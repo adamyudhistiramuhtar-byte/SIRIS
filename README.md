@@ -4,11 +4,96 @@ SIRIS adalah website pendamping Erasoft untuk Supplier Inbound Reliability dan I
 
 ## Status repositori
 
-Dokumentasi, fondasi kolaborasi, dan publikasi GitHub telah selesai (**DONE**). Seluruh 22 branch (1 main, 1 develop, 16 use case branches, 4 technical branches) telah dibuat, dipush, dan diverifikasi di remote origin dengan upstream tracking aktif. Branch kerja lokal saat ini berada pada `develop`.
+Fondasi monorepo dan publikasi GitHub telah selesai (**DONE**). Seluruh 22 branch (1 main, 1 develop, 16 use case branches, 4 technical branches) telah dibuat, dipush, dan diverifikasi di remote origin.
 
-Aplikasi belum diinisialisasi; tidak ada klaim build, pengujian bisnis, UAT, atau deployment aplikasi yang telah selesai. Tahap berikutnya adalah implementasi fondasi teknis Sprint 1 (task S1-02). Lihat [laporan readiness](planning/roadmap/DEVELOPMENT_READINESS.md).
+Implementasi fondasi teknis monorepo (**Task S1-02**) telah selesai pada branch `chore/project-foundation`:
+- Root monorepo dengan npm workspaces (`apps/web`, `apps/api`, `packages/contracts`).
+- Frontend Vue 3 + Vite + TypeScript + Tailwind CSS (AppShell, routing 17 layar, Context Strip, API client).
+- Backend Express.js + TypeScript (modular architecture, correlation ID, standard error handling, health endpoint).
+- Shared contracts package (`@siris/contracts`) untuk standard response, pagination, dan domain enums.
+- Database foundation PostgreSQL (`database/migrations/`, `database/seeds/`, `database/fixtures/`, connection pool).
+- Tooling lengkap: ESLint, Prettier, TypeScript, Vitest test suite (13 unit/component/integration tests).
 
-Target repository: [adamyudhistiramuhtar-byte/SIRIS](https://github.com/adamyudhistiramuhtar-byte/SIRIS). Remote verified.
+## Panduan Pengembang
+
+### Prerequisites
+- Node.js >= 20.x (Teruji pada Node v24.21.0)
+- npm >= 10.x (Teruji pada npm 11.19.0)
+- Python 3.9+ (untuk `scripts/check_repository.py`)
+- PostgreSQL 14+ (opsional untuk dev lokal; backend mendukung *graceful startup* tanpa DB)
+
+### Instalasi
+```sh
+npm install
+```
+
+### Konfigurasi Environment
+Salin template environment ke `.env` lokal:
+```sh
+cp .env.example .env
+```
+Sesuaikan `PORT` (default 3001) dan `DATABASE_URL` bila PostgreSQL lokal tersedia.
+
+### Perintah Pengembangan (Development)
+```sh
+# Menjalankan frontend web (Vite dev server pada http://localhost:5173)
+npm run dev
+
+# Menjalankan backend API (tsx watch pada http://localhost:3001)
+npm run dev:api
+```
+
+### Perintah Build & Typecheck
+```sh
+# Build seluruh workspace (contracts -> api -> web)
+npm run build
+
+# Typecheck TypeScript seluruh workspace
+npm run typecheck
+
+# Lint kode JavaScript / TypeScript / Vue
+npm run lint
+```
+
+### Perintah Pengujian (Testing)
+```sh
+# Menjalankan seluruh test suite (unit + component + integration)
+npm run test
+
+# Menjalankan verifikasi kepatuhan repositori
+npm run check:repo
+```
+
+## Struktur Monorepo
+
+```text
+SIRIS/
+├── apps/
+│   ├── web/               # Frontend Vue 3 + Vite + TypeScript + Tailwind CSS
+│   └── api/               # Backend Express.js + TypeScript REST API
+├── packages/
+│   └── contracts/         # Shared TypeScript DTOs, response contracts, dan domain enums
+├── database/
+│   ├── migrations/        # Skrip DDL PostgreSQL (001_initial_schema.sql)
+│   ├── seeds/             # Skrip data uji sintetis berlabel UJI (001_initial_seed.sql)
+│   ├── fixtures/          # Dataset uji sintetis JSON untuk pengujian otomatis
+│   └── README.md          # Panduan database & strategi migrasi
+├── tests/
+│   └── integration/       # Pengujian integrasi API & database
+├── development-docs/      # 19 dokumen spesifikasi sistem (SRS, PRD, Arsitektur, dll.)
+├── planning/              # Roadmap sprint (Sprint 1–3) dan laporan development readiness
+├── docs/                  # Panduan implementasi teknis (Git workflow, testing, review)
+├── scripts/               # Script pemeriksaan repositori dan registry branch
+├── .github/               # GitHub Actions CI workflow dan pull request template
+├── package.json           # Root npm workspaces configuration
+└── README.md
+```
+
+## Batasan & Catatan Teknis (Known Limitations)
+
+- **Database Connection**: Jika PostgreSQL belum dikonfigurasi, pengujian database dilaporkan sebagai `NOT RUN / BLOCKED`, bukan PASS. Server API tetap dapat melayani endpoint `/health`.
+- **Ruang Lingkup S1-02**: Task ini mengimplementasikan fondasi teknis monorepo dan arsitektur aplikasi; logika bisnis per use case (autentikasi S1-03, import framework S1-05, slice UC-01 S1-06, stock UC-09 S1-07) akan dikerjakan pada branch fitur masing-masing.
+- **Pemisahan Data**: Seluruh data simulasi berlabel **UJI**; tidak ada data riil mitra operasional di dalam repositori.
 
 ## Mulai bekerja
 

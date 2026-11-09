@@ -11,7 +11,7 @@ Fondasi dan prototipe pertama. Masuk setelah dependency pada tabel ditinjau, own
 | Label rencana | Pekerjaan | Owner usulan | Reviewer | Dependency | Acceptance rencana |
 | --- | --- | --- | --- | --- | --- |
 | S1-01 | Setup repository, review publish set, branch dan CI repository | DEV-01 | DEV-04 | Permission .git, remote dan identity | Config ditinjau, 22 branch/upstream remote terverifikasi (DONE) |
-| S1-02 | Vue/Express foundation, PostgreSQL, shared contracts | DEV-01 + DEV-04 | DEV-02 | OD-07 dan baseline schema/kontrak yang ditinjau | Build/lint/typecheck yang dikonfigurasi, API smoke dan DB connection test nyata |
+| S1-02 | Vue/Express foundation, PostgreSQL, shared contracts | DEV-01 + DEV-04 | DEV-02 | OD-07 dan baseline schema/kontrak yang ditinjau | Monorepo scaffold, contracts, web/api, build/lint/typecheck lulus, 13 test lulus (DONE) |
 | S1-03 | Authentication dan RBAC | DEV-01 | DEV-02 | S1-02; OD-04/07 | Sesi sah/invalid, permission role/gudang diuji backend |
 | S1-04 | Design system dan app shell | DEV-03 | DEV-02 | design.md; kontrak sesi/context | Token sumber, route yang ada, error/loading/empty, component tests |
 | S1-05 | Shared import framework dan UC-16 foundation | DEV-01 | DEV-04 | S1-02/03; OD-05 | Staging/validator/preview; invalid input tidak menyimpan domain |
@@ -40,11 +40,11 @@ Akses Git/remote, kapasitas empat anggota, sumber final, kontrak cutoff/evidence
 
 | Hal yang dilaporkan | Status |
 | --- | --- |
-| Versi prototipe / SHA | Belum tersedia |
-| Feature selesai | Belum ada bukti implementasi |
-| Test aplikasi | NOT RUN |
+| Versi prototipe / SHA | chore/project-foundation (S1-02 fondasi monorepo) |
+| Feature selesai | S1-01 (Repository setup & publish), S1-02 (Monorepo foundation & tooling) |
+| Test aplikasi | S1-02 fondasi: 13 tests PASS; Business test NOT RUN (menunggu task implementasi) |
 | Feedback stakeholder | Belum dikumpulkan |
 | Defect/retest aktual | Belum tersedia |
-| Acceptance sprint | Belum dievaluasi |
+| Acceptance sprint | S1-01 & S1-02 terpenuhi; S1-03–S1-07 belum dievaluasi |
 
 Rujukan: [roadmap](../roadmap/SPRINT_ROADMAP.md), [dependency](../roadmap/DEPENDENCY_MATRIX.md), [strategi pengujian](../../docs/implementation/TESTING_STRATEGY.md).
