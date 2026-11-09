@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "origin": "https://github.com/adamyudhistiramuhtar-byte/SIRIS.git",
+  "base_branch": "develop",
+  "permanent_branches": [
+    "main",
+    "develop"
+  ],
+  "branches": [
+    {
+      "name": "feature/uc-01-inbound-reference-import",
+      "scope": "UC-01",
+      "purpose": "EXPECTED: referensi inbound dan vertical slice",
+      "owner": "DEV-02",
+      "reviewer": "DEV-04",
+      "sprint": "S1–S2"
+    },
+    {
+      "name": "feature/uc-02-supplier-commitment-import",
+      "scope": "UC-02",
+      "purpose": "COMMITMENT: INITIAL/CHANGE dan histori janji",
+      "owner": "DEV-02",
+      "reviewer": "DEV-01",
+      "sprint": "S2"
+    },
+    {
+      "name": "feature/uc-03-receiving-import",
+      "scope": "UC-03",
+      "purpose": "RECEIVING parsial/final dan lineage",
+      "owner": "DEV-02",
+      "reviewer": "DEV-04",
+      "sprint": "S2"
+    },
+    {
+      "name": "feature/uc-04-inbound-exceptions",
+      "scope": "UC-04",
+      "purpose": "Delivery delay dan quantity mismatch final",
+      "owner": "DEV-02",
+      "reviewer": "DEV-04",
+      "sprint": "S2"
+    },
+    {
+      "name": "feature/uc-05-inbound-notices",
+      "scope": "UC-05",
+      "purpose": "Pemberitahuan dalam aplikasi; overdue terpisah",
+      "owner": "DEV-02",
+      "reviewer": "DEV-03",
+      "sprint": "S2"
+    },
+    {
+      "name": "feature/uc-06-wo-material-reference",
+      "scope": "UC-06",
+      "purpose": "Referensi material WO read-only",
+      "owner": "DEV-02",
+      "reviewer": "DEV-03",
+      "sprint": "S3"
+    },
+    {
+      "name": "feature/uc-07-inbound-history",
+      "scope": "UC-07",
+      "purpose": "Histori referensi, janji dan penerimaan",
+      "owner": "DEV-02",
+      "reviewer": "DEV-03",
+      "sprint": "S2"
+    },
+    {
+      "name": "feature/uc-08-supplier-metrics",
+      "scope": "UC-08",
+      "purpose": "Metrik supplier sesuai definisi dan eligibility sumber",
+      "owner": "DEV-02",
+      "reviewer": "DEV-04",
+      "sprint": "S3"
+    },
+    {
+      "name": "feature/uc-09-stock-import",
+      "scope": "UC-09",
+      "purpose": "Paket STOCK dari QTY AKHIR; dukungan opsional",
+      "owner": "DEV-04",
+      "reviewer": "DEV-01",
+      "sprint": "S1–S2"
+    },
+    {
+      "name": "feature/uc-10-physical-count-import",
+      "scope": "UC-10",
+      "purpose": "COUNT: counted, nol, null dan cutoff",
+      "owner": "DEV-04",
+      "reviewer": "DEV-02",
+      "sprint": "S2"
+    },
+    {
+      "name": "feature/uc-11-stock-evidence",
+      "scope": "UC-11",
+      "purpose": "Evidence privat satu target sah; tunggu CF-03",
+      "owner": "DEV-04",
+      "reviewer": "DEV-01",
+      "sprint": "S3"
+    },
+    {
+      "name": "feature/uc-12-stock-reconciliation",
+      "scope": "UC-12",
+      "purpose": "Pasangan valid/nonvalid dan hasil immutable",
+      "owner": "DEV-04",
+      "reviewer": "DEV-02",
+      "sprint": "S2"
+    },
+    {
+      "name": "feature/uc-13-reconciliation-history",
+      "scope": "UC-13",
+      "purpose": "Histori run dan detail hasil",
+      "owner": "DEV-04",
+      "reviewer": "DEV-03",
+      "sprint": "S3"
+    },
+    {
+      "name": "feature/uc-14-inventory-metrics",
+      "scope": "UC-14",
+      "purpose": "Metrik persediaan dengan denominator benar",
+      "owner": "DEV-04",
+      "reviewer": "DEV-02",
+      "sprint": "S3"
+    },
+    {
+      "name": "feature/uc-15-audit-process",
+      "scope": "UC-15",
+      "purpose": "Penelusuran audit; pencatatan dasar sejak S1",
+      "owner": "DEV-01",
+      "reviewer": "DEV-04",
+      "sprint": "S3"
+    },
+    {
+      "name": "feature/uc-16-import-validation",
+      "scope": "UC-16",
+      "purpose": "Validasi internal lima impor tanpa halaman baru",
+      "owner": "DEV-01",
+      "reviewer": "DEV-02",
+      "sprint": "S1–S2"
+    },
+    {
+      "name": "chore/project-foundation",
+      "scope": "TECH-01",
+      "purpose": "Workspace, konfigurasi, kontrak dan fondasi toolchain",
+      "owner": "DEV-01",
+      "reviewer": "DEV-04",
+      "sprint": "S1"
+    },
+    {
+      "name": "feature/auth-rbac",
+      "scope": "TECH-02",
+      "purpose": "Sesi, role dan izin gudang; tidak menambah UC",
+      "owner": "DEV-01",
+      "reviewer": "DEV-02",
+      "sprint": "S1"
+    },
+    {
+      "name": "feature/shared-import-framework",
+      "scope": "TECH-03",
+      "purpose": "Staging, preview 30 menit, commit atomik, idempotency",
+      "owner": "DEV-01",
+      "reviewer": "DEV-04",
+      "sprint": "S1–S2"
+    },
+    {
+      "name": "feature/frontend-app-shell",
+      "scope": "TECH-04",
+      "purpose": "Vue app shell, router, token dan komponen bersama",
+      "owner": "DEV-03",
+      "reviewer": "DEV-02",
+      "sprint": "S1"
+    }
+  ]
+}
