@@ -10,7 +10,7 @@ Fondasi dan prototipe pertama. Masuk setelah dependency pada tabel ditinjau, own
 
 | Label rencana | Pekerjaan | Owner usulan | Reviewer | Dependency | Acceptance rencana |
 | --- | --- | --- | --- | --- | --- |
-| S1-01 | Setup repository, review publish set, branch dan CI repository | DEV-01 | DEV-04 | Permission .git, remote dan identity | Config ditinjau, branch/upstream remote terverifikasi; saat ini BLOCKED untuk Git |
+| S1-01 | Setup repository, review publish set, branch dan CI repository | DEV-01 | DEV-04 | Permission .git, remote dan identity | Config ditinjau, 22 branch/upstream remote terverifikasi (DONE) |
 | S1-02 | Vue/Express foundation, PostgreSQL, shared contracts | DEV-01 + DEV-04 | DEV-02 | OD-07 dan baseline schema/kontrak yang ditinjau | Build/lint/typecheck yang dikonfigurasi, API smoke dan DB connection test nyata |
 | S1-03 | Authentication dan RBAC | DEV-01 | DEV-02 | S1-02; OD-04/07 | Sesi sah/invalid, permission role/gudang diuji backend |
 | S1-04 | Design system dan app shell | DEV-03 | DEV-02 | design.md; kontrak sesi/context | Token sumber, route yang ada, error/loading/empty, component tests |
