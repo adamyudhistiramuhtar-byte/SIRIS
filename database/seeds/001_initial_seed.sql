@@ -6,7 +6,7 @@
 
 -- Seed Gudang UJI
 INSERT INTO warehouses (id, code, name, description, is_active)
-VALUES 
+VALUES
     ('00000000-0000-0000-0000-000000000001', 'WH-01', 'Gudang Bahan Baku (UJI)', 'Gudang penyimpanan material utama untuk simulasi', TRUE),
     ('00000000-0000-0000-0000-000000000002', 'WH-02', 'Gudang Kemasan (UJI)', 'Gudang penyimpanan packaging untuk simulasi', TRUE)
 ON CONFLICT (code) DO NOTHING;
@@ -26,4 +26,3 @@ VALUES
     ('10000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001'),
     ('10000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000001')
 ON CONFLICT (user_id, warehouse_id) DO NOTHING;
-

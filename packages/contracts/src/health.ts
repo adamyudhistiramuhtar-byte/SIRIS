@@ -10,4 +10,3 @@ export interface HealthCheckData {
   timestamp: string;
   environment: string;
 }
-

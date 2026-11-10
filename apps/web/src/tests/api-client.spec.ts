@@ -60,4 +60,3 @@ describe('ApiClient Unit Tests', () => {
     }
   });
 });
-

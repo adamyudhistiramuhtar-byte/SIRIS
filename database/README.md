@@ -51,4 +51,3 @@ Migrasi PostgreSQL menggunakan file SQL standar yang dieksekusi secara berurutan
 
 - Bila instance PostgreSQL belum aktif di lingkungan lokal atau CI, pengujian integrasi database ditandai sebagai **BLOCKED** atau **NOT RUN**, bukan PASS.
 - Backend API SIRIS dirancang dengan *lazy connection pooling* sehingga server Express tetap dapat melakukan bootstrap dan melayani endpoint kesehatan (`/health`) meskipun database belum terhubung.
-

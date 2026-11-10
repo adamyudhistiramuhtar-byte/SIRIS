@@ -9,4 +9,3 @@ rootRouter.get('/health', getHealth);
 
 // Versioned API routes
 rootRouter.use('/api/v1', v1Router);
-
