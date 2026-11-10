@@ -21,6 +21,21 @@ Status **PROPOSED — NEEDS REVIEW**, 10 November 2026. [SRS-42](https://adamyud
 
 Tidak ada perubahan kepemilikan Jira atau persetujuan anggota lain yang diklaim. Untuk route `/inbound/import-reference`, integrasi halaman SRS-16/82 tetap menunggu shared component SRS-53, transaksi SRS-52 dan review kontrak; jangan membuat duplikat ImportWizard atau menetapkan CF-06 dari asumsi.
 
+## Kesiapan kontrak UC-01 untuk review
+
+`ProposedImportHttpTransport` pada branch SRS-16 adalah mapping yang belum diaktifkan, menggunakan client SRS-42 melalui dependency injection. Seluruh endpoint DOC-09 masih **PROPOSED**; test mock tidak membuktikan backend tersedia. `import-wizard-contract.ts` merupakan usulan props/events SRS-53, bukan komponen kedua atau persetujuan Vassell.
+
+| API DOC-09 | Frontend | Backend / data | Keputusan terbuka |
+| --- | --- | --- | --- |
+| POST `/imports` | Mapping multipart EXPECTED, mode, gudang dan file: PROPOSED | Staging SRS-50 BLOCKED | Header, quantity dan batas file SOURCE REQUIRED; CF-06 |
+| POST `/imports/{batch_id}/validation` | Mapping batch dan hasil siap preview: PROPOSED | SRS-51 BLOCKED | Error/warning per baris dan semantik final perlu review |
+| GET `/imports/{batch_id}/preview` | Mapping scope, fingerprint dan expiry: PROPOSED | SRS-51 BLOCKED | DTO langsung vs envelope dan field preview perlu review |
+| POST `/imports/{batch_id}/commit` | Fingerprint dan idempotency key: PROPOSED; warning fail-closed | SRS-52 BLOCKED | Identitas dan pengakuan warning belum final |
+| POST `/imports/{batch_id}/cancellation` | Mapping respons CANCELLED: PROPOSED | SRS-52 BLOCKED | Kewenangan dan hasil unknown perlu review |
+| GET `/references` | Belum diimplementasikan | Sumber dan izin gudang NOT VERIFIED | Kontrak session dan otorisasi SOURCE REQUIRED |
+
+Authentication/session, otorisasi gudang, shared ImportWizard, staging, validasi, preview, commit atomik, idempotency, isolasi mode, migrasi PostgreSQL dan E2E UC-01 **belum diverifikasi**. Tidak ada klaim READY sampai bukti integrasi nyata tersedia. Format header EXPECTED dan quantity CF-06 tetap SOURCE REQUIRED/OPEN. Kebijakan runtime dan isolasi UJI yang secara eksplisit disetujui PM tercatat pada SRS-40; tidak ada kontrak API baru yang dinyatakan ACCEPTED di sini.
+
 ## Verifikasi dan integrasi
 
 Jalankan lint, typecheck, build dan test sesuai manifest. Test client menggunakan respons sintetis dan fetch tiruan, sedangkan integration test backend dan PostgreSQL hanya dapat dilaporkan jika dijalankan pada layanan nyata. PR SRS-42 harus tetap bertumpuk pada PR #4 dan tidak di-merge sebelum SRS-41 memenuhi DoD; setelah baseline tersedia di develop, retarget dan verifikasi ulang pada commit hasil integrasi. Review independen tetap diperlukan.
