@@ -4,6 +4,20 @@ Status: **DRAFT — NEEDS REVIEW**; tanggal: 10 November 2026. Issue: [SRS-40](h
 
 Dokumen ini mencatat hasil inventaris dan opsi untuk ditinjau. `ACCEPTED` berarti ada bukti persetujuan spesifik; `PROPOSED` berarti rekomendasi yang belum disetujui; `OPEN` berarti belum ada pilihan final. Fakta konfigurasi yang ada tidak dengan sendirinya merupakan persetujuan standar produksi. Tidak ada ADR di bawah yang ditandai ACCEPTED tanpa bukti persetujuan.
 
+## Keputusan minimum yang disetujui pengguna
+
+**Sumber persetujuan:** instruksi langsung pemilik proyek dalam percakapan “SIRIS — APPROVAL SRS-40 & SPRINT 1 UNBLOCK EXECUTION”, 10 November 2026, Asia/Jakarta. Persetujuan ini berlaku untuk Sprint 1 dan tidak otomatis mengesahkan keputusan di luar lima butir berikut.
+
+| No. | Keputusan | Status |
+| --- | --- | --- |
+| 1 | Node.js 22 LTS sebagai baseline runtime pengembangan dan GitHub Actions CI Sprint 1; minor/patch mengikuti rilis aman yang kompatibel. | ACCEPTED |
+| 2 | npm workspaces untuk monorepo dengan satu `package-lock.json` pada root. | ACCEPTED |
+| 3 | `npm ci` untuk instalasi reproducible pada CI; lockfile tidak diperbarui tanpa perubahan dependency yang sah. | ACCEPTED |
+| 4 | Local development dan testing terisolasi dengan fixture sintetis berlabel UJI. | ACCEPTED |
+| 5 | Credential, token, password dan environment secrets tidak disimpan di Git; `.env.example` tanpa credential nyata. | ACCEPTED |
+
+Autentikasi, parser, migration runner, hosting, retensi dan ambang NFR **tidak termasuk persetujuan** dan tetap PROPOSED/OPEN. Pencatatan persetujuan tidak membuktikan kontrol telah diterapkan di seluruh lingkungan atau menggantikan review independen dan PR merged.
+
 ## Sumber, versi, dan cakupan pemeriksaan
 
 | Sumber | Versi atau snapshot | Kegunaan dan batas |
@@ -14,14 +28,16 @@ Dokumen ini mencatat hasil inventaris dan opsi untuk ditinjau. `ACCEPTED` berart
 | `AGENTS.md` | Snapshot develop `ea6dd9c` | Stack proyek, sumber baseline dan pemisahan ACTUAL/UJI. |
 | Repository scaffold | Commit `74b79ab`, juga pada main `3b17306` melalui PR #2; belum pada develop snapshot di atas | Manifest, lockfile, konfigurasi dan implementasi aktual yang diperiksa. Perubahan scaffold sedang diajukan kembali melalui [PR #4](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/4). |
 
-Sumber final, keputusan stakeholder, versi PostgreSQL, kebijakan retensi, target deployment dan NFR asli belum tersedia atau belum terbukti disetujui. DOC-17 ditulis sebelum scaffold dan sejumlah pernyataan bahwa manifest/script belum ada tidak menggambarkan snapshot scaffold; jangan menganggapnya sebagai kondisi saat ini pada main maupun persetujuan produksi.
+Sumber final, keputusan autentikasi dan deployment, versi PostgreSQL, kebijakan retensi, target deployment dan NFR asli belum tersedia atau belum terbukti disetujui. DOC-17 ditulis sebelum scaffold dan sejumlah pernyataan bahwa manifest/script belum ada tidak menggambarkan snapshot scaffold; jangan menganggapnya sebagai kondisi saat ini pada main maupun persetujuan produksi.
+
+Pemeriksaan ulang terhadap scaffold PR #4 `3b5888f`: hanya satu `package-lock.json` root ditemukan; manifest root menyatakan npm workspaces; workflow `application-ci` mengonfigurasi Node 22 dan `npm ci`. Pemeriksaan nama kunci template tidak menemukan nilai nonkosong pada `SECRET`, `TOKEN`, `PASSWORD`, atau `DATABASE_URL`; ini bukan audit seluruh histori atau secret semantik. Node lokal yang tersedia pada pemeriksaan adalah 24.21.0, sehingga menjalankan lokal dengan Node 22 belum diverifikasi; penerapan lokal perlu ditindaklanjuti. Lockfile tidak diubah dalam PR ini.
 
 ## Matriks konfigurasi tooling
 
 | Area | Bukti konfigurasi pada scaffold | Status dan batas |
 | --- | --- | --- |
-| Node/npm | Workflow `repository-checks.yml` memakai Node 22 dan `npm ci`; README menyebut Node >=20. Manifest root belum menetapkan `engines` atau `packageManager`. | OPEN: versi yang didukung dan npm baku perlu disepakati; Node 22 adalah konfigurasi CI, bukan keputusan produksi. |
-| Package manager | Root `package.json` menggunakan npm workspaces; `package-lock.json` tersedia. | Implementasi ada pada scaffold; persetujuan kebijakan lockfile dan pembaruan dependency belum ditemukan. |
+| Node/npm | Workflow `repository-checks.yml` memakai Node 22 dan `npm ci`; README menyebut Node >=20. Manifest root belum menetapkan `engines` atau `packageManager`. | ACCEPTED: Node 22 untuk pengembangan dan CI Sprint 1. README >=20 bukan bukti dukungan versi lain; produksi di luar persetujuan ini. |
+| Package manager | Root `package.json` menggunakan npm workspaces; `package-lock.json` tersedia. | ACCEPTED: npm workspaces, satu lockfile root dan `npm ci` di CI; ubah lockfile hanya untuk perubahan dependency yang sah. |
 | TypeScript, lint, format | Manifest mendeklarasikan TypeScript, ESLint 9 dan Prettier 3; lint/typecheck/build tersedia sebagai script. | Versi manifest berupa rentang; lockfile merekam resolusi. Formatter tersedia, bukan bukti semua file telah diformat. |
 | Web/API | Manifest web mendeklarasikan Vue 3, Vite 6, Tailwind 3; API mendeklarasikan Express 4 dan `pg` 8; kontrak bersama dalam workspace. | Implementasi fondasi, bukan bukti fitur atau versi produksi disetujui. |
 | Pengujian | Vitest dan Supertest dideklarasikan; script `npm test` tersedia. | Hasil test harus dicatat per commit dan lingkungan; satu test penanganan gagal koneksi tidak membuktikan PostgreSQL berjalan. |
@@ -32,7 +48,7 @@ Sumber final, keputusan stakeholder, versi PostgreSQL, kebijakan retensi, target
 
 ### SRS40-ADR-01 — Runtime dan package manager
 
-**Status:** PROPOSED. **Masalah/konteks:** runtime harus dapat direproduksi di empat mesin dan CI; versi yang disetujui belum tercatat. **Opsi:** (A) Node 22 dan npm yang diuji bersama lockfile; (B) rentang Node yang lebih luas beserta matriks kompatibilitas. **Rekomendasi untuk review:** A sebagai baseline kerja sementara karena workflow sudah memakai Node 22, tanpa mengklaim dukungan produksi. **Trade-off:** A menyederhanakan reproduksi tetapi tidak membuktikan kompatibilitas versi lain; B memerlukan CI lebih luas. **Konsekuensi:** sepakati versi Node/npm dan kebijakan `npm ci`, commit lockfile setelah perubahan dependency, lalu uji instalasi bersih. **Dampak:** seluruh workspace, CI, SRS-41. **Persetujuan:** belum ada bukti; OD-07 OPEN.
+**Status:** ACCEPTED untuk tiga butir runtime dan package manager yang secara eksplisit disetujui pada register di atas; keputusan OD-07 lainnya tetap OPEN. **Masalah/konteks:** runtime harus dapat direproduksi di empat mesin dan CI. **Opsi:** (A) Node 22 dan npm workspaces bersama lockfile root; (B) rentang Node yang lebih luas beserta matriks kompatibilitas. **Pilihan:** A untuk pengembangan dan CI Sprint 1; `npm ci` digunakan pada CI. **Trade-off:** A menyederhanakan reproduksi tetapi tidak membuktikan kompatibilitas versi lain atau produksi; B memerlukan CI lebih luas. **Konsekuensi:** gunakan satu lockfile root, jangan perbarui tanpa perubahan dependency yang sah, dan uji instalasi bersih. Versi npm tertentu tidak ditetapkan oleh persetujuan. **Dampak:** seluruh workspace, CI, SRS-41. **Persetujuan:** instruksi langsung pengguna tanggal 10 November 2026, sebagaimana dirinci pada register keputusan minimum.
 
 ### SRS40-ADR-02 — Autentikasi dan otorisasi
 
@@ -48,14 +64,14 @@ Sumber final, keputusan stakeholder, versi PostgreSQL, kebijakan retensi, target
 
 ### SRS40-ADR-05 — Lingkungan, secret dan deployment
 
-**Status:** PROPOSED. **Masalah/konteks:** konfigurasi lokal, test dan produksi harus terpisah; hosting, target kapasitas serta retensi belum disepakati. **Opsi:** (A) environment terisolasi dengan secret melalui penyedia runtime yang dipilih; (B) konfigurasi manual lokal saja. **Rekomendasi untuk review:** A untuk deployment setelah platform diputuskan; B terbatas untuk pengembangan, bukan bukti kesiapan rilis. **Trade-off:** isolasi menambah pengelolaan tetapi mengurangi risiko pencampuran data. **Konsekuensi:** jangan commit secret atau data mitra; frontend hanya menerima konfigurasi publik; gunakan origin spesifik dan TLS pada deployment; catat versi artefak, prosedur backup/restore dan verifikasi hak akses. Lockfile, origin, platform, retensi file/audit, NFR, RPO/RTO serta pemilik operasional masih memerlukan keputusan. **Dampak:** SRS-41, SRS-43/44, DOC-16/17. **Persetujuan:** belum ada; OD-07/08 OPEN, OD-09 NEEDS BASELINE.
+**Status:** ACCEPTED terbatas pada isolasi local development/testing dengan fixture sintetis UJI dan larangan menyimpan secret di Git; konfigurasi deployment tetap PROPOSED/OPEN. **Masalah/konteks:** konfigurasi lokal, test dan produksi harus terpisah; hosting, target kapasitas serta retensi belum disepakati. **Opsi:** (A) environment terisolasi dengan secret melalui penyedia runtime yang dipilih; (B) konfigurasi manual lokal saja. **Keputusan:** bagian local/test dan secret pada register minimum diterima; opsi deployment belum diputuskan. **Trade-off:** isolasi menambah pengelolaan tetapi mengurangi risiko pencampuran data. **Konsekuensi:** `.env.example` tanpa credential nyata; frontend hanya menerima konfigurasi publik. Origin, platform, retensi file/audit, NFR, RPO/RTO serta pemilik operasional masih memerlukan keputusan. **Dampak:** SRS-41, SRS-43/44, DOC-16/17. **Persetujuan:** instruksi langsung pengguna tanggal 10 November 2026 untuk bagian yang dibatasi di atas; OD-07/08 tetap OPEN sebagian dan OD-09 NEEDS BASELINE.
 
 ## Spesifikasi lingkungan untuk review
 
 | Konteks | Data dan akses | Prasyarat yang diusulkan | Status |
 | --- | --- | --- | --- |
-| Lokal | Dataset sintetis UJI; secret lokal di luar Git. | Node/npm sesuai keputusan; DB dan storage lokal terisolasi; origin frontend eksplisit. | PROPOSED; tidak menyiratkan runtime DB tersedia. |
-| Test/CI | Fixture UJI terisolasi; tidak memakai data ACTUAL. | Database sementara, role non-superuser, clock deterministik bila relevan, hasil dan commit dicatat. | PROPOSED; workflow scaffold belum menjalankan DB. |
+| Lokal | Dataset sintetis UJI; secret lokal di luar Git. | Node 22 untuk Sprint 1; rincian DB, storage dan origin masih perlu review. | Isolasi dan data UJI ACCEPTED; runtime DB belum terbukti tersedia. |
+| Test/CI | Fixture UJI terisolasi; tidak memakai data ACTUAL. | Database sementara, role non-superuser, clock deterministik bila relevan, hasil dan commit dicatat. | Isolasi dan data UJI ACCEPTED; rincian DB PROPOSED dan workflow scaffold belum menjalankan DB. |
 | Production-like | Tidak menggunakan data mitra tanpa otorisasi dan kontrol yang disetujui. | TLS, origin disepakati, secret injection, DB/storage privat, backup dan latihan restore. | OPEN; belum ada platform atau bukti deployment. |
 
 | Variabel | Pemakaian yang teramati pada scaffold / ketentuan | Gap |
@@ -76,8 +92,10 @@ Prasyarat rilis yang masih harus dibuktikan: sumber dan keputusan disetujui; art
 
 | Issue / kriteria | Bukti implementasi/dokumen | Metode dan hasil saat penyusunan | Lokasi bukti | Reviewer | Gap |
 | --- | --- | --- | --- | --- | --- |
-| SRS-40: inventaris tooling | Manifest, lockfile dan workflow scaffold | Inspeksi isi snapshot; tidak menjalankan ulang aplikasi pada branch dokumentasi | Commit `74b79ab` dan tabel di atas | Belum ada | Persetujuan versi dan lockfile/environment belum tersedia. |
+| SRS-40: inventaris tooling | Manifest, lockfile dan workflow scaffold | Inspeksi isi snapshot; tidak menjalankan ulang aplikasi pada branch dokumentasi | Commit `74b79ab` dan tabel di atas | Belum ada | Lima butir disetujui pengguna; penerapan Node 22 lokal dan review independen belum diverifikasi. |
 | SRS-40: OD-07/08/09, retensi/NFR dicatat | DOC-00 dan ADR-01–05 | Review dokumentasi terhadap sumber draft | Dokumen ini dan DOC-00 | Belum ada | Keputusan dan NFR asli masih OPEN/SOURCE REQUIRED. |
 | SRS-40: PR dan review | Branch dokumentasi untuk PR ke develop | Pemeriksaan repository dilakukan setelah perubahan; lihat hasil PR/CI yang sebenarnya. | PR SRS-40 setelah dibuat | Reviewer independen belum ada | Review, persetujuan dan merge belum dilakukan. |
 
-Tidak ada acceptance, hasil security test, runtime DB, UAT, atau persetujuan stakeholder yang dinyatakan lulus oleh dokumen ini. Keluaran dan keputusan harus ditinjau oleh reviewer lain sebelum Definition of Done SRS-40 dipertimbangkan.
+SRS-41 tetap diblokir oleh SRS-40 berdasarkan link Jira; persetujuan minimum tidak otomatis memenuhi DoD SRS-40. Perlu review oleh orang lain serta penyelesaian PR sesuai workflow. Acceptance criteria Jira meminta OD-07/08/09 dan retensi/NFR yang belum final dicatat; tidak menyatakan bahwa seluruh keputusan tersebut harus disetujui agar dicatat. Jangan menyimpulkan bahwa SRS-40 Done sebelum review dan workflow selesai.
+
+Tidak ada hasil security test, runtime DB, UAT, atau penerimaan stakeholder yang dinyatakan lulus oleh dokumen ini. Keluaran dan keputusan harus ditinjau oleh reviewer lain sebelum Definition of Done SRS-40 dipertimbangkan.
