@@ -94,7 +94,7 @@ export class ApiClient {
     } catch {
       throw clientError(0, 'INVALID_PATH', 'Alamat permintaan tidak valid');
     }
-    if (/%(?:2f|5c|25)/i.test(path) || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(decodedPath) || decodedPath.includes('\\') || decodedPath.split('/').some((part) => part === '..' || part === '.')) {
+    if (path.includes('#') || /%(?:2f|5c|25)/i.test(path) || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(decodedPath) || decodedPath.includes('\\') || decodedPath.split('/').some((part) => part === '..' || part === '.')) {
       throw clientError(0, 'INVALID_PATH', 'Alamat permintaan tidak valid');
     }
     const { params, ...requestOptions } = options;
@@ -122,16 +122,21 @@ export class ApiClient {
 
     const correlationHeader = response.headers?.get('x-correlation-id');
     const correlationId = correlationHeader ?? 'unknown';
+    const uncertainHttpOutcome = mutation && (response.status === 408 || response.status >= 500);
     let payload: unknown;
     try {
       payload = await response.json();
-    } catch {
-      if (!response.ok) throw clientError(response.status, 'HTTP_ERROR', `Permintaan gagal (HTTP ${response.status}).`, correlationId, mutation && response.status >= 500 ? 'unknown' : 'failed');
+    } catch (error) {
+      const cancelled = requestOptions.signal?.aborted || (isRecord(error) && error.name === 'AbortError');
+      if (cancelled) {
+        throw clientError(response.status, mutation ? 'UNKNOWN_OUTCOME' : 'REQUEST_CANCELLED', mutation ? 'Hasil mutasi tidak diketahui. Periksa status sebelum mencoba kembali.' : 'Permintaan dibatalkan.', correlationId);
+      }
+      if (!response.ok) throw clientError(response.status, 'HTTP_ERROR', `Permintaan gagal (HTTP ${response.status}).`, correlationId, uncertainHttpOutcome ? 'unknown' : 'failed');
       throw clientError(response.status, mutation ? 'UNKNOWN_OUTCOME' : 'INVALID_RESPONSE', 'Respons API tidak sesuai kontrak.', correlationId);
     }
 
     if (!response.ok) {
-      const outcome = mutation && response.status >= 500 ? 'unknown' : 'failed';
+      const outcome = uncertainHttpOutcome ? 'unknown' : 'failed';
       if (isRecord(payload) && isErrorPayload(payload.error)) throw new ApiClientError(response.status, payload.error, outcome);
       throw clientError(response.status, 'HTTP_ERROR', `Permintaan gagal (HTTP ${response.status}).`, correlationId, outcome);
     }

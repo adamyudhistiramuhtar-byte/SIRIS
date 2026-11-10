@@ -129,6 +129,11 @@ describe('ApiClient: respons dan kegagalan', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('menandai timeout HTTP 408 mutasi sebagai hasil tidak pasti', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ message: 'timeout' }, 408)));
+    await expect(new ApiClient('/api/v1').post('/uji', {})).rejects.toMatchObject({ statusCode: 408, outcome: 'unknown' });
+  });
+
   it('meneruskan Headers dan signal ke fetch', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ data: { id: 'uji-1' } }));
     vi.stubGlobal('fetch', fetchMock);
@@ -140,6 +145,21 @@ describe('ApiClient: respons dan kegagalan', () => {
     expect(new Headers(options.headers).get('X-Correlation-ID')).toBe('uji-client');
     expect(new Headers(options.headers).get('Idempotency-Key')).toBe('uji-key');
     expect(options.signal).toBe(controller.signal);
+  });
+
+  it('menolak fragmen agar filter scope tidak tersembunyi setelah tanda pagar', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(new ApiClient('/api/v1').get('/uji#frag', { params: { mode: 'UJI' } })).rejects.toMatchObject({ code: 'INVALID_PATH' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('menangani abort saat membaca respons GET dan mutasi tanpa menganggap mutasi pasti gagal', async () => {
+    const abort = new DOMException('UJI dibatalkan', 'AbortError');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ...jsonResponse(null), json: async () => { throw abort; } }));
+    const client = new ApiClient('/api/v1');
+    await expect(client.get('/uji')).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+    await expect(client.post('/uji', {})).rejects.toMatchObject({ code: 'UNKNOWN_OUTCOME' });
   });
 
   it('meneruskan FormData tanpa memaksa content type JSON atau menyimpan file', async () => {
