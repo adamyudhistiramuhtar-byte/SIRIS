@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
-import { ReferenceImportFlow, type ReferenceImportAdapter } from '../../features/inbound/reference-import';
+import { ReferenceImportFlow } from '../../features/inbound/reference-import';
+import { createUjiSimulator } from '../../features/inbound/uji-simulator';
 
-// Simulator sementara hanya untuk development; tidak menyimpan atau membaca data mitra.
-const adapter: ReferenceImportAdapter = {
-  async upload() { return { batchId: 'UJI-SIMULASI' }; },
-  async validate(batchId) { return { batchId, fingerprint: 'UJI-SIMULASI', warnings: ['Simulasi saja; isi file belum divalidasi server.'] }; },
-  async commit(preview) { return { batchId: preview.batchId, state: 'COMMITTED' }; },
-};
-const enabled = import.meta.env.DEV;
-const flow = reactive(new ReferenceImportFlow(adapter));
+// Kedua syarat diperlukan; build produksi tidak mengaktifkan simulator.
+const enabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_IMPORT_SIMULATOR === 'true';
+const flow = reactive(new ReferenceImportFlow(createUjiSimulator()));
 const warehouse = ref('');
 const file = ref<File>();
 const acknowledged = ref(false);
@@ -162,6 +158,12 @@ async function commit() {
       </template>
       <p v-else-if="flow.state.phase === 'success'">
         Simulasi selesai untuk {{ flow.state.receipt.batchId }}. Tidak ada transaksi database.
+      </p>
+      <p
+        v-else-if="flow.state.phase === 'expired'"
+        role="alert"
+      >
+        Preview kedaluwarsa. Jalankan validasi ulang sebelum konfirmasi.
       </p>
       <p
         v-else-if="flow.state.phase === 'unknown'"

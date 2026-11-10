@@ -3,7 +3,14 @@ import { describe, expect, it, vi } from 'vitest';
 import ImportReferencePage from '../pages/inbound/ImportReferencePage.vue';
 
 describe('Halaman simulasi impor referensi', () => {
+  it('tidak mengaktifkan simulator tanpa konfigurasi eksplisit', () => {
+    vi.stubEnv('VITE_ENABLE_IMPORT_SIMULATOR', '');
+    const wrapper = mount(ImportReferencePage);
+    expect(wrapper.get('#warehouse').attributes('disabled')).toBeDefined();
+    vi.unstubAllEnvs();
+  });
   it('mewajibkan konteks dan file, lalu menandai hasil sebagai simulasi', async () => {
+    vi.stubEnv('VITE_ENABLE_IMPORT_SIMULATOR', 'true');
     vi.spyOn(crypto, 'randomUUID').mockReturnValue('00000000-0000-4000-8000-000000000001');
     const wrapper = mount(ImportReferencePage);
     const upload = wrapper.find('button');
@@ -21,5 +28,6 @@ describe('Halaman simulasi impor referensi', () => {
     await confirm?.trigger('click'); await flushPromises();
     expect(wrapper.text()).toContain('Tidak ada transaksi database');
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 });

@@ -1,7 +1,7 @@
 /** Boundary UC-01 untuk ditinjau; implementasi API dan izin tetap otoritas backend. */
 export type ImportMode = 'UJI' | 'ACTUAL';
 export interface ImportContext { warehouseId: string; mode: ImportMode }
-export interface Preview { batchId: string; fingerprint: string; warnings: string[] }
+export interface Preview { batchId: string; fingerprint: string; warnings: string[]; expiresAt?: string }
 export interface CommitReceipt { batchId: string; state: 'COMMITTED' }
 export interface ReferenceImportAdapter {
   upload(file: File, context: ImportContext): Promise<{ batchId: string }>;
@@ -12,6 +12,7 @@ export type ImportState =
   | { phase: 'initial' }
   | { phase: 'uploading' | 'validating' | 'committing' }
   | { phase: 'preview'; preview: Preview }
+  | { phase: 'expired'; batchId: string }
   | { phase: 'success'; receipt: CommitReceipt }
   | { phase: 'error'; message: string }
   | { phase: 'unknown'; batchId: string; idempotencyKey: string };
@@ -50,6 +51,10 @@ export class ReferenceImportFlow {
   async confirm(idempotencyKey: string): Promise<void> {
     if (this.state.phase !== 'preview' || !this.context || !idempotencyKey) return;
     const preview = this.state.preview;
+    if (preview.expiresAt && (!Number.isFinite(Date.parse(preview.expiresAt)) || Date.parse(preview.expiresAt) <= Date.now())) {
+      this.state = { phase: 'expired', batchId: preview.batchId };
+      return;
+    }
     const generation = this.generation;
     this.state = { phase: 'committing' };
     try {

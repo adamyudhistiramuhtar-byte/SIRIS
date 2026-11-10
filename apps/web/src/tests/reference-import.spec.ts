@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ReferenceImportFlow, type ReferenceImportAdapter } from '../features/inbound/reference-import.js';
+import { createUjiSimulator } from '../features/inbound/uji-simulator.js';
 
 const context = { warehouseId: 'gudang-uji', mode: 'UJI' as const };
 const file = new File(['UJI'], 'fixture.csv', { type: 'text/csv' });
@@ -38,5 +39,24 @@ describe('Boundary impor referensi UJI', () => {
     const flow = new ReferenceImportFlow(api); await flow.prepare(file, context, true);
     expect(flow.state.phase).toBe('error');
     expect(api.commit).not.toHaveBeenCalled();
+  });
+  it('menolak commit saat preview sudah kedaluwarsa', async () => {
+    const api = adapter(); vi.mocked(api.validate).mockResolvedValue({ batchId: 'batch-uji', fingerprint: 'uji', warnings: [], expiresAt: '2000-01-01T00:00:00Z' });
+    const flow = new ReferenceImportFlow(api); await flow.prepare(file, context, true);
+    await flow.confirm('key-uji');
+    expect(flow.state.phase).toBe('expired');
+    expect(api.commit).not.toHaveBeenCalled();
+  });
+  it('menolak mode ACTUAL pada simulator UJI', async () => {
+    await expect(createUjiSimulator().upload(file, { warehouseId: 'gudang-uji', mode: 'ACTUAL' })).rejects.toThrow();
+  });
+  it('tidak mengirim dua mutasi saat konfirmasi dilakukan bersamaan', async () => {
+    const api = adapter(); let resolve!: (value: { batchId: string; state: 'COMMITTED' }) => void;
+    vi.mocked(api.commit).mockImplementation(() => new Promise((done) => { resolve = done; }));
+    const flow = new ReferenceImportFlow(api); await flow.prepare(file, context, true);
+    const first = flow.confirm('key-uji'); await flow.confirm('key-lain');
+    expect(api.commit).toHaveBeenCalledTimes(1);
+    resolve({ batchId: 'batch-uji', state: 'COMMITTED' }); await first;
+    expect(flow.state.phase).toBe('success');
   });
 });
