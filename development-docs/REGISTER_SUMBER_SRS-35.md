@@ -46,7 +46,7 @@ Ketiadaan di atas berarti sumber tersebut tidak ditemukan dalam snapshot reposit
 
 ## Matriks cakupan dan keterlacakan sumber
 
-Hasil berikut merupakan pemeriksaan struktur pada snapshot yang disebutkan di atas, bukan pengesahan semantik terhadap sumber final atau bukti bahwa fitur telah diimplementasikan.
+Hasil berikut merupakan pemeriksaan struktur pada snapshot yang disebutkan di atas, bukan pengesahan semantik terhadap sumber final atau bukti bahwa fitur telah diimplementasikan. Pemeriksaan dua arah dilakukan untuk identitas UC yang tersedia: setiap ID judul DOC-03 ditemukan pada baris DOC-15 dan setiap ID pada baris DOC-15 ditemukan pada DOC-03. Ini bukan pembuktian hubungan FR ↔ UC ↔ tes; pemeriksaan tersebut SOURCE REQUIRED sampai identitas dan isi sumber asli tersedia.
 
 | Kelompok | Sumber dan pemeriksaan | Hasil dan batas |
 | --- | --- | --- |
