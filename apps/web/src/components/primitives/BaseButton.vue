@@ -37,7 +37,10 @@ const hasReason = computed(() => props.disabled && props.disabledReason !== '');
 function onClick(event: MouseEvent) {
   if (inert.value) {
     // Cegah submit form dan klik ganda saat tombol nonaktif atau sedang memuat.
+    // stopPropagation mencegah handler delegasi pada elemen induk ikut berjalan.
+    // Fokus dan alasan nonaktif tidak disentuh, sehingga tombol tetap dapat difokuskan.
     event.preventDefault();
+    event.stopPropagation();
     return;
   }
   emit('click', event);
