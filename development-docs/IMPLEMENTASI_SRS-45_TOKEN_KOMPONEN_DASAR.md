@@ -60,16 +60,16 @@ Dampak visual: nilai warna kini mengikuti `design.md`, sehingga sedikit berbeda 
 
 ## 6. Bukti pengujian
 
-Dijalankan pada cabang kerja (Node/Vitest di lingkungan cloud, bukan di mesin Windows pengembang). Hasil aktual:
+Hasil aktual. `npm run build` dijalankan di lingkungan cloud; `npm run lint`, `npm run typecheck`, dan `npm test` dijalankan ulang di mesin pengembang (Windows) setelah perbaikan review.
 
 | Pemeriksaan | Hasil |
 | --- | --- |
 | `npm run tokens:check` | PASS — "Token sinkron dengan design.md (424 token terbaca)". |
-| `npm run lint` | PASS — 0 error, 0 warning. |
-| `npm run typecheck` | PASS — contracts, api, web. |
-| `npm test` | PASS — 9 berkas, 57 pengujian (termasuk 19 pengujian token dan 25 pengujian komponen baru, serta smoke test AppShell). Tes database tercatat NOT RUN/BLOCKED karena PostgreSQL belum aktif (perilaku bawaan, bukan bagian SRS-45). |
+| `npm run lint` | PASS — tanpa error dan warning (dijalankan ulang di mesin pengembang setelah perbaikan review). |
+| `npm run typecheck` | PASS — contracts, api, web (dijalankan ulang di mesin pengembang setelah perbaikan review). |
+| `npm test` | PASS — 9 berkas, 60 pengujian (termasuk 19 pengujian token dan 28 pengujian komponen, serta smoke test AppShell). Tes database tercatat NOT RUN/BLOCKED karena PostgreSQL belum aktif (perilaku bawaan, bukan bagian SRS-45). |
 | `npm run build` | PASS — build contracts, api, dan web berhasil. |
-| Pemeriksaan visual di browser | NOT RUN — belum dilakukan; perlu dicek pengembang dengan menjalankan frontend. |
+| Pemeriksaan visual di browser | PASS — halaman Beranda dicek pengembang di `localhost:5173` (tangkapan layar pada PR #12). |
 | Uji manual keyboard dan pembaca layar | NOT RUN. |
 | Pengukuran kontras warna manual | NOT RUN — nilai berasal dari token `design.md`; tidak diukur ulang. |
 | Review oleh orang lain dan merge PR | Belum (syarat Definition of Done). |
@@ -81,5 +81,9 @@ Dijalankan pada cabang kerja (Node/Vitest di lingkungan cloud, bukan di mesin Wi
 - `screens` Tailwind belum diturunkan dari token.
 - Belum ada halaman katalog komponen agar tidak menambah rute di luar 17 layar yang disepakati; komponen diverifikasi lewat pengujian.
 - Langkah `tokens:check` belum ditambahkan ke workflow CI (berkas workflow dikelola PM).
-- Cabang ini bertumpu pada `chore/SRS-41-reconcile-main-develop` (PR #4 belum merge); PR diarahkan ke `develop` setelah PR #4 merge.
-- Ketergantungan T-08 (SRS-42, adapter API) tidak menghalangi pekerjaan ini.
+- PR #4 (SRS-41) sudah merge ke `develop`; PR #12 diarahkan ke `develop`.
+- Jira mencatat T-08 (SRS-42, adapter API) sebagai blocker. Pekerjaan ini dikerjakan tanpa menunggunya sesuai arahan PM, karena token dan komponen tidak memakai adapter API.
+
+## 8. Perbaikan hasil review
+
+Review PM pada PR #12 menemukan bahwa `BaseButton` yang nonaktif atau sedang loading masih membiarkan event `click` merambat (bubble) ke handler pada elemen induk, sehingga aksi terdelegasi tetap berjalan. Perbaikan: `onClick` memanggil `event.stopPropagation()` selain `preventDefault()` saat tombol inert, tanpa menyentuh fokus dan alasan nonaktif. Ditambahkan tiga pengujian pada `primitives.spec.ts`: nonaktif dan loading tidak memanggil handler induk (fokus dan `aria-describedby` tetap ada pada kasus nonaktif), serta kontrol bahwa klik pada tombol aktif tetap sampai ke handler induk. Dua pengujian pertama diperiksa gagal tanpa perbaikan dan lolos dengan perbaikan.

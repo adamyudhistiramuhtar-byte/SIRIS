@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import BaseButton from '../components/primitives/BaseButton.vue';
 import BaseInput from '../components/primitives/BaseInput.vue';
@@ -53,6 +53,48 @@ describe('BaseButton', () => {
     expect(button.text()).toContain('Menyimpan…');
     await button.trigger('click');
     expect(wrapper.emitted('click')).toBeUndefined();
+  });
+
+  it('nonaktif: klik tidak merambat ke handler elemen induk, fokus dan alasan tetap ada', async () => {
+    const aksi = vi.fn();
+    const Induk = {
+      components: { BaseButton },
+      methods: { aksi },
+      template:
+        '<div @click="aksi"><BaseButton disabled disabled-reason="Pilih berkas terlebih dahulu">Unggah</BaseButton></div>',
+    };
+    const wrapper = mount(Induk, { attachTo: document.body });
+    const button = wrapper.get('button');
+    await button.trigger('click');
+    expect(aksi).not.toHaveBeenCalled();
+    button.element.focus();
+    expect(document.activeElement).toBe(button.element);
+    expect(button.attributes('aria-describedby')).toBeTruthy();
+    wrapper.unmount();
+  });
+
+  it('loading: klik tidak merambat ke handler elemen induk', async () => {
+    const aksi = vi.fn();
+    const Induk = {
+      components: { BaseButton },
+      methods: { aksi },
+      template: '<div @click="aksi"><BaseButton loading>Simpan</BaseButton></div>',
+    };
+    const wrapper = mount(Induk);
+    await wrapper.get('button').trigger('click');
+    expect(aksi).not.toHaveBeenCalled();
+  });
+
+  it('aktif: klik tetap merambat ke handler elemen induk', async () => {
+    const aksi = vi.fn();
+    const Induk = {
+      components: { BaseButton },
+      methods: { aksi },
+      template: '<div @click="aksi"><BaseButton>Simpan</BaseButton></div>',
+    };
+    const wrapper = mount(Induk);
+    await wrapper.get('button').trigger('click');
+    expect(aksi).toHaveBeenCalledTimes(1);
   });
 
   it('tidak memakai opacity untuk keadaan nonaktif', () => {
