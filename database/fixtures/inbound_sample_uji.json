@@ -1,0 +1,25 @@
+{
+  "_keterangan": "Fixture sintetis berlabel UJI untuk verifikasi testing fondasi dan impor referensi",
+  "mode": "UJI",
+  "warehouse_code": "WH-01",
+  "items": [
+    {
+      "po_number": "PO-UJI-2026-001",
+      "supplier_name": "Supplier Simulasi A",
+      "material_code": "MAT-UJI-101",
+      "material_name": "Resin Bahan Baku (UJI)",
+      "expected_quantity": "1000.00",
+      "uom": "KG",
+      "expected_delivery_date": "2026-11-15"
+    },
+    {
+      "po_number": "PO-UJI-2026-002",
+      "supplier_name": "Supplier Simulasi B",
+      "material_code": "MAT-UJI-102",
+      "material_name": "Katalis Pelarut (UJI)",
+      "expected_quantity": "250.00",
+      "uom": "LITER",
+      "expected_delivery_date": "2026-11-16"
+    }
+  ]
+}

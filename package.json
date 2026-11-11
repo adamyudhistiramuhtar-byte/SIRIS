@@ -1,0 +1,37 @@
+{
+  "name": "siris",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@siris/web",
+    "dev:all": "npm run dev --workspaces --if-present",
+    "dev:web": "npm run dev --workspace=@siris/web",
+    "dev:api": "npm run dev --workspace=@siris/api",
+    "build": "npm run build:contracts && npm run build:api && npm run build:web",
+    "build:contracts": "npm run build --workspace=@siris/contracts",
+    "build:web": "npm run build --workspace=@siris/web",
+    "build:api": "npm run build --workspace=@siris/api",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "vitest run",
+    "test:unit": "vitest run apps/",
+    "test:integration": "vitest run tests/integration/",
+    "check:repo": "python3 scripts/check_repository.py --tracked"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "eslint": "^9.20.0",
+    "eslint-plugin-vue": "^9.32.0",
+    "globals": "^15.14.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.0",
+    "vitest": "^3.0.5"
+  }
+}

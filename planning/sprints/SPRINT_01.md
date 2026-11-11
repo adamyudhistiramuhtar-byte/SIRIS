@@ -1,17 +1,17 @@
 # Sprint 01 — Fondasi dan prototipe pertama
 
-Periode: **9–15 November 2026**. Timezone: **Asia/Jakarta**. Keseluruhan rencana: **9–29 November 2026**. Target akhir **29 November 2026** tidak diperpanjang. Status: PARTIAL untuk setup lokal; implementasi NOT STARTED. Semua tes aplikasi **NOT RUN**. Tidak ada aktivitas historis yang dinyatakan selesai tanpa bukti.
+Periode: **9–15 November 2026**. Timezone: **Asia/Jakarta**. Keseluruhan rencana: **9–29 November 2026**. Target akhir **29 November 2026** tidak diperpanjang. Scaffold tersedia pada main, sementara integrasi ke develop dan acceptance masih terbuka. Tes bisnis dan runtime PostgreSQL **NOT RUN**; rincian bukti terdapat pada [pemeriksaan SRS-41](../../development-docs/STATUS_FONDASI_SRS-41.md).
 
 ## Tujuan dan entry criteria
 
-Fondasi dan prototipe pertama. Masuk setelah dependency pada tabel ditinjau, owner/reviewer tersedia, sumber/acceptance jelas dan fixture UJI siap. Sumber FR/NFR/55 tes asli tetap SOURCE REQUIRED; bagian yang belum dapat diputuskan tidak diimplementasikan berdasarkan asumsi tersembunyi. Jira key belum diketahui; label S1-xx adalah label rencana saja.
+Fondasi dan prototipe pertama. Masuk setelah dependency pada tabel ditinjau, owner/reviewer tersedia, sumber/acceptance jelas dan fixture UJI siap. Sumber FR/NFR/55 tes asli tetap SOURCE REQUIRED; bagian yang belum dapat diputuskan tidak diimplementasikan berdasarkan asumsi tersembunyi. Label S1-xx adalah label rencana dan tidak menggantikan issue Jira.
 
 ## Rencana pekerjaan dan ownership
 
 | Label rencana | Pekerjaan | Owner usulan | Reviewer | Dependency | Acceptance rencana |
 | --- | --- | --- | --- | --- | --- |
-| S1-01 | Setup repository, review publish set, branch dan CI repository | DEV-01 | DEV-04 | Permission .git, remote dan identity | Config ditinjau, 22 branch/upstream remote terverifikasi (DONE) |
-| S1-02 | Vue/Express foundation, PostgreSQL, shared contracts | DEV-01 + DEV-04 | DEV-02 | OD-07 dan baseline schema/kontrak yang ditinjau | Build/lint/typecheck yang dikonfigurasi, API smoke dan DB connection test nyata |
+| S1-01 | Setup repository, review publish set, branch dan CI repository | DEV-01 | DEV-04 | Permission .git, remote dan identity | Branch dan CI tersedia; SRS-41 masih memerlukan dependency, review dan merge PR #4 |
+| S1-02 | Vue/Express foundation, PostgreSQL, shared contracts | DEV-01 + DEV-04 | DEV-02 | OD-07 dan baseline schema/kontrak yang ditinjau | Scaffold dan tes awal tersedia; runtime DB, integrasi dan acceptance belum terbukti lengkap |
 | S1-03 | Authentication dan RBAC | DEV-01 | DEV-02 | S1-02; OD-04/07 | Sesi sah/invalid, permission role/gudang diuji backend |
 | S1-04 | Design system dan app shell | DEV-03 | DEV-02 | design.md; kontrak sesi/context | Token sumber, route yang ada, error/loading/empty, component tests |
 | S1-05 | Shared import framework dan UC-16 foundation | DEV-01 | DEV-04 | S1-02/03; OD-05 | Staging/validator/preview; invalid input tidak menyimpan domain |
@@ -22,7 +22,7 @@ Fondasi dan prototipe pertama. Masuk setelah dependency pada tabel ditinjau, own
 
 Build checks; lint/typecheck bila script tersedia; API smoke; authentication; RBAC; DB connection/migration; import validation; vertical slice integration.
 
-Owner menulis tes bersama implementasi; reviewer memeriksa expected result terhadap sumber. Simpan command, SHA build/schema, dataset, actual result dan bukti. Jangan menunda semua testing sampai Sprint 3. Tidak ada test PASS/FAIL yang dicatat pada dokumen ini.
+Owner menulis tes bersama implementasi; reviewer memeriksa expected result terhadap sumber. Simpan command, SHA build/schema, dataset, actual result dan bukti. Jangan menunda semua testing sampai Sprint 3. Hasil tes awal dan batasnya dicatat pada [pemeriksaan SRS-41](../../development-docs/STATUS_FONDASI_SRS-41.md).
 
 ## Integrasi dan evaluasi Prototyping
 
@@ -40,11 +40,11 @@ Akses Git/remote, kapasitas empat anggota, sumber final, kontrak cutoff/evidence
 
 | Hal yang dilaporkan | Status |
 | --- | --- |
-| Versi prototipe / SHA | Belum tersedia |
-| Feature selesai | Belum ada bukti implementasi |
-| Test aplikasi | NOT RUN |
+| Versi yang diperiksa | `3b17306`, memuat scaffold `74b79ab` pada main; PR #4 menuju develop masih draft |
+| Feature selesai | Acceptance SRS-41 dan alur bisnis belum dinilai selesai; lihat issue Jira dan PR terkait |
+| Test aplikasi | 13 tes runner lulus pada pemeriksaan scaffold sebelumnya; tes koneksi DB melaporkan DATABASE_URL_NOT_CONFIGURED dan tidak membuktikan runtime DB; tes bisnis NOT RUN |
 | Feedback stakeholder | Belum dikumpulkan |
 | Defect/retest aktual | Belum tersedia |
-| Acceptance sprint | Belum dievaluasi |
+| Acceptance sprint | Belum dinyatakan terpenuhi; review dan integrasi serta evaluasi prototipe masih terbuka |
 
 Rujukan: [roadmap](../roadmap/SPRINT_ROADMAP.md), [dependency](../roadmap/DEPENDENCY_MATRIX.md), [strategi pengujian](../../docs/implementation/TESTING_STRATEGY.md).
