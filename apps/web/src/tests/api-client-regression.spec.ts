@@ -18,6 +18,33 @@ afterEach(() => {
 });
 
 describe('Konfigurasi API', () => {
+  it.each([
+    { value: undefined, url: '/api/v1/uji' },
+    { value: '/uji-api/v1', url: '/uji-api/v1/uji' },
+  ])('mengimpor client dan memakai konfigurasi $value', async ({ value, url }) => {
+    vi.resetModules();
+    vi.stubEnv('VITE_API_BASE_URL', value);
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ id: 'uji' }));
+    vi.stubGlobal('fetch', fetchMock);
+    const { apiClient } = await import('../shared/api/client.js');
+    await apiClient.get('/uji');
+    expect(fetchMock).toHaveBeenCalledWith(url, expect.objectContaining({ method: 'GET' }));
+  });
+
+  it.each(['', 'javascript:alert(1)'])(
+    'tetap dapat mengimpor client untuk konfigurasi tidak valid %s dan menolak request sebelum fetch',
+    async (value) => {
+      vi.resetModules();
+      vi.stubEnv('VITE_API_BASE_URL', value);
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      const { apiClient } = await import('../shared/api/client.js');
+      await expect(apiClient.get('/uji')).rejects.toMatchObject({ code: 'INVALID_API_CONFIG', outcome: 'failed' });
+      await expect(apiClient.post('/uji', {})).rejects.toMatchObject({ code: 'INVALID_API_CONFIG', outcome: 'failed' });
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
   it('menerima path API relatif yang valid', () => {
     expect(validateApiBaseUrl('/api/v1')).toBe('/api/v1');
   });
@@ -39,6 +66,14 @@ describe('Konfigurasi API', () => {
 });
 
 describe('ApiClient: respons dan kegagalan', () => {
+  it.each([[], { error: { code: 'VALIDATION_ERROR', message: 'Invalid', correlation_id: 'uji' } }])(
+    'menolak respons sukses di luar kontrak object atau yang memuat error: %j', async (payload) => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(payload)));
+      await expect(new ApiClient('/api/v1').get('/uji')).rejects.toMatchObject({ code: 'INVALID_RESPONSE' });
+      await expect(new ApiClient('/api/v1').post('/uji', {})).rejects.toMatchObject({ code: 'UNKNOWN_OUTCOME', outcome: 'unknown' });
+    },
+  );
+
   it('mempertahankan data dan metadata dari shared response contract', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({
       data: { id: 'uji-1' },

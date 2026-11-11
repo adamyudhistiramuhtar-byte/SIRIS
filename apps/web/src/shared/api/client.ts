@@ -70,7 +70,7 @@ export class ApiClient {
   private readonly baseUrl: string;
 
   constructor(baseUrl = import.meta.env.VITE_API_BASE_URL ?? DEFAULT_BASE_URL) {
-    this.baseUrl = validateApiBaseUrl(baseUrl);
+    this.baseUrl = baseUrl;
   }
 
   public async get<T>(path: string, options?: RequestOptions): Promise<ApiResponse<T>> {
@@ -90,6 +90,12 @@ export class ApiClient {
   }
 
   private async request<T>(path: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
+    let baseUrl: string;
+    try {
+      baseUrl = validateApiBaseUrl(this.baseUrl);
+    } catch {
+      throw clientError(0, 'INVALID_API_CONFIG', 'VITE_API_BASE_URL tidak valid.');
+    }
     let decodedPath: string;
     try {
       decodedPath = decodeURIComponent(path.split(/[?#]/, 1)[0]);
@@ -101,7 +107,7 @@ export class ApiClient {
     }
     const { params, responseFormat = 'dto', ...requestOptions } = options;
     const suffix = path.startsWith('/') ? path : `/${path}`;
-    let url = `${this.baseUrl === '/' ? '' : this.baseUrl}${suffix}`;
+    let url = `${baseUrl === '/' ? '' : baseUrl}${suffix}`;
     if (params) {
       const query = new URLSearchParams();
       for (const [key, value] of Object.entries(params)) {
