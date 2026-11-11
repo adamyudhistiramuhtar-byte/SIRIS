@@ -45,7 +45,7 @@ describe('ApiClient: respons dan kegagalan', () => {
       meta: { correlation_id: 'uji-correlation' },
     })));
 
-    const result = await new ApiClient('/api/v1').get<{ id: string }>('/uji');
+    const result = await new ApiClient('/api/v1').get<{ id: string }>('/uji', { responseFormat: 'envelope' });
     expect(result.data.id).toBe('uji-1');
     expect(result.meta?.correlation_id).toBe('uji-correlation');
   });
@@ -55,6 +55,17 @@ describe('ApiClient: respons dan kegagalan', () => {
 
     const result = await new ApiClient('/api/v1').get<{ items: unknown[]; next_cursor: string | null }>('/uji');
     expect(result.data).toEqual({ items: [], next_cursor: null });
+  });
+
+  it('tidak membuka DTO langsung yang memiliki field data dan meta', async () => {
+    const dto = { data: { value: 'uji' }, meta: { source: 'sintetis' } };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(dto)));
+    expect((await new ApiClient('/api/v1').get<typeof dto>('/uji')).data).toEqual(dto);
+  });
+
+  it('menolak envelope yang dipilih secara eksplisit tanpa field data', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ id: 'uji' })));
+    await expect(new ApiClient('/api/v1').get('/uji', { responseFormat: 'envelope' })).rejects.toMatchObject({ code: 'INVALID_RESPONSE' });
   });
 
   it('menolak respons sukses malformed dengan INVALID_RESPONSE', async () => {

@@ -45,6 +45,8 @@ export class ApiClientError extends Error {
 
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
+  /** Bentuk respons harus dipilih berdasarkan kontrak endpoint, bukan ditebak dari isi DTO. */
+  responseFormat?: 'dto' | 'envelope';
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -97,7 +99,7 @@ export class ApiClient {
     if (path.includes('#') || /%(?:2f|5c|25)/i.test(path) || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(decodedPath) || decodedPath.includes('\\') || decodedPath.split('/').some((part) => part === '..' || part === '.')) {
       throw clientError(0, 'INVALID_PATH', 'Alamat permintaan tidak valid');
     }
-    const { params, ...requestOptions } = options;
+    const { params, responseFormat = 'dto', ...requestOptions } = options;
     const suffix = path.startsWith('/') ? path : `/${path}`;
     let url = `${this.baseUrl === '/' ? '' : this.baseUrl}${suffix}`;
     if (params) {
@@ -143,9 +145,11 @@ export class ApiClient {
     if (!isRecord(payload) || 'error' in payload) {
       throw clientError(response.status, mutation ? 'UNKNOWN_OUTCOME' : 'INVALID_RESPONSE', 'Respons API tidak sesuai kontrak.', correlationId);
     }
-    // Scaffold memakai envelope ApiResponse; DOC-09 juga menggambarkan DTO object langsung.
-    // Validasi bentuk domain tetap menjadi tanggung jawab adapter endpoint yang ditinjau.
-    if ('data' in payload) {
+    // Format respons ditetapkan per endpoint; field `data` dapat menjadi bagian DTO domain.
+    if (responseFormat === 'envelope') {
+      if (!('data' in payload)) {
+        throw clientError(response.status, mutation ? 'UNKNOWN_OUTCOME' : 'INVALID_RESPONSE', 'Envelope respons tidak valid.', correlationId);
+      }
       if ('meta' in payload && (!isRecord(payload.meta) || typeof payload.meta.correlation_id !== 'string')) {
         throw clientError(response.status, mutation ? 'UNKNOWN_OUTCOME' : 'INVALID_RESPONSE', 'Metadata respons tidak valid.', correlationId);
       }
