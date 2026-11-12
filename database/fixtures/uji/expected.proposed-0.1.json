@@ -1,0 +1,96 @@
+{
+  "_keterangan": "Fixture sintetis berlabel UJI untuk kontrak EXPECTED proposed-0.1 (SRS-37). Bukan data mitra. Header sumber asli SOURCE REQUIRED.",
+  "contract_version": "proposed-0.1",
+  "contract_status": "PROPOSED",
+  "kind": "EXPECTED",
+  "raw_header_status": "SOURCE REQUIRED",
+  "metadata": {
+    "kind": "EXPECTED",
+    "warehouse_id": "00000000-0000-4000-8000-000000000001",
+    "mode": "UJI",
+    "source_name": "UJI-expected.csv",
+    "source_reference": "UJI-SRC-EXP-001",
+    "contract_version": "proposed-0.1"
+  },
+  "rows": [
+    {
+      "row_number": 1,
+      "normalized": {
+        "source_ref": "UJI-IN-001",
+        "material_code": "UJI-MAT-01",
+        "supplier_code": "UJI-SUP-01",
+        "uom": "KG",
+        "requested_date": "2026-11-10",
+        "expected_quantity": "10.000000"
+      }
+    },
+    {
+      "row_number": 2,
+      "normalized": {
+        "source_ref": "UJI-IN-002",
+        "material_code": "UJI-MAT-02",
+        "supplier_code": "UJI-SUP-02",
+        "uom": "L",
+        "requested_date": "2026-11-11",
+        "expected_quantity": "2.500000"
+      }
+    }
+  ],
+  "negative_cases": [
+    {
+      "case_id": "UJI-EXP-NEG-01",
+      "description": "material_code tidak ada pada referensi mode UJI",
+      "normalized": {
+        "source_ref": "UJI-IN-003",
+        "material_code": "UJI-MAT-TIDAK-ADA",
+        "supplier_code": "UJI-SUP-01",
+        "uom": "KG",
+        "requested_date": "2026-11-12",
+        "expected_quantity": "1.000000"
+      },
+      "expected_issue": "MISSING_REFERENCE"
+    },
+    {
+      "case_id": "UJI-EXP-NEG-02",
+      "description": "expected_quantity negatif",
+      "normalized": {
+        "source_ref": "UJI-IN-004",
+        "material_code": "UJI-MAT-01",
+        "supplier_code": "UJI-SUP-01",
+        "uom": "KG",
+        "requested_date": "2026-11-12",
+        "expected_quantity": "-1.000000"
+      },
+      "expected_issue": "INVALID_FILE",
+      "note": "Kode khusus tipe/format field belum ada di katalog DOC-08 (gap G-04)."
+    },
+    {
+      "case_id": "UJI-EXP-NEG-03",
+      "description": "expected_quantity melebihi presisi numeric(20,6); ditolak, tidak dibulatkan",
+      "normalized": {
+        "source_ref": "UJI-IN-005",
+        "material_code": "UJI-MAT-01",
+        "supplier_code": "UJI-SUP-01",
+        "uom": "KG",
+        "requested_date": "2026-11-12",
+        "expected_quantity": "1.0000001"
+      },
+      "expected_issue": "INVALID_FILE",
+      "note": "Gap G-04."
+    },
+    {
+      "case_id": "UJI-EXP-BOUNDARY-01",
+      "description": "expected_quantity nol",
+      "normalized": {
+        "source_ref": "UJI-IN-006",
+        "material_code": "UJI-MAT-01",
+        "supplier_code": "UJI-SUP-01",
+        "uom": "KG",
+        "requested_date": "2026-11-12",
+        "expected_quantity": "0.000000"
+      },
+      "expected_issue": "OPEN_DECISION",
+      "note": "CF-06: DOC-08 >=0 vs SRC-09 >0. Jangan dijadikan assertion sebelum diputuskan."
+    }
+  ]
+}
