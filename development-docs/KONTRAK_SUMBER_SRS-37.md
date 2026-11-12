@@ -37,6 +37,23 @@ Dokumen ini menetapkan **usulan** kontrak sumber berversi untuk lima jenis impor
 
 **Sumber yang tidak tersedia** (dicatat, bukan diasumsikan): sampel file Erasoft untuk kelima jenis, nama sheet, header asli (selain `QTY AKHIR`), locale angka, timezone sumber, batas ukuran/baris impor, sumber suplai WO, dokumen SRS/PRD final (OD-01, OD-03).
 
+### 2.1 Register sumber mitra yang dilaporkan
+
+**Asal laporan:** Adam Yudhistira Muhtar (PM & Technical Lead), melalui review [PR #13](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/13) (12 November 2026) dan chat tim. Penyusun dokumen ini **tidak memiliki akses** ke file mitra mana pun. Karena itu seluruh baris berstatus **dilaporkan, belum diperiksa**: tidak ada file, versi, sheet, header, maupun isi yang telah diverifikasi, dan tidak ada isi file yang diasumsikan.
+
+| Sumber yang dilaporkan | Jenis menurut laporan | Peran dalam kontrak | Status pemeriksaan | Versi / sheet / header |
+| --- | --- | --- | --- | --- |
+| Daftar barang | Belum dinyatakan | Belum ditetapkan; tidak otomatis menjadi master `materials` | Dilaporkan, belum diperiksa | Belum diverifikasi |
+| Kartu mutasi | Laporan **saldo periodik** | Sumber `QTY AKHIR` → STOCK `system_quantity` (§4.4) | Dilaporkan, belum diperiksa | Belum diverifikasi; hanya nama kolom `QTY AKHIR` yang diketahui (SRC-01) |
+| Kartu stok | **Movement**, terpisah dari saldo | Bukan sumber saldo; tidak dijumlahkan ke `system_quantity` (§4.4) | Dilaporkan, belum diperiksa | Belum diverifikasi |
+| WO | Belum dinyatakan | Kandidat suplai `wo_references` (§4.6), mekanisme OPEN DECISION | Dilaporkan, belum diperiksa | Belum diverifikasi |
+| Dokumen barang masuk | **Bukti dokumen** | Bukan dataset transaksi RECEIVING lengkap (§4.3) | Dilaporkan, belum diperiksa | Belum diverifikasi |
+| Surat jalan | **Bukti dokumen** | Bukan dataset transaksi RECEIVING lengkap (§4.3) | Dilaporkan, belum diperiksa | Belum diverifikasi |
+| Bukti permintaan/pemakaian | Bukti dokumen | Belum ditetapkan; tidak menjadi sumber quantity domain | Dilaporkan, belum diperiksa | Belum diverifikasi |
+| Daftar distributor (disebut pada butir 2 review) | Daftar referensi | **Bukan master supplier** (§4.1) | Dilaporkan, belum diperiksa | Belum diverifikasi |
+
+Pembedaan yang berlaku: laporan dan bukti dokumen (sekunder) **tidak** diperlakukan sebagai dataset impor. Hanya file yang kelak diperiksa dengan akses dan bukti yang dapat dipetakan ke kontrak berversi.
+
 ## 3. Ketentuan umum lintas jenis
 
 | Aspek | Usulan `proposed-0.1` | Status | Catatan |
@@ -73,7 +90,8 @@ Kolom "Header sumber" berisi header asli bila diketahui; selain itu `SOURCE REQU
 | `requested_date` | date | Ya | SOURCE REQUIRED | PROPOSED; immutable setelah commit |
 | `expected_quantity` | decimal string | Ya | SOURCE REQUIRED | **OPEN DECISION CF-06**: DOC-08 `>=0` vs SRC-09 `>0` |
 
-- Key bisnis usulan: (`warehouse_id`, `mode`, `source_ref`). Kunci line asli Erasoft SOURCE REQUIRED.
+- **Grain dan line key EXPECTED: SOURCE REQUIRED, penerapan ditahan.** Usulan awal (`warehouse_id`, `mode`, `source_ref`) belum membuktikan identitas baris karena satu referensi dapat memuat lebih dari satu material. Key tidak diterapkan sebagai unique constraint, validator duplikasi, atau rujukan lintas impor sampai sumber dikonfirmasi.
+- `supplier_code` merujuk master supplier yang **belum tersedia**: daftar distributor yang dilaporkan bukan master supplier (§2.1). Referensi supplier tetap SOURCE REQUIRED dan tidak dibuat otomatis dari impor.
 - design.md UI-01 menyebut kolom "release date bila tersedia" — **tidak** dimasukkan ke kontrak karena belum ada di DOC-08 (CF-08); dicatat sebagai gap.
 - Fixture UJI tidak memuat baris dengan quantity `0` sebagai kasus valid maupun invalid; kasus batas tersebut ditandai `OPEN_DECISION` sampai CF-06 diputuskan.
 
@@ -87,6 +105,7 @@ Kolom "Header sumber" berisi header asli bila diketahui; selain itu `SOURCE REQU
 | `promised_date` | date | Ya | SOURCE REQUIRED | PROPOSED; tidak menimpa `requested_date` |
 | `event_at` | datetime | Ya | SOURCE REQUIRED | PROPOSED |
 
+- `inbound_source_ref` bergantung pada line key EXPECTED yang masih SOURCE REQUIRED (§4.1); pencocokan ke referensi inbound ditahan hingga grain dikonfirmasi.
 - **OPEN DECISION CF-06**: SRC-09 UI-02 meminta `sequence`, `previous_date`, `committed_date`, `recorded_at` yang belum ada di DOC-08. Tidak ditambahkan dan tidak disintesis.
 
 ### 4.3 RECEIVING — penerimaan (UC-03)
@@ -101,6 +120,8 @@ Kolom "Header sumber" berisi header asli bila diketahui; selain itu `SOURCE REQU
 | `is_closing` | boolean | Ya | SOURCE REQUIRED | PROPOSED; tidak diturunkan dari kumulatif |
 | `closing_reference` | string/null | Kondisional | SOURCE REQUIRED | PROPOSED; validitas penutup OD-06 OPEN |
 
+- **Batas sumber RECEIVING:** dokumen barang masuk dan surat jalan yang dilaporkan adalah bukti dokumen, **bukan** dataset transaksi penerimaan yang lengkap (§2.1). Kontrak ini tidak mengklaim adanya sumber RECEIVING terstruktur; sumbernya tetap SOURCE REQUIRED.
+- `inbound_source_ref` bergantung pada line key EXPECTED yang masih SOURCE REQUIRED (§4.1).
 - Representasi boolean di sumber (mis. `Y/N`, `1/0`) SOURCE REQUIRED; tidak ditebak.
 - Quantity mismatch inbound **bukan** stock variance; kontrak ini tidak menghitung variance.
 
@@ -113,6 +134,7 @@ Kolom "Header sumber" berisi header asli bila diketahui; selain itu `SOURCE REQU
 | `system_quantity` | decimal string | Ya | **`QTY AKHIR`** | Pemetaan ACCEPTED dari SRC-01; format angka SOURCE REQUIRED |
 
 - `system_quantity` **hanya** dari `QTY AKHIR`; tidak menjumlah movement.
+- **Kartu mutasi** dilaporkan sebagai saldo periodik dan menjadi asal `QTY AKHIR`. **Kartu stok** dilaporkan sebagai movement terpisah; movement tidak menjadi sumber saldo dan tidak dijumlahkan ulang. Keduanya belum diperiksa (§2.1).
 - Paket STOCK: satu request, `balance_file` wajib + `support_files` opsional (master/movement/WO), satu commit. Komponen opsional yang diberikan tetapi invalid menggagalkan paket; komponen tidak diberikan → warning `OPTIONAL_COMPONENT_ABSENT`.
 - Komponen support disimpan di `stock_support_rows` dengan lineage dan **tidak** dijumlahkan ke saldo. Schema payload komponen support SOURCE REQUIRED (OD-05).
 - `cutoff_id` wajib. Kontrak cutoff (DATE/DATETIME, basis, precision, UJI SIMULATED) = **OPEN DECISION CF-04**, ditangani SRS-38.
@@ -137,6 +159,7 @@ Kolom "Header sumber" berisi header asli bila diketahui; selain itu `SOURCE REQU
 | --- | --- |
 | Mekanisme suplai `wo_references` | **OPEN DECISION** (DOC-08 §3, CF-08). Usulan DOC-07/08: komponen WO opsional dalam paket STOCK dipetakan ke `wo_references` dengan lineage `source_row`; **bukan** jenis impor keenam. |
 | Field WO | SOURCE REQUIRED; UI-06 hanya menampilkan field yang tersedia di sumber, tanpa mengarang actual use. |
+| Quantity detail WO | Bila tidak tersedia di sumber, nilainya **null, bukan nol**. Tidak ada quantity WO yang disintesis. |
 
 ## 5. Raw-to-normalized dan urutan validasi
 
@@ -168,6 +191,9 @@ Struktur setiap fixture: `metadata` batch (DOC-08 §4), `rows` valid dalam bentu
 | G-04 | Katalog error belum punya kode untuk tipe/format field dan header hilang | Validator memakai `INVALID_FILE` secara umum | Usulkan kode tambahan melalui review DOC-08 |
 | G-05 | CF-06 (EXPECTED quantity, field COMMITMENT tambahan), CF-08 (release date, kolom tambahan) | Validator dan boundary test tertahan | Keputusan Adam/pemilik domain |
 | G-06 | FR/NFR terkait SRS-37 SOURCE REQUIRED (OD-01) | Traceability belum lengkap | Diisi setelah SRS final tersedia |
+| G-07 | Delapan sumber mitra pada §2.1 dilaporkan tetapi belum diperiksa | Versi/sheet/header dan peran beberapa sumber belum dapat dipetakan | Pemeriksaan dengan akses dan bukti oleh pihak yang berwenang |
+| G-08 | Grain/line key EXPECTED belum terbukti (satu referensi dapat memuat banyak material) | Unique key, duplikasi, dan rujukan COMMITMENT/RECEIVING ditahan | Konfirmasi sumber (OD-05) |
+| G-09 | Sumber RECEIVING terstruktur dan master supplier belum tersedia; dokumen barang masuk/surat jalan dan daftar distributor tidak menggantikannya | Impor RECEIVING dan referensi supplier tidak dapat difinalkan | OD-05/OD-06 |
 
 ### 7.1 Keputusan yang disetujui
 
@@ -182,7 +208,7 @@ Struktur setiap fixture: `metadata` batch (DOC-08 §4), `rows` valid dalam bentu
 | Versi kontrak dan contoh UJI ditinjau | Kontrak `proposed-0.1` dan fixture UJI **tersedia**; review **belum** | Dokumen ini + `database/fixtures/uji/`; menunggu reviewer |
 | QTY AKHIR dipetakan | Terpenuhi: `QTY AKHIR` → `system_quantity` → `stock_lines.system_quantity` | §4.4, `stock.proposed-0.1.json` |
 | Tidak menyamakan limit evidence dengan limit impor | Terpenuhi | §3 baris batas ukuran |
-| Source yang hilang dicatat | Terpenuhi | §2, §7 |
+| Source yang hilang dicatat | Terpenuhi, termasuk register sumber mitra yang dilaporkan | §2, §2.1, §7 |
 
 Pengujian: tidak ada kode aplikasi yang berubah; validasi fixture terhadap validator **NOT RUN** (validator belum ada, SRS-34/SRS-51). Dokumen ini tidak menyatakan persetujuan; Definition of Done memerlukan review oleh reviewer lain dan PR merged.
 
@@ -192,3 +218,4 @@ Pengujian: tidak ada kode aplikasi yang berubah; validasi fixture terhadap valid
 | --- | --- | --- | --- |
 | proposed-0.1 | 2026-11-12 | Penyusunan awal kontrak lima jenis, fixture UJI, temuan F-01/F-02 dan gap | Belum ada |
 | proposed-0.1 | 2026-11-12 | Mencatat keputusan F-01 (penamaan `kind`) sebagai ACCEPTED | Adam, 12 Nov 2026, chat tim; kontrak lain tetap PROPOSED |
+| proposed-0.1 | 2026-11-12 | Tindak lanjut review PR #13: register sumber mitra yang dilaporkan (§2.1), peran kartu mutasi vs kartu stok, batas sumber RECEIVING/supplier/WO, grain EXPECTED ditahan (G-07–G-09) | Belum ada; F-01 tetap hanya penamaan |
