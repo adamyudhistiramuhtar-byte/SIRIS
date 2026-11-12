@@ -55,9 +55,3 @@ export class ConflictError extends AppError {
     super(409, code, message, details);
   }
 }
-
-export class PayloadTooLargeError extends AppError {
-  constructor(message = 'Payload melebihi batas yang diizinkan.') {
-    super(413, 'PAYLOAD_TOO_LARGE', message);
-  }
-}
