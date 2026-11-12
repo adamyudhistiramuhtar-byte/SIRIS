@@ -33,6 +33,7 @@
     "development-docs/17_DEPLOYMENT_OPERATIONAL_GUIDE.md",
     "development-docs/18_USER_MANUAL_HANDOVER.md",
     "docs/implementation/GIT_WORKFLOW.md",
+    "docs/implementation/API_RUNTIME_GUIDE.md",
     "docs/implementation/PUBLISH_REVIEW.md",
     "docs/implementation/REPOSITORY_ARCHITECTURE.md",
     "docs/implementation/TESTING_STRATEGY.md",

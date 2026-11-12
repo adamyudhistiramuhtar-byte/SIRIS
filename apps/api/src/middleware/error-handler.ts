@@ -1,7 +1,42 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { ApiErrorResponse } from '@siris/contracts';
+import type { ApiErrorDetail, ApiErrorResponse } from '@siris/contracts';
 import { AppError } from '../errors/app-error.js';
 import { env } from '../config/env.js';
+
+function buildErrorResponse(
+  code: string,
+  message: string,
+  correlationId: string,
+  details: ApiErrorDetail[] = [],
+): ApiErrorResponse {
+  return {
+    error: {
+      code,
+      message,
+      details,
+      correlation_id: correlationId,
+    },
+  };
+}
+
+/**
+ * Log aman untuk error tak terduga. Pesan mentah, SQL, stack lengkap, dan
+ * objek error tidak dicatat karena dapat memuat nilai sensitif atau storage key.
+ * Stack frame hanya dicatat saat LOG_LEVEL=debug dan tanpa baris pesan.
+ */
+function logUnexpectedError(err: Error, correlationId: string): void {
+  const rawCode = (err as { code?: unknown }).code;
+  const safeCode = typeof rawCode === 'string' && /^[A-Za-z0-9_]+$/.test(rawCode) ? rawCode : undefined;
+  const summary = `[${correlationId}] Unhandled Error: ${err.name}${safeCode ? ` code=${safeCode}` : ''}`;
+
+  if (env.LOG_LEVEL === 'debug' && typeof err.stack === 'string') {
+    const frames = err.stack.split('\n').slice(1).join('\n');
+    console.error(frames ? `${summary}\n${frames}` : summary);
+    return;
+  }
+
+  console.error(summary);
+}
 
 export function errorHandler(
   err: Error,
@@ -12,43 +47,43 @@ export function errorHandler(
   const correlationId = req.correlationId || '00000000-0000-0000-0000-000000000000';
 
   if (err instanceof AppError) {
-    const payload: ApiErrorResponse = {
-      error: {
-        code: err.code,
-        message: err.message,
-        details: err.details,
-        correlation_id: correlationId,
-      },
-    };
-    res.status(err.statusCode).json(payload);
+    res
+      .status(err.statusCode)
+      .json(buildErrorResponse(err.code, err.message, correlationId, err.details));
     return;
   }
 
   // Handle syntax error dari JSON parser Express
   if ('type' in err && (err as { type: string }).type === 'entity.parse.failed') {
-    const payload: ApiErrorResponse = {
-      error: {
-        code: 'INVALID_JSON',
-        message: 'Format payload JSON tidak valid.',
-        correlation_id: correlationId,
-      },
-    };
-    res.status(400).json(payload);
+    res
+      .status(400)
+      .json(buildErrorResponse('INVALID_JSON', 'Format payload JSON tidak valid.', correlationId));
     return;
   }
 
-  // Error tidak terduga (Internal Server Error)
-  if (env.LOG_LEVEL === 'debug' || env.NODE_ENV !== 'test') {
-    console.error(`[${correlationId}] Unhandled Error:`, err);
+  // Handle payload melebihi batas parser Express
+  if ('type' in err && (err as { type: string }).type === 'entity.too.large') {
+    res
+      .status(413)
+      .json(
+        buildErrorResponse(
+          'PAYLOAD_TOO_LARGE',
+          'Payload melebihi batas yang diizinkan.',
+          correlationId,
+        ),
+      );
+    return;
   }
 
-  const payload: ApiErrorResponse = {
-    error: {
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Terjadi kesalahan internal pada server.',
-      correlation_id: correlationId,
-    },
-  };
+  logUnexpectedError(err, correlationId);
 
-  res.status(500).json(payload);
+  res
+    .status(500)
+    .json(
+      buildErrorResponse(
+        'INTERNAL_SERVER_ERROR',
+        'Terjadi kesalahan internal pada server.',
+        correlationId,
+      ),
+    );
 }
