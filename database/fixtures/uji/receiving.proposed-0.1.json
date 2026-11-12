@@ -1,0 +1,76 @@
+{
+  "_keterangan": "Fixture sintetis berlabel UJI untuk kontrak RECEIVING proposed-0.1 (SRS-37). Bukan data mitra. Header sumber asli SOURCE REQUIRED.",
+  "contract_version": "proposed-0.1",
+  "contract_status": "PROPOSED",
+  "kind": "RECEIVING",
+  "raw_header_status": "SOURCE REQUIRED",
+  "open_decisions": [
+    "OD-06: validitas bukti penutup dan aturan koreksi receiving belum diputuskan."
+  ],
+  "metadata": {
+    "kind": "RECEIVING",
+    "warehouse_id": "00000000-0000-4000-8000-000000000001",
+    "mode": "UJI",
+    "source_name": "UJI-receiving.csv",
+    "source_reference": "UJI-SRC-RCV-001",
+    "contract_version": "proposed-0.1"
+  },
+  "prerequisites": ["EXPECTED UJI-IN-001 (UOM KG) sudah COMMITTED pada gudang dan mode yang sama"],
+  "rows": [
+    {
+      "row_number": 1,
+      "normalized": {
+        "inbound_source_ref": "UJI-IN-001",
+        "event_ref": "UJI-RCV-001",
+        "received_quantity": "4.000000",
+        "uom": "KG",
+        "received_at": "2026-11-11T09:00:00+07:00",
+        "is_closing": false,
+        "closing_reference": null
+      }
+    },
+    {
+      "row_number": 2,
+      "normalized": {
+        "inbound_source_ref": "UJI-IN-001",
+        "event_ref": "UJI-RCV-002",
+        "received_quantity": "5.000000",
+        "uom": "KG",
+        "received_at": "2026-11-12T10:00:00+07:00",
+        "is_closing": true,
+        "closing_reference": "UJI-CLOSE-001"
+      }
+    }
+  ],
+  "negative_cases": [
+    {
+      "case_id": "UJI-RCV-NEG-01",
+      "description": "is_closing=true tanpa closing_reference",
+      "normalized": {
+        "inbound_source_ref": "UJI-IN-002",
+        "event_ref": "UJI-RCV-003",
+        "received_quantity": "2.500000",
+        "uom": "L",
+        "received_at": "2026-11-12T11:00:00+07:00",
+        "is_closing": true,
+        "closing_reference": null
+      },
+      "expected_issue": "INVALID_CLOSING"
+    },
+    {
+      "case_id": "UJI-RCV-NEG-02",
+      "description": "UOM berbeda dari referensi inbound; tidak dikonversi otomatis",
+      "normalized": {
+        "inbound_source_ref": "UJI-IN-001",
+        "event_ref": "UJI-RCV-004",
+        "received_quantity": "1000.000000",
+        "uom": "G",
+        "received_at": "2026-11-12T12:00:00+07:00",
+        "is_closing": false,
+        "closing_reference": null
+      },
+      "expected_issue": "INVALID_FILE",
+      "note": "Gap G-04."
+    }
+  ]
+}
