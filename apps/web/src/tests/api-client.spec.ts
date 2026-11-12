@@ -22,7 +22,7 @@ describe('ApiClient Unit Tests', () => {
       json: async () => mockResponse,
     });
 
-    const res = await client.get<{ status: string; service: string }>('/health');
+    const res = await client.get<{ status: string; service: string }>('/health', { responseFormat: 'envelope' });
 
     expect(global.fetch).toHaveBeenCalledWith('/api/v1/health', expect.objectContaining({ method: 'GET' }));
     expect(res.data.status).toBe('ok');
@@ -60,4 +60,3 @@ describe('ApiClient Unit Tests', () => {
     }
   });
 });
-

@@ -66,4 +66,3 @@ const targetRole = computed(() => (route.meta.role as string) || 'Purchasing / W
     </div>
   </div>
 </template>
-

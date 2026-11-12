@@ -139,4 +139,3 @@ function handleSubmit() {
     </div>
   </div>
 </template>
-

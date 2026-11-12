@@ -55,4 +55,3 @@ export async function closeDbPool(): Promise<void> {
     pool = null;
   }
 }
-

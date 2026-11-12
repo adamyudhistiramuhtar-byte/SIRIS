@@ -105,4 +105,3 @@ const quickTasks = [
     </div>
   </div>
 </template>
-

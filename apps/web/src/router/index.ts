@@ -228,4 +228,3 @@ router.afterEach((to) => {
   const pageTitle = to.meta.title as string | undefined;
   document.title = pageTitle ? `${pageTitle} — SIRIS` : 'SIRIS';
 });
-

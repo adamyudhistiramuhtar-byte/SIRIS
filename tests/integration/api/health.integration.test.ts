@@ -23,4 +23,3 @@ describe('Monorepo Integration: API & Shared Contracts', () => {
     expect(body.meta?.timestamp).toBeDefined();
   });
 });
-

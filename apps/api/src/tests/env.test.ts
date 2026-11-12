@@ -24,4 +24,3 @@ describe('Environment Configuration Validation Tests', () => {
     }).toThrow(/Environment validation failed/);
   });
 });
-
