@@ -5,7 +5,7 @@
 | Issue | [SRS-38](https://adamyudhistiramuhtar.atlassian.net/browse/SRS-38) (T-04), parent SRS-11 / EPIC-08 |
 | UC terkait | UC-09, UC-10, UC-11, UC-12, UC-13, UC-14 |
 | Konflik yang ditangani | CF-03 (target evidence), CF-04 (cutoff), CF-05 (identitas/reuse hasil rekonsiliasi) |
-| Status dokumen | **PROPOSED — NEEDS DECISION**. Tidak ada keputusan di dokumen ini yang berstatus ACCEPTED. |
+| Status dokumen | **PROPOSED — NEEDS DECISION**. Tidak ada keputusan di dokumen ini yang berstatus ACCEPTED. Dokumen ini **belum siap merge** sebagai penyelesaian SRS-38 sampai keputusan berwenang tersedia. |
 | Tanggal | 12 November 2026, Asia/Jakarta |
 | Baseline repo | `origin/develop` @ `dba5c66` |
 | Pemilik | Backend & Database (Dwi Rani Amelia) |
@@ -52,7 +52,8 @@ Pemilik issue SRS-38 hanya menyiapkan usulan; penetapan menjadi ACCEPTED memerlu
 **Rekomendasi (PROPOSED):** opsi B dengan constraint:
 - `effective_precision = 'DATE'` ⇒ `effective_time IS NULL`; `'DATETIME'` ⇒ `effective_time IS NOT NULL` dan `source_timezone IS NOT NULL`.
 - Nilai `effective_basis` (misalnya akhir hari kerja, waktu cetak laporan): **SOURCE REQUIRED**; tidak dikarang. Sampai tersedia, kolom berisi teks bebas yang wajib diisi dan `basis_reference` wajib.
-- Kesebandingan STOCK–COUNT tetap memakai **`cutoff_id` identik** (DOC-08 §15). Tidak ada toleransi waktu tersembunyi; konteks berbeda ditolak `CUTOFF_MISMATCH`.
+- **Tanggal laporan bukan bukti waktu efektif.** Tanggal cetak, periode laporan, atau tanggal yang tertera pada laporan tidak otomatis membuktikan effective timestamp, dan tidak membuktikan bahwa STOCK dan COUNT sebanding waktunya. Label tanggal tersebut tidak dipertukarkan dengan effective cutoff (design.md §7).
+- **`cutoff_id` identik adalah syarat perlu, bukan syarat cukup.** Pasangan STOCK–COUNT wajib memakai `cutoff_id` yang sama (DOC-08 §15), tetapi `cutoff_id` yang sama tidak menggantikan bukti basis efektif. Kesebandingan juga memerlukan `effective_basis` dan `basis_reference` yang dapat ditelusuri. Tidak ada toleransi waktu tersembunyi; konteks berbeda ditolak `CUTOFF_MISMATCH`.
 - Unique usulan: (`warehouse_id`, `mode`, `effective_date`, `effective_time`, `effective_precision`, `effective_basis`), dengan `NULLS NOT DISTINCT` atau indeks parsial, menunggu versi PostgreSQL (OD-07).
 
 ## 4. D-02 — Status verifikasi: VERIFIED dan UJI SIMULATED (CF-04)
@@ -95,6 +96,17 @@ Pemilik issue SRS-38 hanya menyiapkan usulan; penetapan menjadi ACCEPTED memerlu
 - Variance hanya untuk pasangan valid: **Physical Quantity − System Quantity**.
 - Grain final multi-UOM per material tetap OD-05.
 
+**Belum dihitung bukan nol.** `physical_quantity` null dan item yang belum dihitung (`is_counted = false`) **tidak** diperlakukan sebagai nol dan **tidak** menghasilkan DISCREPANCY. Baris COUNT yang tidak ada juga bukan nol. Variance hanya dihitung untuk pasangan yang terhitung (`is_counted = true`), UOM sama, dan valid; untuk status nonvalid variance wajib null. Aturan ini dipertahankan dalam skenario uji berikut (data UJI, `system_quantity = 10` bila stok ada):
+
+| Skenario | Input COUNT | Status | Variance |
+| --- | --- | --- | --- |
+| Dihitung, fisik nol | `is_counted = true`, `physical_quantity = 0` | DISCREPANCY | −10 |
+| Dihitung, sama dengan sistem | `is_counted = true`, `physical_quantity = 10` | MATCHED | 0 |
+| Belum dihitung | `is_counted = false`, `physical_quantity = null` | NOT_COUNTED | null |
+| Baris COUNT tidak ada | — | COUNT_MISSING | null |
+| Stok tidak ada, count ada (8) | `is_counted = true`, `physical_quantity = 8` | STOCK_MISSING | null |
+| UOM berbeda | `is_counted = true`, UOM lain | UOM_MISMATCH | null |
+
 ## 7. D-05 — Identitas hasil dan reuse fingerprint (CF-05)
 
 **Konflik.** DOC-07/08: Idempotency-Key sama mengembalikan run sama; key berbeda dapat membuat run baru. SRC-09 §6.5: "Result existing fingerprint dibaca ulang; tidak menampilkan run duplikat seolah hasil baru". PVT-20 ditahan.
@@ -123,7 +135,7 @@ Pemilik issue SRS-38 hanya menyiapkan usulan; penetapan menjadi ACCEPTED memerlu
 
 | Area | Kontrak yang dirujuk saat ini | Kontrak yang **ditahan** | Aturan |
 | --- | --- | --- | --- |
-| Cutoff | Tidak ada yang final; `cutoff_id` identik sebagai syarat pasangan (DOC-08) | `cutoff_at` DOC-07, `cutoff_date`/`cutoff_time NOT NULL` migrasi 001, opsi B §3 | Migrasi cutoff tidak dibekukan di SRS-44 sebelum D-01/D-02 diputuskan; UJI berjalan dengan fixture saja |
+| Cutoff | Tidak ada yang final; `cutoff_id` identik sebagai syarat perlu (bukan cukup) pasangan (DOC-08) | `cutoff_at` DOC-07, `cutoff_date`/`cutoff_time NOT NULL` migrasi 001, opsi B §3 | Migrasi cutoff tidak dibekukan di SRS-44 sebelum D-01/D-02 diputuskan; UJI berjalan dengan fixture saja |
 | Evidence | Tidak ada | `stock_line_id` DOC-07/09 dan opsi B §5 | Implementasi UC-11 (API-17) tidak dimulai sebelum D-03 diputuskan |
 | Identitas run | Idempotency-Key per (actor, operation, key) DOC-07 | Reuse lintas key §7 | PVT-20 tetap NOT RUN; tidak membuat run duplikat untuk input identik sampai D-05 diputuskan |
 | Grain | DOC-07/08 (`AMBIGUOUS_PAIR`) | — | Tidak ada konflik; tetap PROPOSED |
@@ -154,10 +166,13 @@ Pemilik issue SRS-38 hanya menyiapkan usulan; penetapan menjadi ACCEPTED memerlu
 | Dampak schema/API/UI/tes tercatat | Tersedia (§10) |
 | Kontrak yang bertentangan tidak diberlakukan bersamaan | Aturan penahanan tercatat (§9) |
 
-Pengujian: tidak ada kode yang berubah; PVT-18 dan PVT-20 tetap NOT RUN. Definition of Done memerlukan review oleh reviewer lain dan PR merged.
+Karena kriteria pertama belum terpenuhi, pekerjaan ini tetap berupa **usulan** dan **belum siap merge maupun Done**. Usulan tidak dinaikkan menjadi ACCEPTED tanpa bukti keputusan dari pihak pada §2.
+
+Pengujian: tidak ada kode yang berubah; PVT-18 dan PVT-20 tetap NOT RUN. Skenario §6 belum dijalankan karena engine rekonsiliasi belum ada. Definition of Done memerlukan keputusan berwenang, review oleh reviewer lain, dan PR merged.
 
 ## 13. Riwayat revisi
 
 | Versi | Tanggal | Perubahan | Persetujuan |
 | --- | --- | --- | --- |
 | 0.1 | 2026-11-12 | Usulan D-01–D-06, matriks dampak, aturan penahanan kontrak, temuan F-03/F-04 | Belum ada |
+| 0.2 | 2026-11-12 | Tindak lanjut review PR #14: status belum siap merge, aturan belum dihitung bukan nol beserta skenario uji (§6), tanggal laporan dan `cutoff_id` bukan bukti basis efektif (§3) | Belum ada; seluruh usulan tetap PROPOSED |
