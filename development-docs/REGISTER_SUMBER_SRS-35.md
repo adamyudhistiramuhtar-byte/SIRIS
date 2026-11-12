@@ -1,0 +1,102 @@
+# Register sumber dan pemulihan baseline — SRS-35
+
+Status: **DRAFT — NEEDS REVIEW; SOURCE REQUIRED**
+
+Tanggal pemeriksaan: 10 November 2026
+
+Issue: [SRS-35](https://adamyudhistiramuhtar.atlassian.net/browse/SRS-35)
+
+Snapshot yang diperiksa: `develop` pada commit `ea6dd9cfa4943f1afd546bed2c9cdc965f09ccdd`.
+
+Register ini mencatat apa yang tersedia pada snapshot tersebut. Keberadaan dokumen draft bukan bukti bahwa dokumen asli telah diterima, isi telah disetujui, atau kebutuhan telah terpenuhi. Hash adalah SHA-256 atas isi berkas pada snapshot, bukan tanda tangan atau bukti persetujuan.
+
+## Sumber yang tersedia
+
+| Sumber | Versi/status yang tercantum | Bagian yang digunakan | SHA-256 |
+| --- | --- | --- | --- |
+| `AGENTS.md` | Panduan repository; versi tidak dicantumkan | Baseline 16 UC, 29 FR, 14 NFR dan ketentuan dokumentasi | `b0f923128692d57a455223e2a4e129e4cb4862df15707e0c787b04c87816a353` |
+| `design.md` (SRC-09) | 1.0.0; untuk ditinjau | Kontrak desain frontend; konflik tetap memerlukan keputusan | `d250dfd717c1a75bc8a15f3f04a3a44143a4eec8a90ec069521d2b2c9b08f2ec` |
+| [DOC-00](00_MASTER_DOCUMENTATION_INDEX.md) | 0.2.0; NEEDS REVIEW | Register SRC-01–SRC-09, OD-01–OD-10 dan konflik | `358bca4bfe64fe3a8311f5d3e4149ffcda8fc323294291365f1297d62e06cbf6` |
+| [DOC-03](03_PRODUCT_REQUIREMENTS_DOCUMENT.md) | 0.2.0; NEEDS REVIEW | Inventaris dan uraian UC-01–UC-16 untuk dibandingkan dengan sumber final | `4de24c309ecb88bc747f7202ef0884152c8119c1f395a6f9a3ac03b41d6ecf22` |
+| [DOC-04](04_SOFTWARE_REQUIREMENTS_SPECIFICATION.md) | 0.2.0; NEEDS REVIEW | Slot kebutuhan dan batas ketersediaan FR | `9d8b7b35caaccf3aec5c3d3fedd89c77315ef48f444a47488939fa6b93c53e32` |
+| [DOC-13](13_SOFTWARE_TEST_PLAN_TEST_CASES.md) | 0.2.0; NEEDS REVIEW | 55 slot sumber dan skenario turunan yang terpisah | `b5607bc41e2322caf212a2a9cdb455d65eb9beed3cbd5911e13e10c2df315100` |
+| [DOC-15](15_REQUIREMENTS_TRACEABILITY.md) | 0.2.0; NEEDS REVIEW | Matriks keterlacakan dan pengendalian perubahan | `b82fceb3058e6843c18b024fe203633e7f8246f4ad28777074413eb08d54feda` |
+| [DOC-16](16_SECURITY_RISK_NFR.md) | 0.2.0; NEEDS REVIEW | Slot NFR, risiko dan batas verifikasi | `56da5cd87aa6d9468dabbb2a509e6946c982f8d85f798ac2feca5df04f6291d2` |
+
+SRC-01 tercatat pada DOC-00 sebagai prompt dalam percakapan penyusunan; naskah terpisah dan hash-nya tidak tersedia pada snapshot. Jangan menganggap DOC-03 atau DOC-04 sebagai pengganti dokumen final yang belum diterima.
+
+## Sumber yang masih diperlukan
+
+| ID sumber DOC-00 | Sumber yang dibutuhkan | Dampak dan tindak lanjut |
+| --- | --- | --- |
+| SRC-03 | SRS final dengan identitas dan pernyataan asli 29 FR dan 14 NFR | SOURCE REQUIRED; cocokkan ID, makna dan hubungan tanpa penomoran ulang pada DOC-04, DOC-15 dan DOC-16. |
+| SRC-04 | PRD, business flow dan BPMN final | SOURCE REQUIRED; bandingkan aktor dan alur dengan DOC-03 dan desain terkait. |
+| SRC-05 dan SRC-06 | DESAIN-42-1.1 dan REVISI-UML-42-1.2 | SOURCE REQUIRED; identifikasi bagian yang direvisi secara eksplisit sebelum membandingkan UML dan desain. |
+| SRC-07 | 55 spesifikasi pengujian asli beserta identitas dan hasil yang diharapkan | SOURCE REQUIRED; petakan hanya berdasarkan sumber pada DOC-13 dan DOC-15. |
+| SRC-08 | Sampel sumber operasional dan master yang diizinkan untuk analisis | SOURCE REQUIRED; simpan data ACTUAL secara terpisah dan gunakan fixture UJI berlabel untuk pengujian. |
+
+Ketiadaan di atas berarti sumber tersebut tidak ditemukan dalam snapshot repository yang diperiksa; hal ini tidak membuktikan bahwa sumber tidak ada di luar repository. Versi, hash, bagian dan bukti persetujuan sumber final diisi setelah diterima dan diperiksa.
+
+## Status pemetaan dan langkah review
+
+- DOC-03 memuat UC-01–UC-16 sebagai inventaris draft. Identitas, makna, aktor dan keterkaitan dengan baseline final **belum dapat diverifikasi**.
+- DOC-04 dan DOC-15 menyediakan tempat pencatatan FR; DOC-16 menyediakan tempat pencatatan NFR. ID, pernyataan dan mapping asli tetap **SOURCE REQUIRED**. Jumlah baseline tetap 29 FR dan 14 NFR.
+- DOC-13 memisahkan 55 slot pengujian sumber dari skenario turunan PROPOSED. Slot bukan bukti bahwa spesifikasi asli telah dipulihkan, dan skenario turunan tidak menambah jumlah baseline.
+- Setelah sumber tersedia, catat versi dan hash, bandingkan tiap identitas dan bagian sumber dengan dokumen terkait, catat konflik dan keputusan berwenang, lalu minta review independen. Jangan menutup gap melalui asumsi.
+
+## Matriks cakupan dan keterlacakan sumber
+
+Hasil berikut merupakan pemeriksaan struktur pada snapshot yang disebutkan di atas, bukan pengesahan semantik terhadap sumber final atau bukti bahwa fitur telah diimplementasikan. Pemeriksaan dua arah dilakukan untuk identitas UC yang tersedia: setiap ID judul DOC-03 ditemukan pada baris DOC-15 dan setiap ID pada baris DOC-15 ditemukan pada DOC-03. Ini bukan pembuktian hubungan FR ↔ UC ↔ tes; pemeriksaan tersebut SOURCE REQUIRED sampai identitas dan isi sumber asli tersedia.
+
+| Kelompok | Sumber dan pemeriksaan | Hasil dan batas |
+| --- | --- | --- |
+| Use case | Judul UC pada [DOC-03](03_PRODUCT_REQUIREMENTS_DOCUMENT.md) dibandingkan dengan baris UC–FEAT pada [DOC-15](15_REQUIREMENTS_TRACEABILITY.md) | Masing-masing memuat 16 ID unik UC-01–UC-16; himpunan ID sama dan nomor FEAT pada DOC-15 sepadan. Nama dan makna terhadap sumber final: SOURCE REQUIRED. |
+| Functional requirement | Baris slot pada [DOC-04](04_SOFTWARE_REQUIREMENTS_SPECIFICATION.md) dan matriks [DOC-15](15_REQUIREMENTS_TRACEABILITY.md) | DOC-04 memuat 29 slot administratif dengan ID asli SOURCE REQUIRED. Bukan 29 requirement yang telah dipulihkan; mapping ke UC belum dapat disahkan. |
+| Nonfunctional requirement | Baris slot pada [DOC-04](04_SOFTWARE_REQUIREMENTS_SPECIFICATION.md), [DOC-15](15_REQUIREMENTS_TRACEABILITY.md), dan [DOC-16](16_SECURITY_RISK_NFR.md) | DOC-04 memuat 14 slot administratif dengan ID asli SOURCE REQUIRED; target dan pemetaan belum dapat disahkan. |
+| Pengujian baseline | Register slot pada [DOC-13](13_SOFTWARE_TEST_PLAN_TEST_CASES.md) | Ada 55 baris slot berlabel SOURCE REQUIRED. PVT adalah skenario turunan PROPOSED, tidak membuktikan identitas atau cakupan 55 tes asli. |
+| Desain dan alur final | Register SRC-04–SRC-06 pada [DOC-00](00_MASTER_DOCUMENTATION_INDEX.md) | SOURCE REQUIRED; versi, revisi yang menggantikan bagian desain, dan kesesuaian business flow belum dapat diperiksa terhadap dokumen final. |
+
+### Peta 16 use case draft
+
+Nama berikut disalin dari judul DOC-03. Kolom keterlacakan menunjuk baris yang ada pada DOC-15; statusnya desain PROPOSED, bukan konfirmasi baseline final. Tidak ada pemetaan FR/NFR asli yang diisi dari asumsi.
+
+| ID | Nama dalam DOC-03 | Baris draft DOC-15 | Sumber final |
+| --- | --- | --- | --- |
+| UC-01 | Mengimpor Referensi Inbound | FEAT-01 | SOURCE REQUIRED |
+| UC-02 | Mengimpor Janji Supplier | FEAT-02 | SOURCE REQUIRED |
+| UC-03 | Mengimpor Data Penerimaan | FEAT-03 | SOURCE REQUIRED |
+| UC-04 | Memeriksa Exception Inbound | FEAT-04 | SOURCE REQUIRED |
+| UC-05 | Melihat Pemberitahuan Inbound | FEAT-05 | SOURCE REQUIRED |
+| UC-06 | Membaca Referensi Material WO | FEAT-06 | SOURCE REQUIRED |
+| UC-07 | Menelusuri Riwayat Inbound | FEAT-07 | SOURCE REQUIRED |
+| UC-08 | Melihat Metrik Supplier | FEAT-08 | SOURCE REQUIRED |
+| UC-09 | Mengimpor Data Stok | FEAT-09 | SOURCE REQUIRED |
+| UC-10 | Mengimpor Hasil Hitung Fisik | FEAT-10 | SOURCE REQUIRED |
+| UC-11 | Mengarsipkan Bukti Kartu Stok | FEAT-11 | SOURCE REQUIRED |
+| UC-12 | Menjalankan Rekonsiliasi Stok | FEAT-12 | SOURCE REQUIRED |
+| UC-13 | Menelusuri Riwayat Selisih Stok | FEAT-13 | SOURCE REQUIRED |
+| UC-14 | Melihat Metrik Persediaan | FEAT-14 | SOURCE REQUIRED |
+| UC-15 | Menelusuri Audit Proses | FEAT-15 | SOURCE REQUIRED |
+| UC-16 | Memvalidasi Data Impor | FEAT-16; internal | SOURCE REQUIRED |
+
+## Register gap dan konflik untuk review
+
+| Acuan | Gap atau konflik | Dampak | Status |
+| --- | --- | --- | --- |
+| SRC-03, SRC-07; OD-01–02 | ID dan pernyataan asli FR/NFR serta spesifikasi tes asli tidak ditemukan dalam snapshot | Pemetaan kebutuhan dan coverage pengujian tidak dapat disahkan | SOURCE REQUIRED |
+| SRC-04–06; OD-03 | PRD, business flow, BPMN dan dua versi desain UML final belum ditemukan dalam snapshot | Aktor, alur dan cakupan revisi belum dapat dibandingkan dengan baseline | SOURCE REQUIRED |
+| CF-02 | Pemetaan view role audit pada draft awal berbeda dari SRC-09 | RBAC final perlu ditinjau terhadap sumber berwenang | OPEN DECISION; lihat DOC-00 |
+| CF-03–06 | Target evidence, model cutoff, reuse fingerprint, serta quantity/event memiliki alternatif yang belum diputuskan | Kontrak domain terdampak tidak boleh dianggap final | OPEN DECISION; lihat DOC-00 dan DOC-07–DOC-09 |
+| CF-07–09 | Mapping state UI, kelengkapan DTO, dan sumber yang dirujuk SRC-09 belum seluruhnya terbukti | Perlu review kontrak dan sumber pendukung | PROPOSED atau SOURCE REQUIRED sesuai DOC-00 |
+| DOC-15, bagian dasar sumber | Bagian tersebut menyebut paket versi 0.1.0, sedangkan metadata DOC-15 dan DOC-00 mencatat 0.2.0 | Informasi versi di dalam dokumen tidak konsisten; jangan pilih versi baseline final dari teks tersebut | NEEDS REVIEW; koreksi harus mengikuti review dokumen |
+
+## Matriks verifikasi SRS-35
+
+| Kriteria | Bukti dan metode | Hasil | Reviewer / gap |
+| --- | --- | --- | --- |
+| Versi, hash dan bagian sumber tercatat | Tabel sumber di atas; hitung ulang SHA-256 pada snapshot | Delapan hash cocok pada pemeriksaan 10 November 2026 | Reviewer independen belum tercatat |
+| Pemetaan berdasarkan bukti | Bandingkan ID dan baris DOC-03/DOC-15; inventaris slot DOC-04/DOC-13 | Struktur cocok sesuai matriks; bukan validasi semantik sumber final | SOURCE REQUIRED untuk isi dan ID asli |
+| Gap yang belum ditutup dinyatakan | Tabel sumber diperlukan dan register gap di atas | Dicatat SOURCE REQUIRED atau OPEN DECISION menurut bukti | Penerimaan dan penutupan konflik belum ada |
+| Dokumen melalui PR dan review | [PR #3](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/3) | Draft pada saat pemeriksaan | Review independen dan integrasi belum tercatat |
+
+Pemeriksaan ini belum memverifikasi konsistensi semantik terhadap sumber final, belum menghasilkan keputusan stakeholder, dan belum memenuhi seluruh Definition of Done SRS-35. Tidak ada hasil pengujian atau penerimaan stakeholder yang diklaim.
