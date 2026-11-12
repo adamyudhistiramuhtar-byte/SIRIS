@@ -50,6 +50,7 @@ dumps/
 !database/seeds/**/*.sql
 # Berkas mitra/binary memerlukan review dan pengecualian spesifik sebelum tracking.
 *.csv
+!planning/sprints/SPRINT_01_WORKLOAD.csv
 *.tsv
 *.xls
 *.xlsx
