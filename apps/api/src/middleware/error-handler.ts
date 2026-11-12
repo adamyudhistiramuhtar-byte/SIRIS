@@ -46,15 +46,19 @@ export function errorHandler(
 ): void {
   const correlationId = req.correlationId || '00000000-0000-0000-0000-000000000000';
 
-  if (err instanceof AppError) {
+  // Express memungkinkan nilai error yang tidak berupa Error instance (misalnya
+  // string). Normalisasi sebelum diproses agar deteksi type dan log aman.
+  const error = err instanceof Error ? err : new Error('Unknown error');
+
+  if (error instanceof AppError) {
     res
-      .status(err.statusCode)
-      .json(buildErrorResponse(err.code, err.message, correlationId, err.details));
+      .status(error.statusCode)
+      .json(buildErrorResponse(error.code, error.message, correlationId, error.details));
     return;
   }
 
   // Handle syntax error dari JSON parser Express
-  if ('type' in err && (err as { type: string }).type === 'entity.parse.failed') {
+  if ('type' in error && (error as { type: string }).type === 'entity.parse.failed') {
     res
       .status(400)
       .json(buildErrorResponse('INVALID_JSON', 'Format payload JSON tidak valid.', correlationId));
@@ -62,7 +66,7 @@ export function errorHandler(
   }
 
   // Handle payload melebihi batas parser Express
-  if ('type' in err && (err as { type: string }).type === 'entity.too.large') {
+  if ('type' in error && (error as { type: string }).type === 'entity.too.large') {
     res
       .status(413)
       .json(
@@ -75,7 +79,7 @@ export function errorHandler(
     return;
   }
 
-  logUnexpectedError(err, correlationId);
+  logUnexpectedError(error, correlationId);
 
   res
     .status(500)

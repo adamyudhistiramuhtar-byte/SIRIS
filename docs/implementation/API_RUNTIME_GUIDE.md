@@ -70,7 +70,7 @@ Ketentuan yang diterapkan:
 - Payload melebihi batas parser menghasilkan `413 PAYLOAD_TOO_LARGE`.
 - Route tidak dikenal menghasilkan `404 NOT_FOUND`.
 
-Kode error pada `AppError` yang tersedia: `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `PAYLOAD_TOO_LARGE`, `VALIDATION_ERROR`, `INTERNAL_SERVER_ERROR`, serta kode spesifik yang diberikan pemanggil (misalnya `INVALID_JSON`).
+Kode error pada `AppError` yang tersedia: `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, dan `VALIDATION_ERROR`, ditambah kode spesifik yang diberikan pemanggil (misalnya `INVALID_JSON`). Dua kode berikut dihasilkan oleh error handler untuk kondisi parser dan tidak tersedia sebagai class `AppError`: `INVALID_JSON`, `PAYLOAD_TOO_LARGE`. `INTERNAL_SERVER_ERROR` selalu dihasilkan error handler untuk error tak terduga, bukan melalui `AppError`.
 
 ## 5. Logging aman
 
