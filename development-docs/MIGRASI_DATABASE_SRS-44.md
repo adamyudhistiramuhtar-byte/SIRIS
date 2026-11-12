@@ -38,6 +38,8 @@
 
 Pemisahan ACTUAL/UJI pada referensi: kode yang sama boleh ada di kedua mode sebagai baris berbeda dan unik di dalam satu mode. Penegakan bahwa domain hanya menunjuk referensi dengan mode yang sama (FK komposit atau trigger) belum dibuat. DOC-07 menyerahkannya ke service/transaksi, dan tabel domain belum ada.
 
+Tabel `suppliers` dan `materials` hanya menyediakan struktur; belum ada sumber master ACTUAL yang terverifikasi untuk mengisinya. Menurut review PR #13, daftar distributor yang dilaporkan **bukan** master supplier dan daftar barang belum diperiksa, sehingga keduanya tidak dipakai sebagai seed ACTUAL. Seed saat ini hanya data sintetis UJI.
+
 ## 4. Bagian yang ditahan dan selisih yang belum diselesaikan
 
 | ID | Selisih migrasi 001 terhadap DOC-07/08 | Penanganan |
