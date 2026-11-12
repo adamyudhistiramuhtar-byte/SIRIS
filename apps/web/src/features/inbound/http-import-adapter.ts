@@ -54,16 +54,21 @@ export class ProposedImportHttpTransport {
         form.get('mode') !== context.mode || !(form.get('file') instanceof File)) {
       throw new Error('Konteks atau file staging tidak valid');
     }
-    const result = object((await this.client.post<unknown>('/imports', form, { headers: this.headers })).data);
-    if (typeof result.batch_id !== 'string' || !uuid.test(result.batch_id) || result.state !== 'STAGED') throw new Error('Respons staging tidak valid');
+    const response = await this.client.post<unknown>('/imports', form, { headers: this.headers });
+    let result: Record<string, unknown>;
+    try { result = object(response.data); } catch { throw new ImportOutcomeUnknownError('Hasil staging tidak dapat dipastikan'); }
+    if (typeof result.batch_id !== 'string' || !uuid.test(result.batch_id) || result.state !== 'STAGED') throw new ImportOutcomeUnknownError('Hasil staging tidak dapat dipastikan');
     return result.batch_id;
   }
 
   async validate(batchId: string): Promise<void> {
-    const result = object((await this.client.post<unknown>(`${batchPath(batchId)}/validation`, {}, { headers: this.headers })).data);
-    if (result.batch_id !== batchId || result.state !== 'PREVIEW_READY' || !count(result.error_count) || result.error_count !== 0 || !count(result.warning_count) || !Array.isArray(result.issues)) {
-      throw new Error('Validasi belum menghasilkan preview yang layak');
+    const response = await this.client.post<unknown>(`${batchPath(batchId)}/validation`, {}, { headers: this.headers });
+    let result: Record<string, unknown>;
+    try { result = object(response.data); } catch { throw new ImportOutcomeUnknownError('Hasil validasi tidak dapat dipastikan'); }
+    if (result.batch_id !== batchId || result.state !== 'PREVIEW_READY' || !count(result.error_count) || !count(result.warning_count) || !Array.isArray(result.issues)) {
+      throw new ImportOutcomeUnknownError('Hasil validasi tidak dapat dipastikan');
     }
+    if (result.error_count !== 0) throw new Error('Validasi belum menghasilkan preview yang layak');
   }
 
   async preview(batchId: string, context: ImportContext): Promise<ProposedPreview> {

@@ -34,6 +34,19 @@ describe('Boundary impor referensi UJI', () => {
     expect(flow.state).toEqual({ phase: 'unknown', batchId: 'batch-uji', idempotencyKey: 'key-uji' });
     expect(api.commit).toHaveBeenCalledTimes(1);
   });
+  it('mengunci persiapan ketika hasil staging atau validasi tidak diketahui', async () => {
+    for (const step of ['upload', 'validate'] as const) {
+      const api = adapter();
+      vi.mocked(api[step]).mockRejectedValue({ outcome: 'unknown' });
+      const flow = new ReferenceImportFlow(api);
+      await flow.prepare(file, context, true);
+      expect(flow.state).toEqual(step === 'upload' ? { phase: 'preparation-unknown' } : { phase: 'preparation-unknown', batchId: 'batch-uji' });
+      flow.reset();
+      await flow.prepare(file, context, true);
+      expect(api.upload).toHaveBeenCalledTimes(1);
+      expect(api.commit).not.toHaveBeenCalled();
+    }
+  });
   it('tidak menerima preview untuk batch lain', async () => {
     const api = adapter(); vi.mocked(api.validate).mockResolvedValue({ batchId: 'lain', fingerprint: 'uji', warnings: [] });
     const flow = new ReferenceImportFlow(api); await flow.prepare(file, context, true);

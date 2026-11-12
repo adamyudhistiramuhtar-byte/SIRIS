@@ -21,6 +21,12 @@ describe('Transport DOC-09 usulan, hanya mock UJI', () => {
     await expect(transport.stage(form, context)).rejects.toThrow();
     expect(client.post).toHaveBeenCalledTimes(1);
   });
+  it('menandai respons staging sukses yang tidak dapat dibuktikan sebagai hasil tidak diketahui', async () => {
+    const client = mockClient(); client.post.mockResolvedValue({ data: {} });
+    const form = new FormData(); form.set('kind', 'EXPECTED'); form.set('warehouse_id', warehouse); form.set('mode', 'UJI'); form.set('file', new File(['UJI'], 'uji.csv'));
+    await expect(new ProposedImportHttpTransport(client as unknown as ImportHttpClient).stage(form, context)).rejects.toMatchObject({ outcome: 'unknown' });
+    expect(client.post).toHaveBeenCalledTimes(1);
+  });
   it('memeriksa validasi dan preview yang cocok dengan konteks', async () => {
     const client = mockClient(); client.post.mockResolvedValue({ data: { batch_id: batch, state: 'PREVIEW_READY', error_count: 0, warning_count: 0, issues: [] } });
     const transport = new ProposedImportHttpTransport(client as unknown as ImportHttpClient);
@@ -28,6 +34,11 @@ describe('Transport DOC-09 usulan, hanya mock UJI', () => {
     await expect(transport.preview(batch, context)).resolves.toEqual(preview);
     client.get.mockResolvedValue({ data: { ...preview, mode: 'ACTUAL' } });
     await expect(transport.preview(batch, context)).rejects.toThrow();
+  });
+  it('menandai respons validasi yang tidak sesuai sebagai hasil tidak diketahui', async () => {
+    const client = mockClient(); client.post.mockResolvedValue({ data: {} });
+    await expect(new ProposedImportHttpTransport(client as unknown as ImportHttpClient).validate(batch)).rejects.toMatchObject({ outcome: 'unknown' });
+    expect(client.post).toHaveBeenCalledTimes(1);
   });
   it('commit mengirim fingerprint dan idempotency key tepat sekali', async () => {
     const client = mockClient(); client.post.mockResolvedValue({ data: { batch_id: batch, state: 'COMMITTED' } });

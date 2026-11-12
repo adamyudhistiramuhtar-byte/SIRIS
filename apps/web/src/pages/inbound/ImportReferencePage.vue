@@ -14,7 +14,7 @@ const warehouse = ref('');
 const file = ref<File>();
 const acknowledged = ref(false);
 const busy = computed(() => ['uploading', 'validating', 'committing'].includes(flow.state.phase));
-const locked = computed(() => busy.value || flow.state.phase === 'unknown');
+const locked = computed(() => busy.value || flow.state.phase === 'unknown' || flow.state.phase === 'preparation-unknown');
 function selectFile(event: Event) {
   file.value = (event.target as HTMLInputElement).files?.[0];
   flow.reset(); acknowledged.value = false;
@@ -175,6 +175,12 @@ async function commit() {
         role="alert"
       >
         Preview kedaluwarsa. Jalankan validasi ulang sebelum konfirmasi.
+      </p>
+      <p
+        v-else-if="flow.state.phase === 'preparation-unknown'"
+        role="alert"
+      >
+        Hasil persiapan belum diketahui<span v-if="flow.state.batchId"> untuk batch {{ flow.state.batchId }}</span>. Periksa status melalui petugas; jangan mengirim ulang otomatis.
       </p>
       <p
         v-else-if="flow.state.phase === 'unknown'"

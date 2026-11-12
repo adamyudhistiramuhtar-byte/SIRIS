@@ -15,7 +15,8 @@ export type ImportState =
   | { phase: 'expired'; batchId: string }
   | { phase: 'success'; receipt: CommitReceipt }
   | { phase: 'error'; message: string }
-  | { phase: 'unknown'; batchId: string; idempotencyKey: string };
+  | { phase: 'unknown'; batchId: string; idempotencyKey: string }
+  | { phase: 'preparation-unknown'; batchId?: string };
 
 /** State sengaja tidak memiliki sesi atau mock produksi bawaan. */
 export class ReferenceImportFlow {
@@ -25,7 +26,7 @@ export class ReferenceImportFlow {
   constructor(private readonly adapter: ReferenceImportAdapter) {}
 
   async prepare(file: File | undefined, context: ImportContext, sessionVerified: boolean): Promise<void> {
-    if (this.state.phase === 'committing' || this.state.phase === 'unknown') return;
+    if (this.state.phase === 'committing' || this.state.phase === 'unknown' || this.state.phase === 'preparation-unknown') return;
     const generation = ++this.generation;
     this.context = undefined;
     if (!sessionVerified || !context.warehouseId || !['UJI', 'ACTUAL'].includes(context.mode) || !file) {
@@ -33,17 +34,23 @@ export class ReferenceImportFlow {
       return;
     }
     this.context = { ...context };
+    let batchId: string | undefined;
     try {
       this.state = { phase: 'uploading' };
       const batch = await this.adapter.upload(file, this.context);
       if (generation !== this.generation) return;
+      batchId = batch.batchId;
       this.state = { phase: 'validating' };
       const preview = await this.adapter.validate(batch.batchId, this.context);
       if (generation !== this.generation) return;
       if (!preview.batchId || preview.batchId !== batch.batchId || !preview.fingerprint) throw new Error('invalid preview');
       this.state = { phase: 'preview', preview };
-    } catch {
+    } catch (error) {
       if (generation !== this.generation) return;
+      if (typeof error === 'object' && error !== null && 'outcome' in error && error.outcome === 'unknown') {
+        this.state = { phase: 'preparation-unknown', ...(batchId ? { batchId } : {}) };
+        return;
+      }
       this.state = { phase: 'error', message: 'Impor belum siap. Periksa hasil server dan coba kembali.' };
     }
   }
@@ -69,7 +76,7 @@ export class ReferenceImportFlow {
   }
 
   reset(): void {
-    if (this.state.phase === 'committing' || this.state.phase === 'unknown') return;
+    if (this.state.phase === 'committing' || this.state.phase === 'unknown' || this.state.phase === 'preparation-unknown') return;
     this.generation++; this.context = undefined; this.state = { phase: 'initial' };
   }
 }
