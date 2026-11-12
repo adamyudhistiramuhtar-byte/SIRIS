@@ -1,0 +1,27 @@
+# Batas integrasi frontend — SRS-42
+
+Status **PROPOSED — NEEDS REVIEW**, 11 November 2026. [SRS-42](https://adamyudhistiramuhtar.atlassian.net/browse/SRS-42) melalui PR #10 menargetkan `develop`. PR #4 SRS-41 telah merged ke `develop` pada `ea5f6df` dan SRS-41 berstatus Done. Implementasi belum menjadi kontrak backend yang disetujui. DOC-09 dan desain aplikasi masih perlu review. Kebijakan Node 22, npm workspaces, root lockfile, `npm ci` di CI, isolasi UJI dan secret di luar Git telah disetujui PM pada SRS-40.
+
+## Konvensi implementasi untuk review
+
+- `apps/web/src/shared/api/client.ts` menyediakan `apiClient` dan `ApiClient`; model envelope/error berasal dari `packages/contracts`. Adapter endpoint bertanggung jawab memvalidasi isi DTO spesifik; pemeriksaan client umum hanya memeriksa bentuk object/envelope dan bukan validator domain.
+- `VITE_API_BASE_URL` adalah konfigurasi **publik** Vite. Jika tidak disetel, client memakai `/api/v1`; nilai eksplisit kosong atau URL tidak aman ditolak saat request dengan `INVALID_API_CONFIG` sebelum fetch. Impor modul tetap dapat dilakukan; pemanggil bertanggung jawab menampilkan kesalahan konfigurasi. Jangan menaruh token, password, atau informasi rahasia pada variabel `VITE_*`. Vite membaca environment menurut root proyek dan environment prosesnya; verifikasi konfigurasi lokal masing-masing tanpa commit `.env`.
+- Client mengembalikan `ApiResponse<T>` untuk pemanggil. Secara default body ditafsirkan sebagai DTO langsung sesuai contoh DOC-09, termasuk field bernama `data`; endpoint yang kontraknya benar-benar memakai envelope harus memilih `responseFormat: 'envelope'` secara eksplisit. Bentuk wire API tetap **PROPOSED** dan memerlukan review backend. Perubahan dari tebakan envelope otomatis ini mengharuskan pemanggil envelope menyatakan formatnya. HTTP 204 belum diklaim didukung.
+- Review DOC-09 §kontrak umum dan contoh API-01–API-22: koleksi JSON dicontohkan sebagai object `items`/`next_cursor`, bukan array langsung; contoh DTO sukses tidak menunjukkan field `error` tingkat atas. API-19 adalah unduhan binary dan tidak didukung client JSON ini. Shared contract mendefinisikan envelope sukses dan envelope error, tetapi tidak menetapkan seluruh wire endpoint. Sampai dikonfirmasi, client menolak JSON non-object dan object sukses dengan `error`; error HTTP tidak diperlakukan sebagai sukses. **Pertanyaan untuk Luthfi:** apakah ada endpoint JSON yang sah mengembalikan array langsung, atau DTO sukses dengan field `error` tingkat atas? Jika ada, tetapkan schema dan pemilihan format per endpoint serta pembeda respons error sebelum mengubah validasi.
+- Error terstruktur membawa `code`, `details`, status dan correlation ID; error jaringan GET dibedakan dari mutasi yang hasilnya tidak diketahui. Pada mutasi, pemutusan jaringan, abort, body sukses yang tak terbaca, HTTP 408 dan 5xx diperlakukan sebagai outcome tidak pasti secara konservatif; kebijakan proxy/finalisasi perlu review backend. Jangan retry otomatis; periksa status menggunakan kontrak yang disahkan dan pertahankan idempotency key. Tidak ada penanganan session/cookie lintas origin yang ditetapkan oleh pekerjaan ini.
+- `RequestOptions` menerima `Headers`, query dan `AbortSignal`; correlation ID yang disediakan pemanggil diteruskan, correlation ID dari response disimpan jika tersedia. Request JSON dan `FormData` didukung; browser menetapkan boundary multipart. Tidak ada request/response atau credential dicatat ke console oleh client.
+- Client tidak menyimpan cache dan tidak memilih mode/gudang. Pemanggil harus membawa context yang benar; backend tetap menjadi otoritas izin dan pemisahan ACTUAL/UJI. Mock di test hanya fixture UJI dan tidak menunjukkan integrasi backend nyata.
+
+## Handoff lintas anggota
+
+| Pemilik | Issue terkait | Kebutuhan untuk integrasi dan risiko |
+| --- | --- | --- |
+| Vassell | SRS-45/46/53/54/25/56 | Komponen dan routing tetap milik issue tersebut; gunakan hasil adapter dan tampilkan error/unknown outcome tanpa menyatakan sukses. ImportWizard mempertahankan context dan idempotency key. Harness/fixture lintas role tetap SRS-54. |
+| Luthfi | SRS-36/43/47/48/49/51 | Tinjau bentuk response langsung vs envelope, error, correlation ID, CSRF/session dan scope; backend memeriksa role/gudang/objek. Validasi preview, expiry dan status transaksi tetap otoritas API. |
+| Dwi | SRS-37/38/44/50/52 | Sahkan kontrak sumber, cutoff, staging, lineage dan retry atomik; quantity/header CF-06 masih terbuka. Sediakan DB dan fixture UJI terisolasi saat dependency siap; frontend tidak mengklaim commit atau rollback dari mock. |
+
+Tidak ada perubahan kepemilikan Jira atau persetujuan anggota lain yang diklaim. Untuk route `/inbound/import-reference`, integrasi halaman SRS-16/82 tetap menunggu shared component SRS-53, transaksi SRS-52 dan review kontrak; jangan membuat duplikat ImportWizard atau menetapkan CF-06 dari asumsi.
+
+## Verifikasi dan integrasi
+
+Jalankan scanner, lint, typecheck, build dan test sesuai manifest. Test client menggunakan respons sintetis dan fetch tiruan, sedangkan integration test backend dan PostgreSQL hanya dapat dilaporkan jika dijalankan pada layanan nyata. PR #10 menargetkan `develop`; integrasi mensyaratkan review independen formal, CI dan DoD yang berlaku. SRS-45 bergantung pada penyelesaian SRS-42; PR #11 tetap draft sampai dependency dan DoD UC-01 terpenuhi.
