@@ -35,10 +35,24 @@ database/
 Migrasi PostgreSQL menggunakan file SQL standar yang dieksekusi secara berurutan:
 
 1. **Idempotensi**: Setiap pernyataan DDL menggunakan klausa `IF NOT EXISTS` atau pengecekan constraint. `IF NOT EXISTS` tidak mengoreksi tabel yang sudah ada dengan struktur berbeda; perubahan struktur memerlukan migrasi baru yang direview.
-2. **Keterlacakan**: Penamaan file menggunakan format penomoran 3 digit dan dijalankan berurutan:
-   - `001_initial_schema.sql` — identitas, gudang, cutoff (ditahan, lihat F-03), staging dan idempotency awal.
+2. **Migrasi yang sudah dipublikasikan tidak diubah.** Karena tidak ada bukti bahwa migrasi di `develop` belum pernah dijalankan di lingkungan mana pun, perubahan schema selalu dibuat sebagai migrasi baru yang dapat meng-upgrade schema lama, bukan dengan menyunting file lama.
+3. **Keterlacakan**: Penamaan file menggunakan format penomoran 3 digit dan dijalankan berurutan:
+   - `001_initial_schema.sql` — identitas, gudang, cutoff (ditahan, lihat F-03), staging dan idempotency awal. Isi sama dengan versi `develop`.
    - `002_reference_masters.sql` — `materials` dan `suppliers` terpisah menurut mode ACTUAL/UJI.
-3. **Migration runner** belum diputuskan (SRS40-ADR-03 PROPOSED). Eksekusi saat ini manual dengan role migrasi:
+   - `003_import_batches_kind.sql` — upgrade `import_batches.import_type` ke `kind` (keputusan F-01). Atomik dan fail-closed: kondisi lama di-upgrade, kondisi sudah ter-upgrade tidak diubah, kondisi lain dihentikan tanpa perubahan. Tidak men-drop tabel.
+4. **Inventarisasi sebelum upgrade.** Proyek belum memiliki tabel pencatat versi migrasi (runner masih PROPOSED), sehingga sebelum menjalankan migrasi baru pada database yang sudah berisi, periksa kondisi schema dan data terlebih dahulu dengan role migrasi:
+   ```sql
+   -- Kolom jenis impor yang ada (import_type = schema lama, kind = schema baru)
+   SELECT attname FROM pg_attribute
+   WHERE attrelid = 'import_batches'::regclass AND attname IN ('import_type', 'kind') AND NOT attisdropped;
+   -- Jumlah batch per jenis (ganti kind dengan import_type pada schema lama)
+   SELECT kind, count(*) FROM import_batches GROUP BY kind;
+   -- CHECK constraint yang terpasang
+   SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint
+   WHERE conrelid = 'import_batches'::regclass AND contype = 'c';
+   ```
+   Lakukan backup sebelum upgrade pada database selain UJI lokal. Migrasi 003 juga mencetak inventaris sebelum dan sesudah upgrade sebagai NOTICE.
+5. **Migration runner** belum diputuskan (SRS40-ADR-03 PROPOSED). Eksekusi saat ini manual dengan role migrasi:
    ```bash
    for f in database/migrations/*.sql database/seeds/*.sql; do
      psql "$DATABASE_MIGRATION_URL" -v ON_ERROR_STOP=1 -f "$f"
@@ -50,7 +64,7 @@ Migrasi PostgreSQL menggunakan file SQL standar yang dieksekusi secara berurutan
      docker exec -i siris-pg-uji psql -X -v ON_ERROR_STOP=1 -U siris_migrator -d siris_uji < "$f"
    done
    ```
-4. **Pengujian migrasi**: `npm run test:integration` menjalankan `tests/integration/database/migrations.test.ts`, yang menerapkan seluruh migrasi dan seed dua kali (reapply) di dalam satu transaksi lalu ROLLBACK. Tanpa `DATABASE_MIGRATION_URL` test ini berstatus *skipped*, bukan PASS.
+6. **Pengujian migrasi**: `npm run test:integration` menjalankan `tests/integration/database/migrations.test.ts`. Setiap skenario berjalan pada schema sementara di dalam transaksi yang di-ROLLBACK: instalasi bersih dan reapply, upgrade dari 001 lama berisi data (pemetaan nilai, FK, reapply), serta penolakan kondisi parsial/tidak dikenal tanpa perubahan data. Tanpa `DATABASE_MIGRATION_URL` test ini berstatus *skipped*, bukan PASS.
 
 ## 4. Strategi Seed (Data Uji)
 

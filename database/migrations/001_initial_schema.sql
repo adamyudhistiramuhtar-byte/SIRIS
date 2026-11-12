@@ -54,8 +54,7 @@ CREATE TABLE IF NOT EXISTS cutoff_contexts (
 CREATE TABLE IF NOT EXISTS import_batches (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE RESTRICT,
-    -- Nama kolom dan nilai kind mengikuti DOC-07/08/09 (keputusan F-01, Adam, 12 Nov 2026; SRS-37/SRS-44).
-    kind VARCHAR(32) NOT NULL CHECK (kind IN ('EXPECTED', 'COMMITMENT', 'RECEIVING', 'STOCK', 'COUNT')),
+    import_type VARCHAR(32) NOT NULL CHECK (import_type IN ('INBOUND_REFERENCE', 'SUPPLIER_COMMITMENT', 'RECEIVING', 'STOCK', 'PHYSICAL_COUNT')),
     mode VARCHAR(16) NOT NULL CHECK (mode IN ('ACTUAL', 'UJI')),
     status VARCHAR(32) NOT NULL DEFAULT 'STAGED' CHECK (status IN ('STAGED', 'VALIDATED', 'COMMITTED', 'CANCELLED')),
     file_name VARCHAR(255) NOT NULL,
