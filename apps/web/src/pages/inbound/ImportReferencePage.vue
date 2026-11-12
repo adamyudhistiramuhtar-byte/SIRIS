@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
+import AlertBanner from '../../components/primitives/AlertBanner.vue';
+import BaseButton from '../../components/primitives/BaseButton.vue';
+import BaseInput from '../../components/primitives/BaseInput.vue';
+import FormField from '../../components/primitives/FormField.vue';
 import { ReferenceImportFlow } from '../../features/inbound/reference-import';
 import { createUjiSimulator } from '../../features/inbound/uji-simulator';
 
@@ -50,58 +54,65 @@ async function commit() {
       >
         Konteks dan file
       </h2>
-      <p
+      <AlertBanner
         class="mt-2"
-        role="status"
+        variant="info"
       >
         MODE UJI — simulasi lokal; tidak ada data yang disimpan.
-      </p>
-      <p
+      </AlertBanner>
+      <AlertBanner
         v-if="!enabled"
         class="mt-2"
-        role="alert"
+        variant="warning"
       >
         Sesi dan layanan impor belum tersedia. Simulasi hanya dapat digunakan pada lingkungan pengembangan.
-      </p>
-      <label
-        for="warehouse"
-        class="mt-4 block font-medium"
-      >Kode gudang UJI</label>
-      <input
+      </AlertBanner>
+      <FormField
         id="warehouse"
-        v-model="warehouse"
-        :disabled="!enabled || locked"
-        class="mt-1 w-full rounded border border-siris-border-strong p-2 focus-visible:outline focus-visible:outline-2"
-        @input="flow.reset(); acknowledged = false"
+        v-slot="field"
+        class="mt-4"
+        label="Kode gudang UJI"
+        required
       >
-      <label
-        for="source-file"
-        class="mt-4 block font-medium"
-      >File UJI</label>
-      <input
+        <BaseInput
+          v-model="warehouse"
+          v-bind="field"
+          :disabled="!enabled || locked"
+          @input="flow.reset(); acknowledged = false"
+        />
+      </FormField>
+      <FormField
         id="source-file"
-        type="file"
-        :disabled="!enabled || locked"
-        class="mt-1 block w-full"
-        @change="selectFile"
+        v-slot="field"
+        class="mt-4"
+        label="File UJI"
+        required
+        hint="Format, ukuran, dan isi file menunggu kontrak sumber. Pemilihan file tidak memvalidasi data."
       >
-      <p class="mt-2 text-sm">
-        Format, ukuran, dan isi file menunggu kontrak sumber. Pemilihan file tidak memvalidasi data.
-      </p>
+        <input
+          v-bind="field"
+          type="file"
+          :disabled="!enabled || locked"
+          class="block w-full"
+          @change="selectFile"
+        >
+      </FormField>
       <p
         v-if="file"
         class="mt-2"
       >
         File dipilih: {{ file.name }}
       </p>
-      <button
-        type="button"
+      <BaseButton
+        class="mt-4"
         :disabled="!enabled || locked || !file || !warehouse.trim()"
-        class="mt-4 rounded bg-siris-ink px-4 py-2 text-white disabled:opacity-50 focus-visible:outline focus-visible:outline-2"
+        disabled-reason="Aktifkan simulasi dan pilih gudang serta file UJI sebelum melanjutkan."
+        :loading="busy"
+        loading-label="Memproses simulasi…"
         @click="prepare"
       >
         Jalankan simulasi validasi
-      </button>
+      </BaseButton>
     </section>
     <section
       class="mt-4 rounded-lg border border-siris-border bg-siris-card p-5"
@@ -140,21 +151,21 @@ async function commit() {
           v-model="acknowledged"
           type="checkbox"
         > Saya memahami bahwa ini hanya simulasi UJI.</label>
-        <button
-          type="button"
+        <BaseButton
+          class="mt-3"
           :disabled="!acknowledged"
-          class="mt-3 rounded bg-siris-ink px-4 py-2 text-white disabled:opacity-50"
+          disabled-reason="Akui bahwa ini simulasi UJI sebelum konfirmasi."
           @click="commit"
         >
           Konfirmasi simulasi
-        </button>
-        <button
-          type="button"
-          class="ml-3 underline"
+        </BaseButton>
+        <BaseButton
+          class="ml-3"
+          variant="tertiary"
           @click="flow.reset(); acknowledged = false"
         >
           Batalkan
-        </button>
+        </BaseButton>
       </template>
       <p v-else-if="flow.state.phase === 'success'">
         Simulasi selesai untuk {{ flow.state.receipt.batchId }}. Tidak ada transaksi database.
