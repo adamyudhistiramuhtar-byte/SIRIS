@@ -108,7 +108,7 @@ Ketersediaan port bukan bukti koneksi, autentikasi, migrasi, atau isolasi ACTUAL
 
 ## 7. Matriks verifikasi
 
-Perintah dijalankan pada branch `feature/SRS-43-express-service-error-contract` (commit `7d2463b`), Node.js v24.14.1 dan npm 11.11.0 (runtime lokal; CI memakai Node 22).
+Perintah dijalankan pada branch `feature/SRS-43-express-service-error-contract` (commit implementasi `b6656cc`), Node.js v24.14.1 dan npm 11.11.0 (runtime lokal; CI memakai Node 22).
 
 | Perintah | Hasil |
 | --- | --- |
