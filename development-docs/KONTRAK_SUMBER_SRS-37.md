@@ -41,7 +41,7 @@ Dokumen ini menetapkan **usulan** kontrak sumber berversi untuk lima jenis impor
 
 | Aspek | Usulan `proposed-0.1` | Status | Catatan |
 | --- | --- | --- | --- |
-| Jenis impor (`kind`) | Tepat lima: `EXPECTED`, `COMMITMENT`, `RECEIVING`, `STOCK`, `COUNT`; nilai lain ditolak `INVALID_FILE` | PROPOSED | Selaras DOC-07/08/09 dan PR #11. Lihat temuan F-01 tentang nama di migrasi 001. |
+| Jenis impor (`kind`) | Tepat lima: `EXPECTED`, `COMMITMENT`, `RECEIVING`, `STOCK`, `COUNT` | **ACCEPTED** untuk penamaan (keputusan F-01, §7.1); penolakan nilai lain dengan `INVALID_FILE` tetap PROPOSED | Selaras DOC-07/08/09 dan PR #11. |
 | Format file | CSV UTF-8, delimiter koma, header eksplisit di baris pertama, quoting RFC 4180 | PROPOSED | DOC-08; format asli Erasoft SOURCE REQUIRED. XLSX/XLS hanya setelah sampel dan sheet disetujui (ADR-04 OPEN). |
 | Nama sheet | Tidak berlaku untuk CSV; untuk XLSX belum ditetapkan | SOURCE REQUIRED | Kolom `component` pada staging menyimpan nama sheet/komponen bila nanti disetujui. |
 | Header asli | Hanya `QTY AKHIR` (STOCK) yang diketahui | SOURCE REQUIRED | Header lain **tidak dikarang**. Mapping header→field dibuat per `contract_version` setelah sampel tersedia. |
@@ -160,7 +160,7 @@ Struktur setiap fixture: `metadata` batch (DOC-08 §4), `rows` valid dalam bentu
 
 | ID | Temuan | Dampak | Tindak lanjut |
 | --- | --- | --- | --- |
-| F-01 | `database/migrations/001_initial_schema.sql` memakai `import_type` `INBOUND_REFERENCE`/`SUPPLIER_COMMITMENT`/`PHYSICAL_COUNT`, sedangkan DOC-07/08/09 dan PR #11 memakai `kind` `EXPECTED`/`COMMITMENT`/`COUNT`; status batch juga berbeda dari state machine DOC-08 | Kontrak bertentangan bila diberlakukan bersamaan | Diputuskan di SRS-44 bersama Adam; dokumen ini memakai nama DOC-07/08 |
+| F-01 | `database/migrations/001_initial_schema.sql` memakai `import_type` `INBOUND_REFERENCE`/`SUPPLIER_COMMITMENT`/`PHYSICAL_COUNT`, sedangkan DOC-07/08/09 dan PR #11 memakai `kind` `EXPECTED`/`COMMITMENT`/`COUNT`; status batch juga berbeda dari state machine DOC-08 | Kontrak bertentangan bila diberlakukan bersamaan | **Diputuskan** (lihat §7.1); penyesuaian migrasi 001 dilakukan di branch SRS-44 |
 | F-02 | `database/fixtures/inbound_sample_uji.json` memakai field `po_number`, `supplier_name`, `expected_quantity`, `expected_delivery_date` yang tidak bersumber dan berbeda dari DOC-08 (`source_ref`, `supplier_code`, `requested_date`) | Risiko dipakai sebagai "header EXPECTED" | Tidak diubah/dihapus di SRS-37; usulan: tandai deprecated atau ganti dengan fixture baru setelah review |
 | G-01 | Header asli 4 jenis + komponen STOCK | Adaptor tidak dapat dibuat final | Minta sampel sintetis berstruktur sama dari mitra/pemilik domain (OD-05) |
 | G-02 | Batas ukuran/baris impor | Upload produksi blocking | Keputusan backend + pemilik domain (Q-02, OD-09) |
@@ -168,6 +168,12 @@ Struktur setiap fixture: `metadata` batch (DOC-08 §4), `rows` valid dalam bentu
 | G-04 | Katalog error belum punya kode untuk tipe/format field dan header hilang | Validator memakai `INVALID_FILE` secara umum | Usulkan kode tambahan melalui review DOC-08 |
 | G-05 | CF-06 (EXPECTED quantity, field COMMITMENT tambahan), CF-08 (release date, kolom tambahan) | Validator dan boundary test tertahan | Keputusan Adam/pemilik domain |
 | G-06 | FR/NFR terkait SRS-37 SOURCE REQUIRED (OD-01) | Traceability belum lengkap | Diisi setelah SRS final tersedia |
+
+### 7.1 Keputusan yang disetujui
+
+| ID | Keputusan | Status | Pemutus dan bukti | Dampak |
+| --- | --- | --- | --- | --- |
+| F-01 | Nama jenis impor mengikuti DOC-07/08/09 dan PR #11: `EXPECTED`, `COMMITMENT`, `RECEIVING`, `STOCK`, `COUNT`. Nama `INBOUND_REFERENCE`, `SUPPLIER_COMMITMENT`, `PHYSICAL_COUNT` pada migrasi 001 tidak dipakai. | **ACCEPTED** | Adam Yudhistira Muhtar (PM & Technical Lead), 12 November 2026, persetujuan melalui chat tim (diteruskan oleh pemilik issue) | Migrasi 001 disesuaikan pada branch SRS-44, bukan pada branch SRS-37. Keputusan ini hanya mencakup penamaan `kind`; perbedaan status batch dan kolom lain pada migrasi 001 tetap ditinjau di SRS-44. |
 
 ## 8. Status acceptance criteria SRS-37
 
@@ -185,3 +191,4 @@ Pengujian: tidak ada kode aplikasi yang berubah; validasi fixture terhadap valid
 | Versi | Tanggal | Perubahan | Persetujuan |
 | --- | --- | --- | --- |
 | proposed-0.1 | 2026-11-12 | Penyusunan awal kontrak lima jenis, fixture UJI, temuan F-01/F-02 dan gap | Belum ada |
+| proposed-0.1 | 2026-11-12 | Mencatat keputusan F-01 (penamaan `kind`) sebagai ACCEPTED | Adam, 12 Nov 2026, chat tim; kontrak lain tetap PROPOSED |
