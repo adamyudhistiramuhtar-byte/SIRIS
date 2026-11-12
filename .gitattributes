@@ -1,0 +1,3 @@
+# Berkas hasil generate (npm run tokens:generate) selalu LF agar konsisten di Windows, Mac, dan Linux.
+apps/web/src/styles/generated/*.css text eol=lf
+apps/web/src/styles/generated/*.json text eol=lf
