@@ -1,0 +1,50 @@
+/* Fondasi tipografi dan fokus SIRIS (design.md §4.3, §4.4, §4.6, §7.1).
+ * Berkas ini hanya memakai token (var(--...)); literal visual berada di tokens.css hasil generate. */
+
+html {
+  /* Root 16 px mengikuti preferensi browser; ukuran teks memakai rem dari token. */
+  font-family: var(--font-body);
+  color: var(--color-fg-default);
+  background-color: var(--color-bg-canvas);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-size: var(--type-body-md-size);
+  line-height: var(--type-body-md-line-height);
+  letter-spacing: var(--type-body-md-tracking);
+  font-weight: var(--type-body-md-weight);
+  font-variant-numeric: normal;
+}
+
+/* Fokus terlihat: ring + celah warna surface. Ring tidak boleh menempel langsung pada
+ * tombol biru (design.md §4.7), sehingga celah diisi token focus-gap. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--focus-width) solid var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  box-shadow: 0 0 0 var(--focus-offset) var(--focus-gap);
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Reduced motion: tanpa transisi atau animasi perpindahan; status teks tetap tampil. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Forced colors: biarkan sistem menentukan warna; ring fokus memakai warna sistem. */
+@media (forced-colors: active) {
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline-color: Highlight;
+  }
+}
