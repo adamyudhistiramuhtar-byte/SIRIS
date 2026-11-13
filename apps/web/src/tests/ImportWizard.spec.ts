@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import ImportWizard from '../components/patterns/ImportWizard.vue';
@@ -231,7 +231,7 @@ describe('ImportWizard: Preview dan konfirmasi', () => {
   it('ringkasan konfirmasi: nilai yang tidak dikirim layanan ditulis Tidak tersedia', () => {
     const wrapper = mountTrack({
       phase: 'preview',
-      preview: preview({ rowCount: 120, expiresAt: 'bukan-tanggal' }),
+      preview: preview({ rowCount: 120, expiresAt: '2999-01-01T00:00:00Z' }),
     });
     const teks = wrapper.get('dl').text();
     expect(teks).toContain('Referensi Inbound');
@@ -241,7 +241,7 @@ describe('ImportWizard: Preview dan konfirmasi', () => {
     expect(teks).toContain('120');
     expect(teks).toMatch(/Sumber\s*Tidak tersedia/);
     expect(teks).toContain('B-100');
-    expect(teks).toContain('bukan-tanggal');
+    expect(teks).toMatch(/Kedaluwarsa\s*\S+/);
   });
 
   it('tanpa warning: Simpan aktif dan confirm membawa daftar kosong', async () => {
@@ -335,6 +335,116 @@ describe('ImportWizard: Preview dan konfirmasi', () => {
   });
 });
 
+describe('ImportWizard: preview kedaluwarsa di sisi tampilan', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('expiresAt sudah lewat dengan warning kosong: Simpan hilang dan confirm tidak dikirim', async () => {
+    const wrapper = mountTrack({
+      phase: 'preview',
+      preview: preview({ expiresAt: '2000-01-01T00:00:00Z', warnings: [] }),
+    });
+    expect(wrapper.text()).toContain('Preview kedaluwarsa');
+    expect(labelTombol(wrapper)).toEqual(['Validasi Ulang', 'Batal']);
+    expect(tombol(wrapper, 'Simpan')).toBeUndefined();
+    await tombol(wrapper, 'Validasi Ulang')!.trigger('click');
+    expect(wrapper.emitted('revalidate')).toHaveLength(1);
+    expect(wrapper.emitted('confirm')).toBeUndefined();
+  });
+
+  it('expiresAt lewat dengan semua warning diakui tetap tidak mengirim confirm', async () => {
+    const wrapper = mountTrack({
+      phase: 'preview',
+      preview: preview({ expiresAt: '2000-01-01T00:00:00Z', warnings: ['W-1'] }),
+    });
+    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false);
+    expect(tombol(wrapper, 'Simpan')).toBeUndefined();
+    expect(wrapper.emitted('confirm')).toBeUndefined();
+  });
+
+  it('waktu habis saat layar terbuka: tampilan berubah tanpa perubahan props', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+    const wrapper = mountTrack({
+      phase: 'preview',
+      preview: preview({ expiresAt: '2026-01-01T00:30:00Z' }),
+    });
+    expect(tombol(wrapper, 'Simpan')).toBeDefined();
+    vi.advanceTimersByTime(29 * 60 * 1000);
+    await nextTick();
+    expect(tombol(wrapper, 'Simpan')).toBeDefined();
+    vi.advanceTimersByTime(60 * 1000 + 1);
+    await nextTick();
+    expect(wrapper.text()).toContain('Preview kedaluwarsa');
+    expect(tombol(wrapper, 'Simpan')).toBeUndefined();
+    expect(labelTombol(wrapper)).toEqual(['Validasi Ulang', 'Batal']);
+  });
+
+  it('klik Simpan tepat setelah waktu habis tetapi sebelum timer jalan tidak mengirim confirm', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+    const wrapper = mountTrack({
+      phase: 'preview',
+      preview: preview({ expiresAt: '2026-01-01T00:30:00Z' }),
+    });
+    const simpan = tombol(wrapper, 'Simpan')!;
+    // Jam maju tanpa menjalankan timer (mis. tab di latar belakang).
+    vi.setSystemTime(new Date('2026-01-01T00:31:00Z'));
+    await simpan.trigger('click');
+    expect(wrapper.emitted('confirm')).toBeUndefined();
+  });
+
+  it('preview yang masih berlaku tetap mengirim confirm', async () => {
+    const wrapper = mountTrack({
+      phase: 'preview',
+      preview: preview({ expiresAt: '2999-01-01T00:00:00Z' }),
+    });
+    await tombol(wrapper, 'Simpan')!.trigger('click');
+    expect(wrapper.emitted('confirm')).toEqual([[[]]]);
+  });
+
+  it('tanpa expiresAt: tidak ada klaim kedaluwarsa dari komponen (layanan tetap otoritas)', async () => {
+    const wrapper = mountTrack({ phase: 'preview', preview: preview() });
+    await tombol(wrapper, 'Simpan')!.trigger('click');
+    expect(wrapper.emitted('confirm')).toHaveLength(1);
+  });
+
+  it('expiresAt yang tidak terbaca gagal tertutup: tidak dapat dibuktikan masih berlaku', async () => {
+    const wrapper = mountTrack({
+      phase: 'preview',
+      preview: preview({ expiresAt: 'bukan-tanggal' }),
+    });
+    expect(tombol(wrapper, 'Simpan')).toBeUndefined();
+    expect(wrapper.emitted('confirm')).toBeUndefined();
+  });
+
+  it('props berganti ke preview baru yang berlaku: Simpan kembali tersedia', async () => {
+    const wrapper = mountTrack({
+      phase: 'preview',
+      preview: preview({ expiresAt: '2000-01-01T00:00:00Z' }),
+    });
+    expect(tombol(wrapper, 'Simpan')).toBeUndefined();
+    await wrapper.setProps({
+      state: { phase: 'preview', preview: preview({ fingerprint: 'fp-2', expiresAt: '2999-01-01T00:00:00Z' }) },
+    });
+    expect(tombol(wrapper, 'Simpan')).toBeDefined();
+  });
+
+  it('timer dibersihkan saat komponen dilepas', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+    const wrapper = mountTrack({
+      phase: 'preview',
+      preview: preview({ expiresAt: '2026-01-01T00:30:00Z' }),
+    });
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    wrapper.unmount();
+    aktif = undefined;
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
 describe('ImportWizard: Hasil Simpan', () => {
   it('sukses hanya dari receipt COMMITTED, dengan batch dan Mulai Impor Baru', async () => {
     const wrapper = mountTrack({ phase: 'success', receipt: { batchId: 'B-100', state: 'COMMITTED' } });
@@ -382,8 +492,8 @@ describe('ImportWizard: status baru dan kompatibilitas', () => {
   });
 
   it('state dari boundary PR #11 dapat diberikan langsung (tipe lokal kompatibel)', () => {
-    // Salinan bentuk `ImportState` pada PR #11 (reference-import.ts); bila bentuk itu berubah,
-    // pemeriksaan tipe di sini yang harus gagal lebih dulu.
+    // Salinan bentuk `ImportState` pada PR #11 head 757f12c (reference-import.ts). Ini bukan contract test:
+    // perubahan di PR #11 tidak otomatis membuat pengujian ini gagal (lihat dokumen §4).
     type Pr11State =
       | { phase: 'initial' }
       | { phase: 'uploading' | 'validating' | 'committing' }

@@ -43,12 +43,17 @@ Acceptance criteria T-19 pada implementasi ini:
 - Tanpa berkas tidak ada keadaan sukses atau VALID: `FileUpload` hanya berstatus sukses bila ada berkas, dan Validasi nonaktif beralasan.
 - INVALID adalah hasil validasi yang sah: tampil sebagai laporan temuan (Preview dan Simpan terkunci), bukan banner galat transport.
 - Hasil tidak pasti (persiapan, commit, pembatalan) tidak pernah ditampilkan sebagai sukses dan tidak menawarkan Simpan ulang; hanya Periksa Status.
+- Preview kedaluwarsa: bila state tetap `preview` tetapi `expiresAt` sudah lewat, komponen menampilkan keadaan kedaluwarsa (Validasi Ulang dan Batal), menyembunyikan Simpan, dan tidak mengirim `confirm`. Ini berlaku juga saat waktu habis ketika layar terbuka (timer) dan diperiksa ulang dengan jam saat klik, sehingga tidak bergantung pada timer yang tertunda. `expiresAt` yang tidak terbaca diperlakukan kedaluwarsa (gagal tertutup, sejalan dengan `confirm` pada PR #11); tanpa `expiresAt` komponen tidak mengklaim apa pun. Pembagian tanggung jawab: komponen hanya pengaman tampilan, layanan tetap otoritas kedaluwarsa dan menolak commit.
 - Retry mempertahankan idempotency key: kunci dimiliki pemanggil (ada pada state `unknown`); komponen tidak membuat atau mengganti kunci.
 - Aksesibilitas: daftar bernomor dengan `aria-current="step"`, tahap berikutnya bukan kontrol interaktif, fokus pindah ke judul tahap setelah tahap berubah, teks "Tahap n dari 4 — Nama" selalu terbaca.
 
 ## 4. Kompatibilitas dengan PR #11
 
-`ImportState` dari `features/inbound/reference-import.ts` (PR #11) dapat diberikan langsung ke `ImportWizard`. Pengujian menyalin bentuk tipe tersebut dan memeriksa penugasannya pada saat typecheck, sehingga perubahan bentuk di PR #11 akan terdeteksi. Penambahan pada sisi SRS-53 bersifat opsional (`rowCount`, `source`, props `importLabel`, `accept`, `maxSizeBytes`) atau berupa status baru (`invalid`, `cancelling`, `cancelled`, `cancel-unknown`) dan event baru (`back`, `revalidate`, `checkStatus`, `restart`). Event `selectFile`, `changeContext`, `submit`, `confirm`, dan `cancel` mengikuti `ImportWizardEvents` pada PR #11.
+Kompatibilitas diperiksa secara manual terhadap PR #11 (draft) pada head `757f12c9c73141b6a54cac90d391b6f6cf4db221` (branch `feature/SRS-16-inbound-reference-ui`): bentuk `ImportContext`, `Preview`, `CommitReceipt`, dan union `ImportState` pada `reference-import.ts`, serta `ImportWizardState` dan `ImportWizardEvents` pada `import-wizard-contract.ts`, sama dengan yang diasumsikan tipe lokal ini. Pemeriksaan itu hanya berlaku untuk SHA tersebut.
+
+Batas yang perlu diketahui reviewer: pengujian `ImportWizard.spec.ts` ("state dari boundary PR #11…") memakai **salinan** definisi tipe dan tidak mengimpor tipe upstream. Karena itu perubahan di PR #11 **tidak** otomatis membuat pengujian gagal. Salinan itu hanya mengunci bahwa bentuk pada SHA di atas dapat diberikan ke `ImportWizard`. Strategi contract test otomatis (mengimpor tipe bersama) baru dapat dibuat setelah kontrak bersama disepakati dan berada di `develop`; sebelum itu tidak dibuat dependency ke branch draft.
+
+Penambahan pada sisi SRS-53 bersifat opsional (`rowCount`, `source`, props `importLabel`, `accept`, `maxSizeBytes`) atau berupa status baru (`invalid`) dan event baru (`back`, `revalidate`, `checkStatus`, `restart`). Status `cancelling`, `cancelled`, `cancel-unknown` dan event `selectFile`, `changeContext`, `submit`, `confirm`, `cancel` mengikuti PR #11 pada SHA di atas.
 
 ## 5. Keputusan yang masih PROPOSED
 
@@ -59,6 +64,7 @@ Acceptance criteria T-19 pada implementasi ini:
 | Pembacaan status batch | `Periksa Status` hanya event; belum ada endpoint `GET /imports/{batch_id}`. | Keputusan PM atas usulan backend. |
 | Bentuk metadata impor | Hanya `warehouseId` dan `mode` (sama dengan PR #11). | API-01. |
 | Pengakuan semua warning sebelum Simpan | Diterapkan sebagai kebijakan tampilan; belum disahkan. | Kontrak P-I pada §6 (warning-only dapat lanjut bila kontrak mengizinkan). |
+| Kedaluwarsa preview di sisi tampilan | Berdasarkan `expiresAt` dan jam perangkat; nilai tidak terbaca gagal tertutup. | Konfirmasi PM atas pembagian tanggung jawab komponen dan layanan, serta sumber waktu (jam perangkat vs waktu server). |
 | Pilihan mode ACTUAL pada UI | Ditampilkan; izin sebenarnya diperiksa layanan. | Matriks role/gudang. |
 
 ## 6. Verifikasi
@@ -70,9 +76,9 @@ Dijalankan pada cabang `feature/SRS-53-import-wizard` (basis `develop` pada `761
 | `npm run lint` | Lulus tanpa galat. |
 | `npm run typecheck` | Lulus (contracts, api, web). |
 | `npm run tokens:check` | Sinkron dengan `design.md` (424 token). |
-| `npm test` | 13 berkas, 158 pengujian lulus (91 sebelumnya + 67 baru). Pengujian koneksi database tercatat NOT RUN/BLOCKED karena PostgreSQL belum aktif. |
+| `npm test` | 13 berkas, 167 pengujian lulus (91 sebelumnya + 76 baru; 158 pada commit `4b022f4` sebelum perbaikan review). Pengujian koneksi database tercatat NOT RUN/BLOCKED karena PostgreSQL belum aktif. |
 | `npm run build` | Lulus. Komponen baru belum diimpor aplikasi, sehingga build hanya membuktikan tipe valid, bukan perilaku. |
-| Uji mutasi manual (8 kerusakan sengaja pada kode) | Seluruhnya terdeteksi oleh pengujian; kode dikembalikan dan 61 pengujian komponen lulus. |
+| Uji mutasi manual (8 kerusakan sengaja pada kode, ditambah 4 pada pengaman kedaluwarsa) | Seluruhnya terdeteksi oleh pengujian; kode dikembalikan dan 70 pengujian komponen lulus. |
 
 Belum dilakukan (NOT RUN): pengujian pembaca layar dan kontras warna manual, pengujian di peramban nyata dan layar sempit (aturan tampilan seluler hanya diperiksa lewat gaya, bukan render), integrasi dengan halaman dan router (menunggu SRS-46), integrasi API nyata, serta pengujian PostgreSQL.
 
