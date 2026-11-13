@@ -82,33 +82,72 @@ Kode error pada `AppError` yang tersedia: `BAD_REQUEST`, `UNAUTHORIZED`, `FORBID
 
 ## 6. Verifikasi koneksi PostgreSQL
 
-Langkah yang disarankan pada lingkungan lokal:
+Bagian ini memisahkan kredensial runtime dan migrasi sesuai kesepakatan teknis SRS-44 dengan pengelola database (14 November 2026). Rancangan role, DDL privilege, dan *migration runner* pada PR #15 masih **PROPOSED dan belum merged**; isi bagian ini mencatat apa yang sudah diverifikasi pada lingkungan UJI lokal, bukan menetapkan kontrak final.
 
-```sh
-# 1. Isi DATABASE_URL pada .env lokal (jangan commit nilainya)
-# 2. Jalankan pemeriksaan koneksi
+### 6.1 Peran dan tanggung jawab
+
+| Kredensial | Role | Hak | Digunakan oleh |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | `siris_app` | `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `USAGE` sequence; `USAGE` schema `public`; **tanpa** `CREATE` | Aplikasi/runtime: layanan Express dan `npm run db:check` |
+| `DATABASE_MIGRATION_URL` | `siris_migrator` | `LOGIN`, `NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE`; pemilik database, schema `public`, dan objek migrasi | Proses migrasi dan seed manual melalui `psql` — **bukan** aplikasi |
+
+Kedua role `NOSUPERUSER`. `DATABASE_MIGRATION_URL` **tidak dibaca oleh konfigurasi aplikasi**: `apps/api/src/config/env.ts` hanya memuat `DATABASE_URL`, dan `apps/api/src/shared/db/pool.ts` hanya membuka pool dari `DATABASE_URL`. Variabel migrasi dikonsumsi oleh proses `psql`, bukan oleh Node.js. DDL tidak boleh dijalankan dengan `DATABASE_URL` runtime karena role runtime tidak memiliki hak `CREATE`.
+
+### 6.2 Urutan bootstrap
+
+1. Siapkan instance PostgreSQL 16.6 lokal (container UJI, port hanya pada loopback `127.0.0.1:55432`).
+2. Jalankan DDL role dan privilege sebagai administrator instance: `CREATE ROLE ... NOSUPERUSER`, pemilik database/schema, `REVOKE CREATE ON SCHEMA public FROM PUBLIC`, `GRANT USAGE`, dan `ALTER DEFAULT PRIVILEGES FOR ROLE siris_migrator`.
+3. Baru jalankan migrasi dan seed dengan `siris_migrator`. `ALTER DEFAULT PRIVILEGES` hanya berlaku untuk objek yang dibuat **setelah** perintah tersebut; objek yang sudah ada sebelumnya harus diberi grant eksplisit.
+4. Isi `.env` lokal (tidak di-commit) dengan `DATABASE_URL` untuk `siris_app` dan `DATABASE_MIGRATION_URL` untuk `siris_migrator`. Jangan commit `.env`, `.env.pg-uji`, connection string, atau password.
+
+### 6.3 Pemeriksaan runtime
+
+```powershell
 npm run db:check
-
-# 3. Terapkan migrasi bila database uji tersedia
-psql "$DATABASE_URL" -f database/migrations/001_initial_schema.sql
-psql "$DATABASE_URL" -f database/seeds/001_initial_seed.sql
 ```
 
-Status aktual pada pemeriksaan 12 November 2026:
+Keluaran yang diharapkan: `[SIRIS API] Koneksi PostgreSQL berhasil (<ms>ms).` dengan exit code `0`. Bila `DATABASE_URL` kosong atau koneksi gagal, script keluar dengan kode `1` dan status yang benar adalah **BLOCKED**, bukan PASS.
+
+### 6.4 Migrasi dan seed dengan role migrasi
+
+Perintah berikut menjalankan DDL sebagai `siris_migrator` tanpa menampilkan connection string (autentikasi lokal di dalam container):
+
+```powershell
+Get-Content database/migrations/001_initial_schema.sql -Raw |
+  docker exec -i siris-pg-uji psql -X -v ON_ERROR_STOP=1 -U siris_migrator -d siris_uji
+Get-Content database/seeds/001_initial_seed.sql -Raw |
+  docker exec -i siris-pg-uji psql -X -v ON_ERROR_STOP=1 -U siris_migrator -d siris_uji
+```
+
+Bila `psql` tersedia pada host:
+
+```powershell
+psql $env:DATABASE_MIGRATION_URL -v ON_ERROR_STOP=1 -f database/migrations/001_initial_schema.sql
+psql $env:DATABASE_MIGRATION_URL -v ON_ERROR_STOP=1 -f database/seeds/001_initial_seed.sql
+```
+
+`.env` dimuat oleh aplikasi melalui `dotenv`, bukan oleh shell; nilai `DATABASE_MIGRATION_URL` harus diekspor eksplisit pada sesi shell dan tidak boleh dicetak ke log atau terminal bersama.
+
+### 6.5 Status verifikasi (14 November 2026)
 
 | Aspek | Hasil | Bukti |
 | --- | --- | --- |
-| Port lokal 5432 | OPEN | Pemeriksaan TCP ke `127.0.0.1:5432`. |
-| `DATABASE_URL` pada `.env` lokal | Kosong | Pemeriksaan kunci environment tanpa mencetak nilai. |
-| `npm run db:check` | **BLOCKED** | Keluaran: `Koneksi PostgreSQL gagal: DATABASE_URL_NOT_CONFIGURED.` |
-| Migrasi dan seed PostgreSQL | **NOT RUN** | Menunggu `DATABASE_URL`, role non-superuser, dan keputusan SRS-44. |
-| Integration test database | **BLOCKED** | Test hanya memverifikasi penanganan aman saat database tidak dikonfigurasi. |
+| Instance PostgreSQL UJI | PASS | `postgres:16.6`, container `siris-pg-uji`, `127.0.0.1:55432` → `5432`. |
+| Atribut role | PASS | `siris_app` dan `siris_migrator`: `rolsuper=f`, `rolcreatedb=f`, `rolcreaterole=f`, `rolcanlogin=t`. |
+| Kepemilikan objek | PASS | Owner database `siris_uji`, schema `public`, dan 8 tabel = `siris_migrator`. |
+| Hak runtime | PASS | `has_table_privilege` SELECT/INSERT/UPDATE/DELETE = `true`; `has_schema_privilege('siris_app','public','CREATE')` = `false`; USAGE = `true`. |
+| Penolakan CREATE runtime | PASS | `CREATE TABLE` oleh `siris_app` → `ERROR: permission denied for schema public`; `to_regclass` objek probe = null. |
+| `npm run db:check` | PASS | `[SIRIS API] Koneksi PostgreSQL berhasil (80ms).` exit code `0`. |
+| Migrasi `001` + seed `001` | PASS | Exit code `0`; 8 tabel; seed UJI: `users` 3, `warehouses` 2, `user_warehouses` 3. |
+| Clean install (database kosong) | PASS | Migrasi dijalankan pada `siris_uji` yang belum memiliki tabel. |
+| Upgrade data lama (`001` lama → `003`) | **NOT RUN** | File `002`/`003` hanya ada pada PR #15 (draft); belum ada prosedur/fixture upgrade di branch ini. |
+| Integration test database | **BLOCKED** | `tests/integration/database/connection.test.ts` tetap lolos saat database tidak terhubung, sehingga bukan bukti koneksi. |
 
-Ketersediaan port bukan bukti koneksi, autentikasi, migrasi, atau isolasi ACTUAL/UJI berhasil. Klaim PASS untuk PostgreSQL memerlukan `DATABASE_URL` yang sah dan hasil `db:check` yang berhasil.
+Ketersediaan port bukan bukti koneksi, autentikasi, migrasi, atau isolasi ACTUAL/UJI berhasil. Klaim PASS untuk PostgreSQL memerlukan `DATABASE_URL` yang sah dan hasil `db:check` yang berhasil; klaim migrasi memerlukan eksekusi aktual dengan role migrasi pada database UJI.
 
 ## 7. Matriks verifikasi
 
-Perintah dijalankan pada branch `feature/SRS-43-express-service-error-contract` (commit implementasi `b6656cc`), Node.js v24.14.1 dan npm 11.11.0 (runtime lokal; CI memakai Node 22).
+Perintah dijalankan pada branch `feature/SRS-43-express-service-error-contract` (commit implementasi `b6656cc`), Node.js v24.14.1 dan npm 11.11.0 (runtime lokal; CI memakai Node 22). Matriks ini adalah snapshot pada commit `b6656cc`; bukti terbaru pada head `889270f` dicatat di §6.
 
 | Perintah | Hasil |
 | --- | --- |
@@ -117,7 +156,7 @@ Perintah dijalankan pada branch `feature/SRS-43-express-service-error-contract` 
 | `npm run build` | PASS (contracts, api, web) |
 | `npm test` | PASS — 8 file, 21 test |
 | `npx vitest run --project api` | PASS — 6 file, 18 test |
-| `npm run db:check` | BLOCKED — `DATABASE_URL_NOT_CONFIGURED` |
+| `npm run db:check` | BLOCKED pada `b6656cc`; PASS pada head `889270f` (lihat §6) |
 
 Test yang ditambahkan:
 
@@ -129,5 +168,5 @@ Test yang ditambahkan:
 
 - Kontrak wire DOC-09 masih PROPOSED; bentuk envelope `{data, meta}` pada health endpoint belum disepakati sebagai kontrak seluruh endpoint.
 - Autentikasi, sesi, CSRF, dan pemeriksaan role/gudang belum diterapkan; lihat SRS-47 dan SRS-48.
-- `npm run db:check` belum dijalankan terhadap PostgreSQL nyata.
+- `npm run db:check` PASS terhadap PostgreSQL 16.6 UJI lokal (lihat §6); CI pada commit final dan review ulang masih diperlukan.
 - Review independen, CI pada commit final, dan merge PR belum dilakukan.
