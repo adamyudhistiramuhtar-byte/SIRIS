@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, useId, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import AlertBanner from '../primitives/AlertBanner.vue';
 import BaseButton from '../primitives/BaseButton.vue';
 import BaseInput from '../primitives/BaseInput.vue';
@@ -21,6 +21,9 @@ import {
 // Komponen ini murni presentasi: state masuk lewat props, niat pengguna keluar lewat event.
 // Validasi, otorisasi, idempotency key, dan perubahan batch tetap pada layanan.
 // - Commit terkunci sampai ada preview sah dan semua warning diakui.
+// - Preview yang `expiresAt`-nya sudah lewat diperlakukan kedaluwarsa oleh komponen ini
+//   (termasuk saat waktu habis ketika layar terbuka): Simpan hilang dan `confirm` tidak
+//   dikirim. Ini hanya pengaman tampilan; layanan tetap otoritas atas kedaluwarsa.
 // - INVALID adalah hasil validasi yang sah: tampil sebagai laporan temuan, bukan galat.
 // - Hasil tidak pasti (commit/pembatalan/persiapan) tidak pernah ditampilkan sebagai sukses.
 // - Status yang belum dikenal mengunci semua tindakan (status baru dapat ditambah pada
@@ -122,6 +125,43 @@ watch(
     acknowledged.value = [];
   },
 );
+
+// --- Kedaluwarsa preview (pengaman tampilan; layanan tetap otoritas) ---
+const MAX_TIMER_MS = 2 ** 31 - 1;
+const now = ref(Date.now());
+let expiryTimer: ReturnType<typeof setTimeout> | undefined;
+
+// undefined = layanan tidak mengirim expiresAt; NaN = nilai tidak dapat dibaca.
+function expiryTime(value: string | undefined): number | undefined {
+  return value === undefined ? undefined : Date.parse(value);
+}
+function isPastExpiry(value: string | undefined, at: number): boolean {
+  const time = expiryTime(value);
+  if (time === undefined) return false;
+  // Nilai yang tidak dapat dibaca tidak dapat dibuktikan masih berlaku: gagal tertutup.
+  return !Number.isFinite(time) || at >= time;
+}
+
+function clearExpiryTimer() {
+  if (expiryTimer !== undefined) clearTimeout(expiryTimer);
+  expiryTimer = undefined;
+}
+function scheduleExpiry() {
+  clearExpiryTimer();
+  now.value = Date.now();
+  const time = expiryTime(preview.value?.expiresAt);
+  if (time === undefined || !Number.isFinite(time) || now.value >= time) return;
+  expiryTimer = setTimeout(scheduleExpiry, Math.min(time - now.value, MAX_TIMER_MS));
+}
+watch(() => (preview.value ? `${preview.value.batchId}:${preview.value.expiresAt}` : ''), scheduleExpiry, {
+  immediate: true,
+});
+onBeforeUnmount(clearExpiryTimer);
+
+const previewExpired = computed(
+  () => preview.value !== null && isPastExpiry(preview.value.expiresAt, now.value),
+);
+
 const allAcknowledged = computed(() =>
   warnings.value.every((warning) => acknowledged.value.includes(warningId(warning))),
 );
@@ -136,6 +176,11 @@ function setAcknowledged(id: string, checked: boolean) {
 
 function onConfirm() {
   if (phase.value !== 'preview' || !allAcknowledged.value) return;
+  // Periksa ulang dengan waktu saat klik; jangan bergantung pada timer yang mungkin tertunda.
+  if (previewExpired.value || isPastExpiry(preview.value?.expiresAt, Date.now())) {
+    now.value = Date.now();
+    return;
+  }
   emit('confirm', warnings.value.map(warningId));
 }
 
@@ -321,12 +366,12 @@ const batchId = computed(() => {
 
       <!-- Tahap 3: Preview -->
       <template v-else-if="step === 3">
-        <template v-if="state.phase === 'expired'">
+        <template v-if="state.phase === 'expired' || (state.phase === 'preview' && previewExpired)">
           <AlertBanner
             variant="warning"
             title="Preview kedaluwarsa"
           >
-            Batch {{ state.batchId }} perlu divalidasi ulang sebelum dapat disimpan.
+            Batch {{ batchId }} perlu divalidasi ulang sebelum dapat disimpan.
           </AlertBanner>
           <div class="siris-wizard__actions">
             <BaseButton @click="emit('revalidate')">
