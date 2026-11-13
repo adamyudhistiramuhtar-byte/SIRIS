@@ -22,7 +22,10 @@ async function gracefulShutdown(signal: string): Promise<void> {
       await closeDbPool();
       console.log('[SIRIS API] Koneksi database ditutup.');
     } catch (err) {
-      console.error('[SIRIS API] Gagal menutup database pool:', err);
+      // Log aman: hanya nama error, tanpa pesan mentah driver, SQL, atau stack.
+      console.error(
+        `[SIRIS API] Gagal menutup database pool: ${err instanceof Error ? err.name : 'UnknownError'}`,
+      );
     }
     process.exit(0);
   });

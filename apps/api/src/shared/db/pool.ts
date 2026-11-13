@@ -5,6 +5,12 @@ const { Pool } = pg;
 
 let pool: pg.Pool | null = null;
 
+export interface DatabaseConnectionStatus {
+  connected: boolean;
+  latency_ms?: number;
+  error?: string;
+}
+
 export function getDbPool(): pg.Pool {
   if (!pool) {
     if (!env.DATABASE_URL) {
@@ -19,14 +25,27 @@ export function getDbPool(): pg.Pool {
     });
 
     pool.on('error', (err) => {
-      console.error('Unexpected error on idle PostgreSQL client:', err);
+      // Hanya kode aman yang dicatat; pesan driver tidak dipublikasikan.
+      console.error(`[SIRIS API] PostgreSQL idle client error: ${toSafeDatabaseErrorCode(err)}`);
     });
   }
 
   return pool;
 }
 
-export async function checkDatabaseConnection(): Promise<{ connected: boolean; latency_ms?: number; error?: string }> {
+/**
+ * Mengubah error driver menjadi kode aman. Pesan mentah driver tidak
+ * dikembalikan karena dapat memuat host, pengguna, SQL, atau detail internal.
+ */
+function toSafeDatabaseErrorCode(err: unknown): string {
+  const code = (err as { code?: unknown } | null)?.code;
+  if (typeof code === 'string' && /^[A-Za-z0-9_]+$/.test(code)) {
+    return code.toUpperCase();
+  }
+  return 'DATABASE_CONNECTION_FAILED';
+}
+
+export async function checkDatabaseConnection(): Promise<DatabaseConnectionStatus> {
   if (!env.DATABASE_URL) {
     return { connected: false, error: 'DATABASE_URL_NOT_CONFIGURED' };
   }
@@ -42,10 +61,7 @@ export async function checkDatabaseConnection(): Promise<{ connected: boolean; l
       client.release();
     }
   } catch (err) {
-    return {
-      connected: false,
-      error: err instanceof Error ? err.message : 'UNKNOWN_DATABASE_ERROR',
-    };
+    return { connected: false, error: toSafeDatabaseErrorCode(err) };
   }
 }
 
