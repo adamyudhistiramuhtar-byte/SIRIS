@@ -39,7 +39,7 @@ Migrasi PostgreSQL menggunakan file SQL standar yang dieksekusi secara berurutan
 3. **Keterlacakan**: Penamaan file menggunakan format penomoran 3 digit dan dijalankan berurutan:
    - `001_initial_schema.sql` — identitas, gudang, cutoff (ditahan, lihat F-03), staging dan idempotency awal. Isi sama dengan versi `develop`.
    - `002_reference_masters.sql` — `materials` dan `suppliers` terpisah menurut mode ACTUAL/UJI.
-   - `003_import_batches_kind.sql` — upgrade `import_batches.import_type` ke `kind` (keputusan F-01). Atomik dan fail-closed: kondisi lama di-upgrade, kondisi sudah ter-upgrade tidak diubah, kondisi lain dihentikan tanpa perubahan. Tidak men-drop tabel.
+   - `003_import_batches_kind.sql` — upgrade `import_batches.import_type` ke `kind` (keputusan F-01). Atomik dan fail-closed: kondisi lama di-upgrade, kondisi sudah ter-upgrade tidak diubah, kondisi lain dihentikan tanpa perubahan. Kondisi lama/ter-upgrade hanya diterima bila kolomnya `VARCHAR(32) NOT NULL` dengan tepat satu CHECK satu-kolom yang tervalidasi dan definisinya sama dengan acuan; CHECK gabungan atau tambahan menghentikan migrasi. Tidak men-drop tabel.
 4. **Inventarisasi sebelum upgrade.** Proyek belum memiliki tabel pencatat versi migrasi (runner masih PROPOSED), sehingga sebelum menjalankan migrasi baru pada database yang sudah berisi, periksa kondisi schema dan data terlebih dahulu dengan role migrasi:
    ```sql
    -- Kolom jenis impor yang ada (import_type = schema lama, kind = schema baru)
@@ -64,7 +64,7 @@ Migrasi PostgreSQL menggunakan file SQL standar yang dieksekusi secara berurutan
      docker exec -i siris-pg-uji psql -X -v ON_ERROR_STOP=1 -U siris_migrator -d siris_uji < "$f"
    done
    ```
-6. **Pengujian migrasi**: `npm run test:integration` menjalankan `tests/integration/database/migrations.test.ts`. Setiap skenario berjalan pada schema sementara di dalam transaksi yang di-ROLLBACK: instalasi bersih dan reapply, upgrade dari 001 lama berisi data (pemetaan nilai, FK, reapply), serta penolakan kondisi parsial/tidak dikenal tanpa perubahan data. Tanpa `DATABASE_MIGRATION_URL` test ini berstatus *skipped*, bukan PASS.
+6. **Pengujian migrasi**: `npm run test:integration` menjalankan `tests/integration/database/migrations.test.ts`. Setiap skenario berjalan pada schema sementara di dalam transaksi yang di-ROLLBACK: instalasi bersih dan reapply, upgrade dari 001 lama berisi data (pemetaan nilai, FK, reapply), serta penolakan kondisi parsial/tidak dikenal (termasuk CHECK `kind` yang salah dan CHECK gabungan pada schema lama) tanpa perubahan data. Satu skenario penolakan dijalankan tanpa transaksi luar (autocommit) pada schema `srs44_commit_*` yang dihapus di akhir test. Tanpa `DATABASE_MIGRATION_URL` test ini berstatus *skipped*, bukan PASS.
 
 ## 4. Strategi Seed (Data Uji)
 

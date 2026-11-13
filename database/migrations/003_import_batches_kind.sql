@@ -10,6 +10,15 @@
 --   * Kondisi lain/parsial/tidak dikenal       -> gagal (fail-closed), tidak ada perubahan.
 -- Pemetaan nilai: INBOUND_REFERENCE -> EXPECTED, SUPPLIER_COMMITMENT -> COMMITMENT,
 -- PHYSICAL_COUNT -> COUNT; RECEIVING dan STOCK tetap.
+--
+-- Kondisi lama atau sudah ter-upgrade hanya diterima bila bentuk kolomnya persis
+-- dikenal: tipe VARCHAR(32), NOT NULL, dan tepat satu CHECK yang menyebut kolom itu.
+-- CHECK tersebut harus hanya menyebut kolom itu (bukan CHECK gabungan), sudah
+-- tervalidasi, dan definisinya sama dengan CHECK acuan. Definisi acuan dibuat dari
+-- tabel sementara (pg_temp) pada server yang sama, sehingga format
+-- pg_get_constraintdef tidak bergantung pada versi PostgreSQL. Bentuk lain
+-- dihentikan tanpa perubahan; constraint lain pada tabel tidak disentuh.
+--
 -- Seluruh isi berada dalam satu blok DO sehingga berjalan atomik: bila satu
 -- langkah gagal, seluruh perubahan dibatalkan. Tabel tidak di-drop.
 -- ============================================================================
@@ -17,10 +26,14 @@
 DO $migration$
 DECLARE
     v_table regclass := to_regclass('import_batches');
+    v_reference regclass;
     v_has_old boolean;
     v_has_kind boolean;
-    v_old_checks text[];
-    v_kind_checks integer;
+    v_column text;
+    v_column_ok boolean;
+    v_checks bigint;
+    v_checks_ok boolean;
+    v_check_name text;
     v_unknown bigint;
     v_before jsonb;
     v_after jsonb;
@@ -42,33 +55,76 @@ BEGIN
     v_has_old := coalesce(v_has_old, false);
     v_has_kind := coalesce(v_has_kind, false);
 
-    -- ---------------------------------------------------------------- sudah ter-upgrade
-    IF v_has_kind AND NOT v_has_old THEN
-        SELECT count(*) INTO v_unknown
-        FROM import_batches
-        WHERE kind NOT IN ('EXPECTED', 'COMMITMENT', 'RECEIVING', 'STOCK', 'COUNT');
-
-        SELECT count(*) INTO v_kind_checks
-        FROM pg_constraint c
-        JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY (c.conkey)
-        WHERE c.conrelid = v_table AND c.contype = 'c' AND a.attname = 'kind';
-
-        IF v_unknown > 0 OR v_kind_checks <> 1 THEN
-            RAISE EXCEPTION 'SRS-44/003: kolom kind ada tetapi kondisinya tidak dikenal (nilai di luar kontrak: %, jumlah CHECK pada kind: %); periksa manual.',
-                v_unknown, v_kind_checks;
-        END IF;
-
-        RAISE NOTICE 'SRS-44/003: import_batches sudah memakai kind; tidak ada perubahan.';
-        RETURN;
-    END IF;
-
     -- ---------------------------------------------------------------- kondisi tidak dikenal
-    IF NOT (v_has_old AND NOT v_has_kind) THEN
+    -- Kedua kolom ada (parsial) atau keduanya tidak ada.
+    IF v_has_old = v_has_kind THEN
         RAISE EXCEPTION 'SRS-44/003: kondisi import_batches tidak dikenal (import_type=%, kind=%); upgrade dihentikan tanpa perubahan.',
             v_has_old, v_has_kind;
     END IF;
 
+    v_column := CASE WHEN v_has_kind THEN 'kind' ELSE 'import_type' END;
+
+    -- ---------------------------------------------------------------- validasi bentuk kolom
+    -- Acuan: definisi kolom lama (001) dan kolom baru (003) yang dikenal.
+    CREATE TEMP TABLE srs44_003_reference (
+        import_type VARCHAR(32) NOT NULL
+            CHECK (import_type IN ('INBOUND_REFERENCE', 'SUPPLIER_COMMITMENT', 'RECEIVING', 'STOCK', 'PHYSICAL_COUNT')),
+        kind VARCHAR(32) NOT NULL
+            CHECK (kind IN ('EXPECTED', 'COMMITMENT', 'RECEIVING', 'STOCK', 'COUNT'))
+    );
+    v_reference := to_regclass('pg_temp.srs44_003_reference');
+
+    WITH ref_col AS (
+        SELECT attnum, atttypid, atttypmod
+        FROM pg_attribute
+        WHERE attrelid = v_reference AND attname = v_column
+    ),
+    act_col AS (
+        SELECT attnum, atttypid, atttypmod, attnotnull
+        FROM pg_attribute
+        WHERE attrelid = v_table AND attname = v_column AND NOT attisdropped
+    ),
+    ref_check AS (
+        SELECT pg_get_constraintdef(c.oid) AS def
+        FROM pg_constraint c, ref_col r
+        WHERE c.conrelid = v_reference AND c.contype = 'c' AND c.conkey = ARRAY[r.attnum]
+    ),
+    act_checks AS (
+        SELECT c.conname, c.conkey, c.convalidated, pg_get_constraintdef(c.oid) AS def
+        FROM pg_constraint c, act_col a
+        WHERE c.conrelid = v_table AND c.contype = 'c' AND a.attnum = ANY (c.conkey)
+    )
+    SELECT
+        (SELECT a.atttypid = r.atttypid AND a.atttypmod = r.atttypmod AND a.attnotnull
+         FROM act_col a, ref_col r),
+        (SELECT count(*) FROM act_checks),
+        (SELECT bool_and(ac.conkey = ARRAY[a.attnum]
+                         AND ac.convalidated
+                         AND ac.def = (SELECT def FROM ref_check))
+         FROM act_checks ac, act_col a),
+        (SELECT min(conname) FROM act_checks)
+    INTO v_column_ok, v_checks, v_checks_ok, v_check_name;
+
+    DROP TABLE pg_temp.srs44_003_reference;
+
+    IF NOT coalesce(v_column_ok, false) THEN
+        RAISE EXCEPTION 'SRS-44/003: kolom % bukan VARCHAR(32) NOT NULL seperti yang dikenal; upgrade dihentikan tanpa perubahan.',
+            v_column;
+    END IF;
+
+    IF v_checks <> 1 OR NOT coalesce(v_checks_ok, false) THEN
+        RAISE EXCEPTION 'SRS-44/003: CHECK pada kolom % tidak dikenal (jumlah: %; harus tepat satu, hanya menyebut kolom ini, tervalidasi, dan sesuai definisi acuan); upgrade dihentikan tanpa perubahan.',
+            v_column, v_checks;
+    END IF;
+
+    -- ---------------------------------------------------------------- sudah ter-upgrade
+    IF v_has_kind THEN
+        RAISE NOTICE 'SRS-44/003: import_batches sudah memakai kind dengan bentuk yang dikenal; tidak ada perubahan.';
+        RETURN;
+    END IF;
+
     -- ---------------------------------------------------------------- upgrade dari versi lama
+    -- Lapisan pengaman tambahan; CHECK tervalidasi seharusnya sudah menjamin ini.
     SELECT count(*) INTO v_unknown
     FROM import_batches
     WHERE import_type NOT IN ('INBOUND_REFERENCE', 'SUPPLIER_COMMITMENT', 'RECEIVING', 'STOCK', 'PHYSICAL_COUNT');
@@ -77,22 +133,13 @@ BEGIN
         RAISE EXCEPTION 'SRS-44/003: % baris import_type bernilai tidak dikenal; upgrade dihentikan tanpa perubahan.', v_unknown;
     END IF;
 
-    SELECT coalesce(array_agg(c.conname ORDER BY c.conname), ARRAY[]::text[]) INTO v_old_checks
-    FROM pg_constraint c
-    JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY (c.conkey)
-    WHERE c.conrelid = v_table AND c.contype = 'c' AND a.attname = 'import_type';
-
-    IF cardinality(v_old_checks) <> 1 THEN
-        RAISE EXCEPTION 'SRS-44/003: diharapkan tepat satu CHECK pada import_type, ditemukan %; upgrade dihentikan tanpa perubahan.',
-            cardinality(v_old_checks);
-    END IF;
-
     -- Inventarisasi sebelum perubahan (jumlah baris per nilai lama).
     SELECT coalesce(jsonb_object_agg(import_type, total), '{}'::jsonb) INTO v_before
     FROM (SELECT import_type, count(*) AS total FROM import_batches GROUP BY import_type) s;
     RAISE NOTICE 'SRS-44/003: inventaris sebelum upgrade: %', v_before;
 
-    EXECUTE format('ALTER TABLE import_batches DROP CONSTRAINT %I', v_old_checks[1]);
+    -- Hanya CHECK lama yang sudah diverifikasi persis yang di-drop.
+    EXECUTE format('ALTER TABLE import_batches DROP CONSTRAINT %I', v_check_name);
     ALTER TABLE import_batches RENAME COLUMN import_type TO kind;
 
     UPDATE import_batches

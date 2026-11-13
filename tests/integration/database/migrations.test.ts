@@ -23,6 +23,31 @@ const LEGACY_TO_NEW: Record<string, string> = {
   PHYSICAL_COUNT: 'COUNT',
 };
 const UJI_WAREHOUSE = '00000000-0000-0000-0000-000000000001';
+const KIND_CHECK = "CHECK (kind IN ('EXPECTED', 'COMMITMENT', 'RECEIVING', 'STOCK', 'COUNT'))";
+const LEGACY_VALUES = "('INBOUND_REFERENCE', 'SUPPLIER_COMMITMENT', 'RECEIVING', 'STOCK', 'PHYSICAL_COUNT')";
+
+/**
+ * Tabel yang sudah memakai kind tetapi bentuknya tidak dikenal. Versi 003 sebelumnya
+ * hanya menghitung CHECK pada kind sehingga sebagian bentuk ini lolos sebagai "sudah ter-upgrade".
+ */
+const WRONG_KIND_SHAPES: Record<string, string[]> = {
+  "kind TEXT dengan CHECK (kind <> '') (contoh review)": [
+    "CREATE TABLE import_batches (id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), kind text NOT NULL CHECK (kind <> ''))",
+  ],
+  "kind VARCHAR(32) dengan CHECK (kind <> '')": [
+    "CREATE TABLE import_batches (id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), kind varchar(32) NOT NULL CHECK (kind <> ''))",
+  ],
+  'CHECK kind benar tetapi belum tervalidasi (NOT VALID)': [
+    'CREATE TABLE import_batches (id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), kind varchar(32) NOT NULL)',
+    `ALTER TABLE import_batches ADD CONSTRAINT ck_import_batches_kind ${KIND_CHECK} NOT VALID`,
+  ],
+  'kolom kind boleh NULL': [
+    `CREATE TABLE import_batches (id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), kind varchar(32) ${KIND_CHECK})`,
+  ],
+  'CHECK tambahan pada kind': [
+    `CREATE TABLE import_batches (id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), kind varchar(32) NOT NULL ${KIND_CHECK} CHECK (kind <> 'STOCK'))`,
+  ],
+};
 
 function sqlFileNames(folder: 'migrations' | 'seeds'): string[] {
   return readdirSync(`${databaseDir}${folder}`)
@@ -77,6 +102,40 @@ describe.skipIf(!migrationUrl)('SRS-44 migrasi database', () => {
     } finally {
       await client.query('ROLLBACK');
     }
+  }
+
+  /**
+   * Seperti isolated(), tetapi tanpa transaksi luar maupun savepoint: setiap pernyataan
+   * di-commit seperti `psql -f`. Dipakai untuk membuktikan bahwa penolakan 003 tidak
+   * meninggalkan perubahan apa pun. Schema sementara dihapus di akhir skenario.
+   */
+  async function committed(scenario: () => Promise<void>): Promise<void> {
+    schemaCounter += 1;
+    const schema = `srs44_commit_${process.pid}_${schemaCounter}`;
+    await client.query(`CREATE SCHEMA ${schema}`);
+    try {
+      await client.query(`SET search_path TO ${schema}, public`);
+      await scenario();
+    } finally {
+      await client.query('RESET search_path');
+      await client.query(`DROP SCHEMA ${schema} CASCADE`);
+    }
+  }
+
+  /** Bentuk import_batches yang dapat diamati: kolom, seluruh constraint, dan isi baris. */
+  async function importBatchesState(): Promise<unknown> {
+    const { rows: tableColumns } = await client.query(
+      `SELECT attname, format_type(atttypid, atttypmod) AS type, attnotnull
+       FROM pg_attribute
+       WHERE attrelid = to_regclass('import_batches') AND attnum > 0 AND NOT attisdropped
+       ORDER BY attnum`,
+    );
+    const { rows: constraints } = await client.query(
+      `SELECT conname, contype, convalidated, pg_get_constraintdef(oid) AS definition
+       FROM pg_constraint WHERE conrelid = to_regclass('import_batches') ORDER BY conname`,
+    );
+    const { rows: data } = await client.query('SELECT to_jsonb(b) AS row FROM import_batches b ORDER BY b.id');
+    return { tableColumns, constraints, data };
   }
 
   async function insertLegacyBatches(): Promise<Map<string, string>> {
@@ -266,6 +325,105 @@ describe.skipIf(!migrationUrl)('SRS-44 migrasi database', () => {
         );
         await expectSqlState(client, sql('migrations', '003_import_batches_kind.sql'), 'P0001');
       });
+    });
+
+    it('menolak kind dengan CHECK yang salah, tipe/nullability berbeda, atau CHECK belum tervalidasi', async () => {
+      for (const [shape, statements] of Object.entries(WRONG_KIND_SHAPES)) {
+        await isolated(async () => {
+          for (const statement of statements) await client.query(statement);
+          await client.query("INSERT INTO import_batches (kind) VALUES ('EXPECTED')");
+          await expectSqlState(client, sql('migrations', '003_import_batches_kind.sql'), 'P0001').catch(
+            (error: Error) => {
+              throw new Error(`${shape}: ${error.message}`);
+            },
+          );
+        });
+      }
+    });
+
+    it('menolak CHECK gabungan pada import_type di schema lama dan mempertahankan aturan kolom lain', async () => {
+      await isolated(async () => {
+        await client.query(sql('migrations', '001_initial_schema.sql'));
+        await client.query(sql('seeds', '001_initial_seed.sql'));
+        const legacy = await insertLegacyBatches();
+        await client.query(
+          `ALTER TABLE import_batches
+             DROP CONSTRAINT import_batches_import_type_check,
+             ADD CONSTRAINT ck_import_batches_type_and_size
+               CHECK (import_type IN ${LEGACY_VALUES} AND file_size_bytes > 0)`,
+        );
+
+        await expectSqlState(client, sql('migrations', '003_import_batches_kind.sql'), 'P0001');
+
+        expect(await columns(client, 'import_batches')).toContain('import_type');
+        const { rows } = await client.query<{ id: string; import_type: string }>(
+          'SELECT id, import_type FROM import_batches ORDER BY id',
+        );
+        for (const row of rows) expect(row.import_type).toBe(legacy.get(row.id));
+        // Aturan file_size_bytes > 0 di dalam CHECK gabungan tetap berlaku.
+        await expectSqlState(
+          client,
+          `INSERT INTO import_batches (warehouse_id, import_type, mode, file_name, file_size_bytes)
+           VALUES ('${UJI_WAREHOUSE}', 'STOCK', 'UJI', 'UJI-size.csv', 0)`,
+          '23514',
+        );
+      });
+    });
+
+    it('penolakan tanpa savepoint (autocommit) tidak mengubah data maupun constraint', async () => {
+      const legacySchema = async () => {
+        await client.query(sql('migrations', '001_initial_schema.sql'));
+        await client.query(sql('seeds', '001_initial_seed.sql'));
+        await insertLegacyBatches();
+      };
+      const rejectedShapes: Record<string, () => Promise<void>> = {
+        'parsial: import_type dan kind sama-sama ada': async () => {
+          await legacySchema();
+          await client.query('ALTER TABLE import_batches ADD COLUMN kind text');
+        },
+        'schema lama dengan CHECK gabungan pada import_type': async () => {
+          await legacySchema();
+          await client.query(
+            `ALTER TABLE import_batches
+               DROP CONSTRAINT import_batches_import_type_check,
+               ADD CONSTRAINT ck_import_batches_type_and_size
+                 CHECK (import_type IN ${LEGACY_VALUES} AND file_size_bytes > 0)`,
+          );
+        },
+        'schema lama dengan CHECK tambahan pada import_type': async () => {
+          await legacySchema();
+          await client.query(
+            "ALTER TABLE import_batches ADD CONSTRAINT ck_extra_type CHECK (import_type <> 'STOCK' OR row_count >= 0)",
+          );
+        },
+      };
+      for (const [shape, statements] of Object.entries(WRONG_KIND_SHAPES)) {
+        rejectedShapes[shape] = async () => {
+          for (const statement of statements) await client.query(statement);
+          await client.query("INSERT INTO import_batches (kind) VALUES ('EXPECTED')");
+        };
+      }
+
+      for (const [shape, setup] of Object.entries(rejectedShapes)) {
+        await committed(async () => {
+          await setup();
+          const before = await importBatchesState();
+
+          let code: string | undefined;
+          try {
+            await client.query(sql('migrations', '003_import_batches_kind.sql'));
+          } catch (error) {
+            code = (error as { code?: string }).code;
+          }
+
+          expect(code, shape).toBe('P0001');
+          expect(await importBatchesState(), shape).toEqual(before);
+          const { rows } = await client.query<{ leftover: string | null }>(
+            "SELECT to_regclass('pg_temp.srs44_003_reference')::text AS leftover",
+          );
+          expect(rows[0].leftover, shape).toBeNull();
+        });
+      }
     });
 
     it('menolak bila tabel import_batches belum ada', async () => {
