@@ -176,3 +176,75 @@ Pengujian: tidak ada kode yang berubah; PVT-18 dan PVT-20 tetap NOT RUN. Skenari
 | --- | --- | --- | --- |
 | 0.1 | 2026-11-12 | Usulan D-01–D-06, matriks dampak, aturan penahanan kontrak, temuan F-03/F-04 | Belum ada |
 | 0.2 | 2026-11-12 | Tindak lanjut review PR #14: status belum siap merge, aturan belum dihitung bukan nol beserta skenario uji (§6), tanggal laporan dan `cutoff_id` bukan bukti basis efektif (§3) | Belum ada; seluruh usulan tetap PROPOSED |
+| 0.3 | 2026-11-13 | Lampiran A: usulan keputusan teknis OD-05 (dasar waktu cutoff, timezone, UOM material), dampak, dan data mitra yang perlu divalidasi; catatan persetujuan tabel UOM dan penomoran migrasi | Belum ada; seluruh usulan tetap PROPOSED |
+
+## Lampiran A. Usulan keputusan teknis OD-05: dasar waktu cutoff, timezone, dan UOM
+
+**Status: PROPOSED.** Tidak ada bagian lampiran ini yang berstatus ACCEPTED. OD-05 tetap **SOURCE REQUIRED** dengan pemilik Database Architect dan sumber dari mitra (§2). Lampiran ini melengkapi D-01 (§3) dan D-04 (§6), tidak menggantikannya, serta tidak menambah UC, FR, atau NFR (baseline 16 UC, 29 FR, 14 NFR tetap).
+
+Sumber tambahan: DOC-08 §4 (metadata batch, `source_timezone`) dan tabel transformasi timestamp lokal; DOC-07 kamus `stock_lines`/`count_lines`; `KONTRAK_SUMBER_SRS-37.md` (aturan UOM dan waktu event, gap G-03); `KEPUTUSAN_TEKNIS_SRS-40.md` (`APP_TIMEZONE` bukan bukti timezone data mitra).
+
+### A.1 Dasar waktu cutoff
+
+| Opsi | Uraian | Catatan |
+| --- | --- | --- |
+| A | `cutoff_at timestamptz` (DOC-07) | Memalsukan jam untuk cutoff tanggal-saja; bertentangan SRC-09 §7 |
+| **B (usulan)** | Model D-01: `effective_date`, `effective_time` NULL, `effective_precision` (`DATE`/`DATETIME`), `effective_basis`, `basis_reference` | Tanggal-saja tetap tanggal-saja; precision eksplisit; menyelesaikan CF-04 tanpa mengarang jam |
+| C | Teks mentah saja | Tidak dapat dibandingkan secara andal |
+
+**Usulan (PROPOSED):** opsi B, dengan aturan D-01: `DATE` ⇒ `effective_time IS NULL`; `DATETIME` ⇒ `effective_time` dan `source_timezone` wajib. Nilai `effective_basis` SOURCE REQUIRED; sampai tersedia diisi teks bebas yang wajib beserta `basis_reference`. Tanggal cetak laporan bukan waktu efektif, dan `cutoff_id` yang sama adalah syarat perlu, bukan syarat cukup.
+
+### A.2 Timezone
+
+| Opsi | Uraian | Catatan |
+| --- | --- | --- |
+| A | Seluruh data dianggap `Asia/Jakarta` (default `APP_TIMEZONE`) | Zona jadwal proyek bukan bukti zona data mitra |
+| **B (usulan)** | Waktu sumber disimpan `timestamptz` beserta nilai mentahnya; `source_timezone` wajib per batch bila timestamp tanpa offset; tidak ada fallback ke `APP_TIMEZONE` | Sejalan dengan DOC-08 dan kontrak SRS-37; fail-closed |
+| C | Hanya UTC, tanpa nilai mentah | Transformasi tidak tertelusur (bertentangan DOC-08) |
+
+**Usulan (PROPOSED):** opsi B.
+
+- Batch ACTUAL dengan timestamp tanpa offset dan tanpa `source_timezone` ditolak.
+- Batch UJI boleh mencantumkan `Asia/Jakarta` secara eksplisit dengan label simulasi.
+- Waktu yang dibuat server (`created_at`, `validated_at`, `committed_at`) tetap `timestamptz`; `APP_TIMEZONE` hanya untuk tampilan.
+- Cutoff dengan precision `DATE` tidak memerlukan timezone.
+
+### A.3 Satuan (UOM) material
+
+| Opsi | Uraian | Catatan |
+| --- | --- | --- |
+| A | Teks UOM apa adanya dari sumber | Variasi penulisan (`KG`/`Kg`/`kg`) memicu `UOM_MISMATCH` palsu |
+| **B (usulan)** | Daftar kode UOM kanonik dan pemetaan alias sumber ke kode kanonik yang disetujui; tanpa konversi otomatis | Sesuai DOC-08 ("kode canonical dari mapping yang disetujui") dan SRS-37 |
+| C | Konversi ke satuan dasar per material | Memerlukan faktor konversi tanpa sumber; berisiko menambah fitur |
+
+**Usulan (PROPOSED):** opsi B.
+
+- UOM yang tidak terpetakan ditolak pada validasi impor.
+- UOM berbeda antarsisi ⇒ `UOM_MISMATCH`, variance null.
+- Lebih dari satu UOM untuk material yang sama pada satu sisi ⇒ run ditolak `AMBIGUOUS_PAIR` (D-04).
+- Precision quantity tetap usulan DOC-07 `numeric(20,6)`.
+
+### A.4 Dampak
+
+| Area | Dampak |
+| --- | --- |
+| Schema | Migrasi baru mengganti `cutoff_date`/`cutoff_time NOT NULL` milik 001 (F-03) dengan kolom `effective_*` dan CHECK; 001 tidak disunting. `import_batches` mendapat `source_timezone` (kondisional) dan nilai waktu mentah disimpan. Tabel referensi UOM kanonik dan alias; kolom `uom` pada baris EXPECTED/STOCK/COUNT merujuk kode kanonik. Unique `(snapshot_id, material_id, uom)` dan `(session_id, material_id, uom)` tetap. |
+| API | Metadata impor dan cutoff (API-01, API-11/12/14/15) menampilkan precision, basis, dan `source_timezone`. Validasi impor memuat penolakan timezone tidak tersedia dan UOM tidak terpetakan; kode error perlu dicocokkan dengan katalog DOC-08 dan, bila belum ada, memerlukan persetujuan kontrak API. `CUTOFF_MISMATCH`, `UOM_MISMATCH`, dan `AMBIGUOUS_PAIR` sudah tersedia. |
+| Tes | PVT-18; batas `DATE` vs `DATETIME` pada CHECK precision; timestamp tanpa offset ditolak bila `source_timezone` kosong, tanpa fallback; pemetaan alias UOM dan penolakan UOM tidak terpetakan; `UOM_MISMATCH` dengan variance null; `AMBIGUOUS_PAIR`; tes migrasi upgrade-aman mengikuti pola migrasi 003 (PR #15). |
+
+### A.5 Catatan persetujuan dan ketergantungan
+
+- **Tabel UOM kanonik dan tabel alias adalah usulan baru.** Keduanya sejalan dengan DOC-08, tetapi belum ada di DOC-07 maupun migrasi mana pun, sehingga **memerlukan persetujuan Adam** (PM & Technical Lead) sebelum masuk rancangan schema. Tanpa persetujuan, tabel ini tidak dibuat dan tidak dianggap bagian ruang lingkup.
+- **Penomoran migrasi (004 atau seterusnya) belum ditetapkan.** Nomor baru ditentukan setelah [PR #15](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/15) (SRS-44, saat ini berisi migrasi 001–003) merged, agar tidak terjadi bentrok urutan.
+
+### A.6 Data mitra yang perlu divalidasi
+
+| No. | Yang perlu divalidasi | Untuk keputusan |
+| --- | --- | --- |
+| 1 | Sampel ekspor Erasoft STOCK dan COUNT: cutoff tanggal-saja atau tanggal dan jam; dasar cutoff (akhir hari, waktu cetak, tutup buku); dokumen yang dapat menjadi `basis_reference` | A.1 |
+| 2 | Zona waktu server Erasoft dan lokasi gudang (WIB tidak diasumsikan); ada atau tidaknya offset pada timestamp ekspor | A.2 |
+| 3 | Daftar UOM yang dipakai Erasoft beserta variasi penulisannya; pihak yang menyetujui daftar kanonik; ada atau tidaknya material dengan lebih dari satu UOM | A.3 |
+| 4 | Locale angka (koma/titik desimal) dan jumlah desimal quantity (G-03) | A.3 |
+| 5 | Bagian OD-05 di luar lampiran ini: kebijakan saldo negatif, sheet/header, dan key bisnis per jenis file | Di luar lampiran |
+
+Sampai butir 1–4 tervalidasi, implementasi cutoff ACTUAL tetap ditahan (CF-04, F-03, aturan §9). Pengujian UJI hanya memakai fixture berlabel simulasi. Lampiran ini tidak mengubah kode; tidak ada pengujian yang dijalankan.
