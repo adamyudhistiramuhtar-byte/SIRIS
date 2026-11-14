@@ -98,7 +98,7 @@ Kedua role `NOSUPERUSER`. `DATABASE_MIGRATION_URL` **tidak dibaca oleh konfigura
 1. Siapkan instance PostgreSQL 16.6 lokal (container UJI, port hanya pada loopback `127.0.0.1:55432`).
 2. Jalankan DDL role dan privilege sebagai administrator instance: `CREATE ROLE ... NOSUPERUSER`, pemilik database/schema, `REVOKE CREATE ON SCHEMA public FROM PUBLIC`, `GRANT USAGE`, dan `ALTER DEFAULT PRIVILEGES FOR ROLE siris_migrator`.
 3. Baru jalankan migrasi dan seed dengan `siris_migrator`. `ALTER DEFAULT PRIVILEGES` hanya berlaku untuk objek yang dibuat **setelah** perintah tersebut; objek yang sudah ada sebelumnya harus diberi grant eksplisit.
-4. Isi `.env` lokal (tidak di-commit) dengan `DATABASE_URL` untuk `siris_app` dan `DATABASE_MIGRATION_URL` untuk `siris_migrator`. Jangan commit `.env`, `.env.pg-uji`, connection string, atau password.
+4. Simpan nilai lokal (tidak di-commit) untuk `DATABASE_URL` (`siris_app`) dan `DATABASE_MIGRATION_URL` (`siris_migrator`). Aplikasi hanya membaca `DATABASE_URL`; `DATABASE_MIGRATION_URL` diekspor eksplisit pada sesi `psql` dan tidak dibaca oleh kode Node.js. Jangan commit `.env`, `.env.pg-uji`, connection string, atau password.
 
 ### 6.3 Pemeriksaan runtime
 
@@ -128,26 +128,33 @@ psql $env:DATABASE_MIGRATION_URL -v ON_ERROR_STOP=1 -f database/seeds/001_initia
 
 `.env` dimuat oleh aplikasi melalui `dotenv`, bukan oleh shell; nilai `DATABASE_MIGRATION_URL` harus diekspor eksplisit pada sesi shell dan tidak boleh dicetak ke log atau terminal bersama.
 
-### 6.5 Status verifikasi (14 November 2026)
+### 6.5 Status verifikasi
+
+Seluruh baris di bawah diuji pada HEAD `50d075b` (commit `Selaraskan panduan koneksi PostgreSQL dengan pemisahan role SRS-44`, 14 November 2026 00:34 WIB), bukan pada `889270f`. Waktu dicatat dalam zona WIB (+07:00) berdasarkan jam lingkungan pengujian, bukan perkiraan.
 
 | Aspek | Hasil | Bukti |
 | --- | --- | --- |
 | Instance PostgreSQL UJI | PASS | `postgres:16.6`, container `siris-pg-uji`, `127.0.0.1:55432` → `5432`. |
-| Atribut role | PASS | `siris_app` dan `siris_migrator`: `rolsuper=f`, `rolcreatedb=f`, `rolcreaterole=f`, `rolcanlogin=t`. |
-| Kepemilikan objek | PASS | Owner database `siris_uji`, schema `public`, dan 8 tabel = `siris_migrator`. |
+| Atribut role | PASS | Diperiksa 14 Nov 2026 20:02 WIB: `siris_app` dan `siris_migrator` `rolsuper=f`, `rolcreatedb=f`, `rolcreaterole=f`, `rolcanlogin=t`. |
+| Kepemilikan objek | PASS | 14 Nov 2026 20:02 WIB: owner database `siris_uji`, schema `public`, dan 8 tabel = `siris_migrator`. |
 | Hak runtime | PASS | `has_table_privilege` SELECT/INSERT/UPDATE/DELETE = `true`; `has_schema_privilege('siris_app','public','CREATE')` = `false`; USAGE = `true`. |
-| Penolakan CREATE runtime | PASS | `CREATE TABLE` oleh `siris_app` → `ERROR: permission denied for schema public`; `to_regclass` objek probe = null. |
-| `npm run db:check` | PASS | `[SIRIS API] Koneksi PostgreSQL berhasil (80ms).` exit code `0`. |
-| Migrasi `001` + seed `001` | PASS | Exit code `0`; 8 tabel; seed UJI: `users` 3, `warehouses` 2, `user_warehouses` 3. |
-| Clean install (database kosong) | PASS | Migrasi dijalankan pada `siris_uji` yang belum memiliki tabel. |
-| Upgrade data lama (`001` lama → `003`) | **NOT RUN** | File `002`/`003` hanya ada pada PR #15 (draft); belum ada prosedur/fixture upgrade di branch ini. |
-| Integration test database | **BLOCKED** | `tests/integration/database/connection.test.ts` tetap lolos saat database tidak terhubung, sehingga bukan bukti koneksi. |
+| Penolakan CREATE runtime | PASS | `CREATE TABLE` oleh `siris_app` → `ERROR: permission denied for schema public`, exit code `1`; `to_regclass('public.probe_denied')` = `NO_OBJECT`. |
+| `npm run db:check` | PASS | HEAD `50d075b`; 14 Nov 2026 20:02:05–20:02:11 WIB; `[SIRIS API] Koneksi PostgreSQL berhasil (427ms).`; role runtime `siris_app`; exit code `0`. |
+| Migrasi `001` + seed `001` | PASS | HEAD `50d075b`; 14 Nov 2026 20:02:19–20:02:22 WIB; keduanya exit code `0`; 8 tabel; seed UJI: `users` 3, `warehouses` 2, `user_warehouses` 3. |
+| Clean install (database kosong) | PASS (bukti awal) | Dilakukan saat penyiapan database UJI sebelum audit ini: 8 tabel terbentuk dari database kosong. Tidak diulang pada audit 14 Nov 2026 20:02 karena bersifat destruktif; log bertimestamp untuk langkah awal tidak tersimpan. |
+| Upgrade data lama (`001` lama → `003`) | **NOT RUN** | File `002`/`003` hanya ada pada PR #15 (draft); scope SRS-44. |
+| Integration test database | **BLOCKED** | `tests/integration/database/connection.test.ts` mencetak `DATABASE_URL_NOT_CONFIGURED` dan tetap lolos tanpa koneksi, sehingga bukan bukti koneksi. |
+| `npm run check:repo` lokal | **NOT RUN** | Python 3 tidak tersedia pada Windows lokal (exit code `9009`); divalidasi oleh job CI Ubuntu. |
+
+Pengukuran `db:check` sebelumnya (80 ms dan 114 ms) tidak memiliki log bertimestamp yang tersimpan, sehingga tidak dipakai sebagai bukti pada laporan ini. Angka yang berlaku adalah pengukuran 427 ms di atas; latensi dapat berbeda antarpengukuran dan bukan ambang kelulusan.
 
 Ketersediaan port bukan bukti koneksi, autentikasi, migrasi, atau isolasi ACTUAL/UJI berhasil. Klaim PASS untuk PostgreSQL memerlukan `DATABASE_URL` yang sah dan hasil `db:check` yang berhasil; klaim migrasi memerlukan eksekusi aktual dengan role migrasi pada database UJI.
 
 ## 7. Matriks verifikasi
 
-Perintah dijalankan pada branch `feature/SRS-43-express-service-error-contract` (commit implementasi `b6656cc`), Node.js v24.14.1 dan npm 11.11.0 (runtime lokal; CI memakai Node 22). Matriks ini adalah snapshot pada commit `b6656cc`; bukti terbaru pada head `889270f` dicatat di §6.
+### 7.1 Snapshot historis pada `b6656cc`
+
+Baris berikut adalah hasil pengujian saat implementasi awal (`b6656cc`), bukan HEAD PR. Angka ini dipertahankan sebagai riwayat dan tidak dipakai sebagai bukti akhir.
 
 | Perintah | Hasil |
 | --- | --- |
@@ -156,7 +163,29 @@ Perintah dijalankan pada branch `feature/SRS-43-express-service-error-contract` 
 | `npm run build` | PASS (contracts, api, web) |
 | `npm test` | PASS — 8 file, 21 test |
 | `npx vitest run --project api` | PASS — 6 file, 18 test |
-| `npm run db:check` | BLOCKED pada `b6656cc`; PASS pada head `889270f` (lihat §6) |
+| `npm run db:check` | BLOCKED pada `b6656cc` (tanpa `DATABASE_URL`) |
+
+### 7.2 Verifikasi akhir pada HEAD `50d075b` (Windows lokal)
+
+Diuji ulang pada 14 November 2026, 20:03–20:05 WIB (+07:00), branch `feature/SRS-43-express-service-error-contract`, Node.js v24.14.1 dan npm 11.11.0. CI memakai Node 22 dan dicatat terpisah pada §7.3.
+
+| Pemeriksaan | Hasil | Bukti |
+| --- | --- | --- |
+| `npm run lint` | PASS | Exit code `0`. |
+| `npm run typecheck` | PASS | Exit code `0`; contracts, api, web. |
+| `npm run build` | PASS | Exit code `0`; Vite selesai dalam 14,05 detik. |
+| `npm test` | PASS | Exit code `0`; 11 file, 103 test. |
+| `npm run check:repo` | **NOT RUN** | Python 3 tidak tersedia (exit code `9009`); divalidasi CI Ubuntu. |
+| `npm run db:check` | PASS | 427 ms, exit code `0`, role `siris_app`; rincian waktu di §6.5. |
+| Integration test database | **BLOCKED** | Mencetak `DATABASE_URL_NOT_CONFIGURED`; bukan bukti koneksi. |
+
+### 7.3 CI Ubuntu pada HEAD `50d075b`
+
+| Run | Job | Hasil |
+| --- | --- | --- |
+| `43474142812` | `repository-checks` | PASS |
+| `43474142812` | `application-ci` | PASS |
+| `43474142812` | Total | **2/2 job PASS** |
 
 Test yang ditambahkan:
 
