@@ -5,7 +5,7 @@
 | Atribut | Nilai |
 | --- | --- |
 | Dokumen | Artefak SRS-36 (T-02) |
-| Versi | 0.2.0 |
+| Versi | 0.2.1 |
 | Tanggal | 15 November 2026 |
 | Penyusun | Muhammad Luthfi Rafif (Backend Development — Member 4) |
 | Dasar keputusan | Komentar Jira SRS-36 `10071` — "PM DECISION — SRS-36: BASELINE RBAC UJI v0.1", status **ACCEPTED FOR UJI WORKING BASELINE ONLY** (15 November 2026) |
@@ -128,32 +128,40 @@ Status: **A (UJI)** untuk keberadaan empat peran dan pembagiannya, berdasarkan P
 
 Sumber: Jira SRS-36 `10071` butir A.
 
-### 5.2 Pemetaan nama PM ke jenis impor teknis
+### 5.2 Pemetaan nama PM, `kind` target, dan `import_type` legacy
 
-| Nama PM | `import_type` | Use case | Layar | Sumber |
-| --- | --- | --- | --- | --- |
-| EXPECTED | `INBOUND_REFERENCE` | UC-01 | UI-01 Impor Referensi Inbound | migration 001 `import_batches.import_type` CHECK; DOC-08 L50; design.md L216 |
-| COMMITMENT | `SUPPLIER_COMMITMENT` | UC-02 | UI-02 Impor Janji Supplier | migration 001; DOC-08 L51; design.md L217 |
-| RECEIVING | `RECEIVING` | UC-03 | UI-03 Impor Penerimaan | migration 001; DOC-08 L52; design.md L218 |
-| STOCK | `STOCK` | UC-09 | UI-09 Impor Data Stok | migration 001; DOC-08 L53; design.md L224 |
-| COUNT | `PHYSICAL_COUNT` | UC-10 | UI-10 Impor Hasil Hitung Fisik | migration 001; DOC-08 L54; design.md L225 |
+Keputusan **F-01** — **ACCEPTED** oleh Adam Yudhistira Muhtar (PM & Technical Lead), 12 November 2026 — menetapkan bahwa nama jenis impor mengikuti DOC-07/08/09 dan PR #11, yaitu `kind`: `EXPECTED`, `COMMITMENT`, `RECEIVING`, `STOCK`, `COUNT`. Nilai `INBOUND_REFERENCE`, `SUPPLIER_COMMITMENT`, dan `PHYSICAL_COUNT` pada `database/migrations/001_initial_schema.sql` (`import_batches.import_type`) adalah **nilai legacy yang tidak dipakai** sebagai nama kontrak target. Bukti: `development-docs/KONTRAK_SUMBER_SRS-37.md` §3 dan §7.1 (F-01).
 
-Tidak ada jenis impor lain yang ditambahkan. Nama PM dan nama teknis tidak boleh dipertukarkan tanpa pemetaan ini.
+| Nama PM | `kind` target (F-01) | `import_type` legacy (migrasi 001) | Use case | Layar | Sumber |
+| --- | --- | --- | --- | --- | --- |
+| EXPECTED | `EXPECTED` | `INBOUND_REFERENCE` — legacy, jangan dipakai | UC-01 | UI-01 Impor Referensi Inbound | F-01; DOC-08 L50; design.md L216 |
+| COMMITMENT | `COMMITMENT` | `SUPPLIER_COMMITMENT` — legacy, jangan dipakai | UC-02 | UI-02 Impor Janji Supplier | F-01; DOC-08 L51; design.md L217 |
+| RECEIVING | `RECEIVING` | `RECEIVING` — nilainya sama; kontrak tetap mengikuti `kind` | UC-03 | UI-03 Impor Penerimaan | F-01; DOC-08 L52; design.md L218 |
+| STOCK | `STOCK` | `STOCK` — nilainya sama; kontrak tetap mengikuti `kind` | UC-09 | UI-09 Impor Data Stok | F-01; DOC-08 L53; design.md L224 |
+| COUNT | `COUNT` | `PHYSICAL_COUNT` — legacy, jangan dipakai | UC-10 | UI-10 Impor Hasil Hitung Fisik | F-01; DOC-08 L54; design.md L225 |
+
+Tidak ada jenis impor lain yang ditambahkan. Nama PM, `kind` target, dan `import_type` legacy tidak boleh dipertukarkan tanpa pemetaan ini.
+
+**Aturan penggunaan kontrak:**
+
+1. Kontrak target adalah `kind` F-01. Penyesuaian migrasi 001 menjadi tanggung jawab **SRS-44** (Dwi); dokumen ini tidak mengubah migrasi, kode, atau dokumen sumber.
+2. **SRS-46** (layout, konteks, dan routing berbasis peran) memakai nama PM pada §5.1 dan matriks §5.3/§6.2. SRS-46 **tidak boleh** memakai `import_type` legacy sebagai nama route, parameter URL, menu, label, atau tipe data.
+3. **SRS-48** (otorisasi peran, gudang, dan objek) memakai `kind` F-01 sebagai nilai kontrak target, bukan `import_type` legacy. Selama migrasi 001 belum disesuaikan di SRS-44, pemetaan legacy hanya boleh dipakai untuk membaca data lama, bukan untuk aturan otorisasi baru.
 
 ### 5.3 Matriks lengkap role × jenis impor × aksi (UJI)
 
 `A` = ACCEPTED untuk UJI; `T` = TOLAK. Tidak ada nilai `P` pada matriks ini karena baseline UJI sudah diputuskan.
 
-| Jenis impor | Role | View | Upload | Validate | Commit | Cancel | Status | Sumber |
+| `kind` (F-01) | Role | View | Upload | Validate | Commit | Cancel | Status | Sumber |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `INBOUND_REFERENCE` (EXPECTED) | PURCHASING | A | A | A | A | A | A | PM `10071` A |
-| `INBOUND_REFERENCE` (EXPECTED) | WAREHOUSE | T | T | T | T | T | A | PM `10071` A |
-| `INBOUND_REFERENCE` (EXPECTED) | PRODUCTION | T | T | T | T | T | A | PM `10071` A |
-| `INBOUND_REFERENCE` (EXPECTED) | MANAGEMENT | T | T | T | T | T | A | PM `10071` A |
-| `SUPPLIER_COMMITMENT` (COMMITMENT) | PURCHASING | A | A | A | A | A | A | PM `10071` A |
-| `SUPPLIER_COMMITMENT` (COMMITMENT) | WAREHOUSE | T | T | T | T | T | A | PM `10071` A |
-| `SUPPLIER_COMMITMENT` (COMMITMENT) | PRODUCTION | T | T | T | T | T | A | PM `10071` A |
-| `SUPPLIER_COMMITMENT` (COMMITMENT) | MANAGEMENT | T | T | T | T | T | A | PM `10071` A |
+| `EXPECTED` | PURCHASING | A | A | A | A | A | A | PM `10071` A |
+| `EXPECTED` | WAREHOUSE | T | T | T | T | T | A | PM `10071` A |
+| `EXPECTED` | PRODUCTION | T | T | T | T | T | A | PM `10071` A |
+| `EXPECTED` | MANAGEMENT | T | T | T | T | T | A | PM `10071` A |
+| `COMMITMENT` | PURCHASING | A | A | A | A | A | A | PM `10071` A |
+| `COMMITMENT` | WAREHOUSE | T | T | T | T | T | A | PM `10071` A |
+| `COMMITMENT` | PRODUCTION | T | T | T | T | T | A | PM `10071` A |
+| `COMMITMENT` | MANAGEMENT | T | T | T | T | T | A | PM `10071` A |
 | `RECEIVING` | PURCHASING | T | T | T | T | T | A | PM `10071` A |
 | `RECEIVING` | WAREHOUSE | A | A | A | A | A | A | PM `10071` A |
 | `RECEIVING` | PRODUCTION | T | T | T | T | T | A | PM `10071` A |
@@ -162,12 +170,12 @@ Tidak ada jenis impor lain yang ditambahkan. Nama PM dan nama teknis tidak boleh
 | `STOCK` | WAREHOUSE | A | A | A | A | A | A | PM `10071` A |
 | `STOCK` | PRODUCTION | T | T | T | T | T | A | PM `10071` A |
 | `STOCK` | MANAGEMENT | T | T | T | T | T | A | PM `10071` A |
-| `PHYSICAL_COUNT` (COUNT) | PURCHASING | T | T | T | T | T | A | PM `10071` A |
-| `PHYSICAL_COUNT` (COUNT) | WAREHOUSE | A | A | A | A | A | A | PM `10071` A |
-| `PHYSICAL_COUNT` (COUNT) | PRODUCTION | T | T | T | T | T | A | PM `10071` A |
-| `PHYSICAL_COUNT` (COUNT) | MANAGEMENT | T | T | T | T | T | A | PM `10071` A |
+| `COUNT` | PURCHASING | T | T | T | T | T | A | PM `10071` A |
+| `COUNT` | WAREHOUSE | A | A | A | A | A | A | PM `10071` A |
+| `COUNT` | PRODUCTION | T | T | T | T | T | A | PM `10071` A |
+| `COUNT` | MANAGEMENT | T | T | T | T | T | A | PM `10071` A |
 
-Sumber: Jira SRS-36 `10071` butir A; pemetaan teknis §5.2.
+Sumber: Jira SRS-36 `10071` butir A; nama `kind` mengikuti keputusan F-01 dan pemetaan §5.2.
 
 Catatan: `View` pada tabel ini berarti melihat data halaman impor yang diizinkan. `View` **tidak** memberi akses ke raw file, preview batch milik pengguna lain, atau operasi mutasi (§6.3, §7).
 
@@ -197,7 +205,7 @@ Syarat 5 tidak boleh diterjemahkan menjadi daftar state final sampai state machi
 | WAREHOUSE | UC-03, UC-04, UC-05, UC-07, UC-09, UC-10, UC-11, UC-12, UC-13, UC-14, UC-15 |
 | PRODUCTION | UC-06 |
 | MANAGEMENT | UC-08, UC-13, UC-14 (proyeksi data aman) |
-| Semua role | UC-16 bukan menu; fungsi validasi internal bersama |
+| PURCHASING, WAREHOUSE | UC-16 bukan menu; fungsi validasi internal bersama, hanya melalui alur pemanggil yang berizin. PRODUCTION dan MANAGEMENT tidak memiliki alur impor berizin maupun akses validasi mandiri |
 
 Sumber: Jira SRS-36 `10071` butir B.
 
@@ -220,12 +228,14 @@ Sumber: Jira SRS-36 `10071` butir B.
 | UC-13 | UI-13 Riwayat Selisih Stok | T | A | T | A | PM butir B; design.md L228 |
 | UC-14 | UI-14 Metrik Persediaan | T | A | T | A | PM butir B; design.md L229 |
 | UC-15 | UI-15 Audit Proses | T | A | T | T | PM butir B; design.md L230 |
-| UC-16 | Fungsi validasi internal bersama (bukan menu) | A (via pemanggil) | A (via pemanggil) | A (via pemanggil) | A (via pemanggil) | PM butir B; DOC-05 L83, L99, L115, L131; design.md L232 |
+| UC-16 | Fungsi validasi internal bersama (bukan menu) | A (internal; pemanggil UC-01, UC-02) | A (internal; pemanggil UC-03, UC-09, UC-10) | T — tanpa authorized import flow | T — tanpa authorized import flow | PM butir B; DOC-05 L83, L99, L115, L131; design.md L232 |
 
 Catatan:
 
 - `A (view saja)` pada UC-11 dan UC-12 berarti halaman boleh dirancang dan diakses untuk melihat; upload/download evidence dan eksekusi rekonsiliasi **belum disetujui** (PM butir D) dan tidak boleh diaktifkan.
 - Baris UC-16 bukan izin mandiri; UC-16 hanya dipanggil oleh alur use case yang sudah berizin.
+- PRODUCTION dan MANAGEMENT **tidak memiliki authorized import flow** (PM butir A; §5.3) dan **tidak memiliki independent validation access**. Karena UC-16 hanya berjalan melalui pemanggil berizin, kedua role tersebut tidak memiliki jalur pemanggil UC-16; nilainya tetap `T` dan tidak boleh dibuka melalui menu, route, maupun endpoint validasi mandiri.
+- UC-16 tetap dipertahankan sebagai fungsi validasi internal bersama bagi pemanggil berizin (PURCHASING: UC-01/UC-02; WAREHOUSE: UC-03/UC-09/UC-10). Penegasan ini tidak mengubah keputusan PM butir B maupun nilai izin halaman lain pada §6.2.
 
 ### 6.3 Batas izin view
 
@@ -335,11 +345,11 @@ Tabel ini hanya berlaku untuk role dan aksi yang telah diizinkan pada §5–§6.
 
 | Jenis impor | PURCHASING | WAREHOUSE | PRODUCTION | MANAGEMENT |
 | --- | --- | --- | --- | --- |
-| EXPECTED (`INBOUND_REFERENCE`) | A — View, Upload, Validate, Commit, Cancel | T | T | T |
-| COMMITMENT (`SUPPLIER_COMMITMENT`) | A — View, Upload, Validate, Commit, Cancel | T | T | T |
+| EXPECTED | A — View, Upload, Validate, Commit, Cancel | T | T | T |
+| COMMITMENT | A — View, Upload, Validate, Commit, Cancel | T | T | T |
 | RECEIVING | T | A — View, Upload, Validate, Commit, Cancel | T | T |
 | STOCK | T | A — View, Upload, Validate, Commit, Cancel | T | T |
-| COUNT (`PHYSICAL_COUNT`) | T | A — View, Upload, Validate, Commit, Cancel | T | T |
+| COUNT | T | A — View, Upload, Validate, Commit, Cancel | T | T |
 
 ### 10.2 Rekap akses halaman per role
 
@@ -349,7 +359,8 @@ Tabel ini hanya berlaku untuk role dan aksi yang telah diizinkan pada §5–§6.
 | WAREHOUSE | 11 | UC-03, 04, 05, 07, 09, 10, 11, 12, 13, 14, 15 | UC-03, UC-09, UC-10 |
 | PRODUCTION | 1 | UC-06 | Tidak ada |
 | MANAGEMENT | 3 | UC-08, 13, 14 | Tidak ada |
-| Semua | — | UC-16 sebagai fungsi internal bersama (bukan menu) | Tidak ada |
+| PURCHASING, WAREHOUSE | — | UC-16 sebagai fungsi internal bersama (bukan menu), hanya via pemanggil berizin | Tidak ada |
+| PRODUCTION, MANAGEMENT | — | Tidak ada akses UC-16 (tanpa authorized import flow dan tanpa independent validation access) | Tidak ada |
 
 ### 10.3 Ketentuan data UJI
 
@@ -366,11 +377,11 @@ Tabel ini hanya berlaku untuk role dan aksi yang telah diizinkan pada §5–§6.
 
 | Jenis impor | PURCHASING | WAREHOUSE | PRODUCTION | MANAGEMENT | Status |
 | --- | --- | --- | --- | --- | --- |
-| EXPECTED (`INBOUND_REFERENCE`) | O | O | O | O | PROPOSED/OPEN |
-| COMMITMENT (`SUPPLIER_COMMITMENT`) | O | O | O | O | PROPOSED/OPEN |
+| EXPECTED | O | O | O | O | PROPOSED/OPEN |
+| COMMITMENT | O | O | O | O | PROPOSED/OPEN |
 | RECEIVING | O | O | O | O | PROPOSED/OPEN |
 | STOCK | O | O | O | O | PROPOSED/OPEN |
-| COUNT (`PHYSICAL_COUNT`) | O | O | O | O | PROPOSED/OPEN |
+| COUNT | O | O | O | O | PROPOSED/OPEN |
 
 | Halaman | PURCHASING | WAREHOUSE | PRODUCTION | MANAGEMENT | Status |
 | --- | --- | --- | --- | --- | --- |
@@ -512,3 +523,4 @@ Seluruh baris di bawah adalah hasil pemeriksaan **dokumen** pada 15 November 202
 | --- | --- | --- | --- |
 | 0.1.0 | 2026-11-15 | Penyusunan usulan awal berbasis DOC-05, DOC-07, DOC-08, DOC-09, DOC-16, design.md, migration 001, dan permintaan review Jira `10069` | DRAFT — menunggu review PM |
 | 0.2.0 | 2026-11-15 | Memasukkan keputusan PM `10071` (Baseline RBAC UJI v0.1): izin impor dan halaman UJI menjadi `A`, kontrol akses dan kepemilikan batch diperbarui, ACTUAL dipisahkan sebagai PROPOSED/OPEN, register perbedaan D-01–D-12 dan traceability ditambahkan | UJI ACCEPTED FOR UJI WORKING BASELINE ONLY; ACTUAL PROPOSED/OPEN |
+| 0.2.1 | 2026-11-15 | Revisi terarah atas arahan PM: §5.2–§5.3 memisahkan `kind` target (F-01) dari `import_type` legacy migrasi 001 dan mengarahkan SRS-46/SRS-48 ke kontrak target; §6 menegaskan PRODUCTION dan MANAGEMENT tanpa authorized import flow dan tanpa independent validation access pada UC-16. Nilai izin A/T/O tidak berubah. | Revisi dokumentasi; baseline UJI tetap ACCEPTED FOR UJI WORKING BASELINE ONLY |
