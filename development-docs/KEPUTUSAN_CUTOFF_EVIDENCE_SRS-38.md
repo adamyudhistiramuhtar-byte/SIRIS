@@ -144,7 +144,7 @@ Pemilik issue SRS-38 hanya menyiapkan usulan; penetapan menjadi ACCEPTED memerlu
 
 | Keputusan | Schema (DOC-07 / migrasi) | API (DOC-09) | UI (design.md / DOC-10) | Tes (DOC-13) | Issue terdampak |
 | --- | --- | --- | --- | --- | --- |
-| D-01 cutoff | `cutoff_contexts`: ganti `cutoff_at` dengan kolom effective_* + CHECK; revisi `cutoff_date`/`cutoff_time` di migrasi 001 | API-01 metadata cutoff; API-11/12/14/15 menampilkan precision/basis | UI-09/UI-10 metadata cutoff; Context Strip; tanggal-saja tanpa jam | PVT-18; boundary DATE vs DATETIME; `CUTOFF_MISMATCH` | SRS-44, SRS-25, SRS-27, SRS-58 |
+| D-01 cutoff | `cutoff_contexts`: ganti `cutoff_at` dengan kolom effective_* + CHECK; `cutoff_time NOT NULL` ditangani lewat migrasi baru sesuai usulan §13.4, migrasi 001 tidak diubah | API-01 metadata cutoff; API-11/12/14/15 menampilkan precision/basis | UI-09/UI-10 metadata cutoff; Context Strip; tanggal-saja tanpa jam | PVT-18; boundary DATE vs DATETIME; `CUTOFF_MISMATCH` | SRS-44, SRS-25, SRS-27, SRS-58 |
 | D-02 status | `verification_status` + CHECK per mode; `verified_by`, `verified_at` | API-13 error `CUTOFF_UNVERIFIED`/`MODE_MISMATCH` | Label UNVERIFIED/SIMULATED; alasan spesifik (§6.5) | AC-13; tolak ACTUAL UNVERIFIED; UJI wajib SIMULATED | SRS-44, SRS-58 |
 | D-03 evidence | `evidence`: XOR `stock_snapshot_id`/`count_session_id` | API-17 request body berubah; API-18 menampilkan target | UI-11 pilihan target snapshot/count | Kasus XOR (0, 1, 2 target), lintas scope | Story UC-11, SRS-58 |
 | D-04 grain | Tidak berubah dari DOC-07 | Error `AMBIGUOUS_PAIR` | Alasan penolakan run | Multi-UOM per material; UOM_MISMATCH | Engine rekonsiliasi |
