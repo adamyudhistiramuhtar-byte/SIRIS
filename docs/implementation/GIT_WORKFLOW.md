@@ -21,7 +21,7 @@ Main menyimpan baseline stabil yang telah ditinjau; pada fase awal, baseline rep
 7. Untuk tiap branch registry: jika remote ada, gunakan tracking tanpa menggeser ref; jika lokal ada, bandingkan dan pertahankan; jika keduanya tidak ada, buat dari develop yang diverifikasi, push branch spesifik dan set upstream.
 8. Bandingkan SHA `refs/heads/*` remote dengan local refs. Jangan memakai `push --all` pada repository yang belum ditinjau seluruh branch-nya.
 
-Tahap di atas belum dijalankan sampai selesai pada sesi ini: .git tidak dapat ditulis dan remote tidak dapat diakses. Tidak ada alternatif git-dir di luar workspace untuk melewati pembatasan.
+Publikasi awal telah dilakukan; hasilnya bersifat historis pada [review publikasi](PUBLISH_REVIEW.md). Pada pemeriksaan SRS-41, scaffold telah masuk main dan PR #4 menuju develop masih memerlukan review independen serta penyelesaian dependency. Status dan bukti terbaru tercatat di [status fondasi](../../development-docs/STATUS_FONDASI_SRS-41.md).
 
 ## Sebelum mengerjakan feature
 
@@ -47,4 +47,4 @@ Sebelum PR develop → main: jalankan tes relevan pada SHA kandidat, tinjau defe
 
 Setelah permission dan check nyata tersedia, tinjau aturan main/develop: wajib PR, satu approval dari rekan, penyelesaian percakapan, larangan force push/deletion, dan required check yang benar-benar pernah berjalan. Mulai dari check `repository-checks`; tambahkan build/lint/typecheck/tes setelah script nyata tersedia. Jangan mengaktifkan code-owner approval tanpa owner nyata atau check yang tidak pernah dilaporkan.
 
-Protection belum diaktifkan; ketersediaannya bergantung visibilitas dan paket GitHub. Rujukan: [GitHub protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
+Status protection aktual perlu diperiksa pada GitHub dan tidak boleh disimpulkan hanya dari dokumen ini. Ketersediaannya bergantung visibilitas dan paket GitHub. Rujukan: [GitHub protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).

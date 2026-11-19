@@ -1,0 +1,81 @@
+{
+  "_keterangan": "Fixture sintetis berlabel UJI untuk kontrak COMMITMENT proposed-0.1 (SRS-37). Bukan data mitra. Header sumber asli SOURCE REQUIRED.",
+  "contract_version": "proposed-0.1",
+  "contract_status": "PROPOSED",
+  "kind": "COMMITMENT",
+  "raw_header_status": "SOURCE REQUIRED",
+  "open_decisions": [
+    "CF-06: sequence, previous_date, committed_date, recorded_at dari SRC-09 belum ada di DOC-08 dan tidak disintesis."
+  ],
+  "metadata": {
+    "kind": "COMMITMENT",
+    "warehouse_id": "00000000-0000-4000-8000-000000000001",
+    "mode": "UJI",
+    "source_name": "UJI-commitment.csv",
+    "source_reference": "UJI-SRC-COM-001",
+    "contract_version": "proposed-0.1"
+  },
+  "prerequisites": ["EXPECTED UJI-IN-001 sudah COMMITTED pada gudang dan mode yang sama"],
+  "rows": [
+    {
+      "row_number": 1,
+      "normalized": {
+        "inbound_source_ref": "UJI-IN-001",
+        "event_ref": "UJI-COM-001",
+        "event_type": "INITIAL",
+        "promised_date": "2026-11-11",
+        "event_at": "2026-11-10T08:00:00+07:00"
+      }
+    },
+    {
+      "row_number": 2,
+      "normalized": {
+        "inbound_source_ref": "UJI-IN-001",
+        "event_ref": "UJI-COM-002",
+        "event_type": "CHANGE",
+        "promised_date": "2026-11-13",
+        "event_at": "2026-11-11T09:30:00+07:00"
+      }
+    }
+  ],
+  "negative_cases": [
+    {
+      "case_id": "UJI-COM-NEG-01",
+      "description": "CHANGE tanpa INITIAL untuk inbound tersebut",
+      "normalized": {
+        "inbound_source_ref": "UJI-IN-002",
+        "event_ref": "UJI-COM-003",
+        "event_type": "CHANGE",
+        "promised_date": "2026-11-14",
+        "event_at": "2026-11-11T10:00:00+07:00"
+      },
+      "expected_issue": "INVALID_FILE",
+      "note": "Aturan bisnis DOC-08 §6; kode khusus belum ada di katalog (gap G-04)."
+    },
+    {
+      "case_id": "UJI-COM-NEG-02",
+      "description": "inbound_source_ref belum di-commit",
+      "normalized": {
+        "inbound_source_ref": "UJI-IN-TIDAK-ADA",
+        "event_ref": "UJI-COM-004",
+        "event_type": "INITIAL",
+        "promised_date": "2026-11-14",
+        "event_at": "2026-11-11T10:00:00+07:00"
+      },
+      "expected_issue": "MISSING_REFERENCE"
+    },
+    {
+      "case_id": "UJI-COM-NEG-03",
+      "description": "event_at lokal tanpa offset dan tanpa source_timezone pada metadata",
+      "normalized": {
+        "inbound_source_ref": "UJI-IN-001",
+        "event_ref": "UJI-COM-005",
+        "event_type": "CHANGE",
+        "promised_date": "2026-11-15",
+        "event_at": "2026-11-12T08:00:00"
+      },
+      "expected_issue": "INVALID_FILE",
+      "note": "Gap G-04."
+    }
+  ]
+}

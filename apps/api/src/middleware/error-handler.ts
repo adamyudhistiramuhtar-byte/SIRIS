@@ -52,4 +52,3 @@ export function errorHandler(
 
   res.status(500).json(payload);
 }
-

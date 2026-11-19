@@ -26,4 +26,3 @@ describe('Error Handling Middleware Tests', () => {
     expect(res.body.error.correlation_id).toBeDefined();
   });
 });
-

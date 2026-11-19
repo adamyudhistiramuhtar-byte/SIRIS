@@ -1,3 +1,6 @@
+@import '../styles/generated/tokens.css';
+@import '../styles/base.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,4 +10,3 @@
     @apply bg-siris-canvas text-siris-ink font-sans;
   }
 }
-

@@ -36,4 +36,3 @@ describe('Health Endpoint Tests', () => {
     expect(res.body.meta.correlation_id).toBe(customCorrelationId);
   });
 });
-

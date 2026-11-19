@@ -2,6 +2,8 @@
 
 Tanggal inspeksi: 10 November 2026. Timezone: Asia/Jakarta. Periode tetap **9–29 November 2026**; target RC **29 November 2026**. Status adalah hasil inspeksi/persiapan repository, bukan hasil sprint atau bukti aplikasi bekerja.
 
+**Pembaruan 10 November 2026 — SRS-41:** Tabel dan hasil setup di bawah merupakan catatan historis saat `4dbc74f`, bukan status aplikasi terkini. Scaffold `74b79ab` tersedia di main; [PR #4](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/4) menuju develop masih draft dan menunggu review independen, dependency SRS-40 serta integrasi. Status dan bukti terbaru beserta batasnya dicatat pada [pemeriksaan fondasi SRS-41](../../development-docs/STATUS_FONDASI_SRS-41.md). Jangan menyimpulkan SRS-41 Done dari status historis di bawah.
+
 ## Ringkasan status
 
 | Item | Status | Bukti / batas |
@@ -19,7 +21,7 @@ Tanggal inspeksi: 10 November 2026. Timezone: Asia/Jakarta. Periode tetap **9–
 | Workflow PR dan panduan kolaborasi | DONE | CONTRIBUTING, template PR dan GIT_WORKFLOW tersedia |
 | Arsitektur | PARTIAL | Modular monorepo direkomendasikan; persiapan chore/project-foundation siap dimulai |
 | CI repository-only | DONE | Workflow .github/workflows/repository-checks.yml ter-commit; script tervalidasi |
-| Lint/typecheck/build/tes aplikasi | NOT STARTED | Belum ada package.json, lockfile atau aplikasi (lingkup S1-02) |
+| Lint/typecheck/build/tes aplikasi | Tersedia pada scaffold; lihat bukti SRS-41 | package.json dan lockfile tersedia pada main; database runtime belum terverifikasi |
 | Sprint plan dan dependency | DONE untuk rencana | Tiga sprint 9–29 November; pelaksanaan S1-01 selesai, S1-02 siap |
 | Baseline bisnis final | BLOCKED untuk acceptance penuh | ID/statement 29 FR, 14 NFR dan 55 tes asli masih SOURCE REQUIRED |
 | Implementasi fitur / produksi | NOT STARTED | Tidak termasuk scope setup ini |
@@ -79,6 +81,6 @@ Semua branch berikut harus dibuat dari **develop yang sudah diverifikasi**, buka
 
 ## Tugas pengembangan pertama yang direkomendasikan
 
-Setelah Git dan baseline develop diverifikasi, DEV-01 memulai `chore/project-foundation`: sepakati runtime/package manager serta batas shared contracts, buat scaffold workspace minimum Vue/Express/PostgreSQL dengan script nyata, test connectivity dan CI dasar. DEV-04 mereview database/konfigurasi; DEV-03 menyiapkan ekstraksi token dan shell pada branch teknisnya. Berikutnya auth/RBAC + import framework/UC-16 membuka vertical slice UC-01 menggunakan fixture UJI.
+Scaffold `chore/project-foundation` sudah ada pada main. Selesaikan keputusan SRS-40, review PR #4, dan verifikasi integrasi sebelum menjadikan develop baseline untuk pekerjaan turunannya. Verifikasi PostgreSQL nyata ditangani pada SRS-44; detail kekurangan dan prasyarat per issue dicatat pada [pemeriksaan fondasi](../../development-docs/STATUS_FONDASI_SRS-41.md).
 
 Ini rekomendasi pekerjaan berikutnya, bukan implementasi dalam setup ini. Keputusan schema/endpoint yang belum final tidak ditutup secara sepihak. Detail jadwal: [roadmap](SPRINT_ROADMAP.md); langkah Git yang harus dilanjutkan: [workflow](../../docs/implementation/GIT_WORKFLOW.md).
