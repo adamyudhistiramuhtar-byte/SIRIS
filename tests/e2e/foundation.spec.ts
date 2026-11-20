@@ -3,7 +3,7 @@ import { evidenceIdentity } from '../helpers/evidence.mjs';
 
 test.afterEach(async ({page}, info) => {
   void page;
-  await info.attach('identitas-evidence-UJI', {body:JSON.stringify({...evidenceIdentity(),test:info.title,status:info.status,started_at:info.startTime.toISOString()}),contentType:'application/json'});
+  await info.attach('identitas-evidence-UJI', {body:JSON.stringify({...evidenceIdentity(),test:info.title,status:info.status,finished_at:new Date().toISOString()}),contentType:'application/json'});
 });
 
 test('browser nyata memuat app shell tanpa error JavaScript', async ({page}) => {
