@@ -1,0 +1,16 @@
+{
+  "dataset": "SRS-54/actors/proposed-0.1",
+  "mode": "UJI",
+  "clock": "2026-11-20T03:00:00.000Z",
+  "auth_status": "Akun fixture tidak dapat dipakai login; mekanisme sesi SRS-47 belum terintegrasi.",
+  "warehouses": [
+    {"id":"10000000-0000-4000-8000-000000000001","code":"UJI-WH-01","name":"Gudang sintetis UJI 01"},
+    {"id":"10000000-0000-4000-8000-000000000002","code":"UJI-WH-02","name":"Gudang sintetis UJI 02"}
+  ],
+  "actors": [
+    {"id":"20000000-0000-4000-8000-000000000001","username":"UJI-PURCHASING","role":"PURCHASING","warehouse_ids":["10000000-0000-4000-8000-000000000001"]},
+    {"id":"20000000-0000-4000-8000-000000000002","username":"UJI-WAREHOUSE","role":"WAREHOUSE","warehouse_ids":["10000000-0000-4000-8000-000000000001"]},
+    {"id":"20000000-0000-4000-8000-000000000003","username":"UJI-PRODUCTION","role":"PRODUCTION","warehouse_ids":["10000000-0000-4000-8000-000000000001"]},
+    {"id":"20000000-0000-4000-8000-000000000004","username":"UJI-MANAGEMENT","role":"MANAGEMENT","warehouse_ids":["10000000-0000-4000-8000-000000000001"]}
+  ]
+}
