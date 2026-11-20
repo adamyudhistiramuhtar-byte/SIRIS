@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 import { AuditService, AuditedTransactionError } from '../../../apps/api/src/modules/audit/audit.service.js';
 import { auditCorrelationId, createAuditRecord, type AuditInput } from '../../../apps/api/src/modules/audit/audit-event.js';
@@ -151,6 +152,22 @@ describe.skipIf(!process.env.DATABASE_URL || !process.env.DATABASE_MIGRATION_URL
       await client.query("UPDATE _uji_schema_versions SET sha256='INVALID' WHERE name='001_initial_schema.sql'");
       await expect(applyUjiMigrations(client)).rejects.toThrow('BLOCKED: checksum migrasi berubah.');
     } finally { await client.end(); }
+  });
+
+  it('migrasi audit dapat direapply langsung dan menolak drift tanpa mengubah event', async () => {
+    const sql=await readFile(new URL('../../../database/migrations/004_audit_lineage.sql',import.meta.url),'utf8');
+    await audit.recordOutcome({...baseEvent,outcome:'DENIED'});
+    const client=new pg.Client({connectionString:ujiConnection(process.env.DATABASE_MIGRATION_URL,'siris_migrator')});
+    await client.connect();
+    try {
+      await client.query(`SET search_path TO ${database.schema},public`);
+      await client.query(sql);await client.query(sql);
+      const before=(await client.query('SELECT * FROM audit_events ORDER BY id')).rows;
+      await client.query('ALTER TABLE audit_events ADD COLUMN unexpected text');
+      await expect(client.query(sql)).rejects.toMatchObject({code:'P0001'});
+      const after=(await client.query('SELECT id,outcome FROM audit_events ORDER BY id')).rows;
+      expect(after).toEqual(before.map(({id,outcome})=>({id,outcome})));
+    } finally {await client.end();}
   });
 
   it('response COMMIT hilang setelah sukses menghasilkan UNKNOWN tanpa FAILURE palsu', async () => {
