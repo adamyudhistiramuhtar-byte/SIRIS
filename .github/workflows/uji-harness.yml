@@ -1,0 +1,40 @@
+name: Harness UJI PostgreSQL dan Browser
+
+on:
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  uji-harness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SIRIS_UJI_ENV_FILE: test-results/uji-env.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck:harness
+      - run: npm run test:db:up
+      - run: npm run test:evidence
+      - run: npm exec -- playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Simpan hanya laporan aman UJI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-uji
+          path: |
+            test-results/evidence-vitest.json
+            test-results/playwright.json
+            test-results/browser/**/attachments/*
+          if-no-files-found: warn
+      - run: npm run test:db:down
+        if: always()
