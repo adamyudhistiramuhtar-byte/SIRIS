@@ -12,6 +12,7 @@
     "dev:all": "npm run dev --workspaces --if-present",
     "dev:web": "npm run dev --workspace=@siris/web",
     "dev:api": "npm run dev --workspace=@siris/api",
+    "db:check": "npm run db:check --workspace=@siris/api",
     "build": "npm run build:contracts && npm run build:api && npm run build:web",
     "build:contracts": "npm run build --workspace=@siris/contracts",
     "build:web": "npm run build --workspace=@siris/web",

@@ -37,7 +37,7 @@ export function createApp(): Application {
 
   // 404 handler untuk route yang tidak ditemukan
   app.use((req, _res, next) => {
-    next(new NotFoundError(`Endpoint ${req.method} ${req.originalUrl} tidak ditemukan.`));
+    next(new NotFoundError(`Endpoint ${req.method} ${req.path} tidak ditemukan.`));
   });
 
   // Centralized Error handler
