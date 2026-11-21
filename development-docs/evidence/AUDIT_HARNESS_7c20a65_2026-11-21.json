@@ -1,0 +1,449 @@
+{
+  "evidence_version": "SRS-54/proposed-0.1",
+  "mode": "UJI",
+  "build_commit": "7c20a65a30512a8e1aff63dd99a8c895c4264711",
+  "build_sha256": "0b28b35d7f761653911a2b96205e2be8da7c815a8744ec7516dbfbc66bf5841a",
+  "schema_sha256": "13c51209f9cf281ae0d892ea64c240c2209cd91066b5bc8eca3b46a81406a0c7",
+  "dataset_sha256": "c53f4d266a593f3cdf259835742e6371cbdff404131aeb1043af547d4d8327d8",
+  "node": "v22.22.2",
+  "baseline_postgresql": "16.6",
+  "clock": "2026-11-20T03:00:00.000Z",
+  "started_at": "2026-11-20T17:25:33.936Z",
+  "finished_at": "2026-11-20T17:25:35.446Z",
+  "exit_code": 0,
+  "assertions": [
+    {
+      "name": "AppShell Component Smoke Test Harus merender identitas SIRIS, Context Strip, dan grup navigasi",
+      "status": "PASS"
+    },
+    {
+      "name": "Konfigurasi API mengimpor client dan memakai konfigurasi undefined",
+      "status": "PASS"
+    },
+    {
+      "name": "Konfigurasi API mengimpor client dan memakai konfigurasi '/uji-api/v1'",
+      "status": "PASS"
+    },
+    {
+      "name": "Konfigurasi API tetap dapat mengimpor client untuk konfigurasi tidak valid  dan menolak request sebelum fetch",
+      "status": "PASS"
+    },
+    {
+      "name": "Konfigurasi API tetap dapat mengimpor client untuk konfigurasi tidak valid javascript:alert(1) dan menolak request sebelum fetch",
+      "status": "PASS"
+    },
+    {
+      "name": "Konfigurasi API menerima path API relatif yang valid",
+      "status": "PASS"
+    },
+    {
+      "name": "Konfigurasi API menggunakan VITE_API_BASE_URL untuk request yang dibuat dari konfigurasi",
+      "status": "PASS"
+    },
+    {
+      "name": "Konfigurasi API menolak konfigurasi yang tidak aman: javascript:alert(1)",
+      "status": "PASS"
+    },
+    {
+      "name": "Konfigurasi API menolak konfigurasi yang tidak aman: //example.invalid/api",
+      "status": "PASS"
+    },
+    {
+      "name": "Konfigurasi API menolak konfigurasi yang tidak aman: [URL_USERINFO_REDACTED]@example.invalid/api",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan menolak respons sukses di luar kontrak object atau yang memuat error: %j",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan menolak respons sukses di luar kontrak object atau yang memuat error: {\"error\":{\"code\":\"VALIDATION_ERROR\",\"message\":\"Invalid\",\"correlation_id\":\"uji\"}}",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan mempertahankan data dan metadata dari shared response contract",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan mempertahankan koleksi kosong DOC-09 sebagai hasil sukses",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan tidak membuka DTO langsung yang memiliki field data dan meta",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan menolak envelope yang dipilih secara eksplisit tanpa field data",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan menolak respons sukses malformed dengan INVALID_RESPONSE",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan mengubah error HTTP di luar envelope menjadi HTTP_ERROR, tanpa TypeError mentah",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan mempertahankan kode, details dan correlation ID error terstruktur",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan mengklasifikasikan kegagalan jaringan GET tanpa membocorkan TypeError mentah",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan mengklasifikasikan mutasi yang terputus UNKNOWN_OUTCOME tanpa retry otomatis",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan menganggap hasil mutasi tidak diketahui jika body sukses tidak dapat dibaca",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan menandai hasil mutasi HTTP 5xx tidak pasti tanpa menghapus kode error server",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan menandai timeout HTTP 408 mutasi sebagai hasil tidak pasti",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan meneruskan Headers dan signal ke fetch",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan menolak fragmen agar filter scope tidak tersembunyi setelah tanda pagar",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan menangani abort saat membaca respons GET dan mutasi tanpa menganggap mutasi pasti gagal",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan meneruskan FormData tanpa memaksa content type JSON atau menyimpan file",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan membedakan pembatalan GET dari hasil mutasi yang tidak diketahui",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan menolak path traversal ter-encode /%2e%2e/admin sebelum mengirim request",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan menolak path traversal ter-encode /%2E./admin sebelum mengirim request",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient: respons dan kegagalan menolak path traversal ter-encode /..%2fadmin sebelum mengirim request",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient Unit Tests Harus berhasil memanggil GET dan mem-parse ApiResponse",
+      "status": "PASS"
+    },
+    {
+      "name": "ApiClient Unit Tests Harus melempar ApiClientError dengan correlation_id saat response gagal",
+      "status": "PASS"
+    },
+    {
+      "name": "Token desain dari design.md §4.9 tidak berubah dari registry design.md (tidak ada drift)",
+      "status": "PASS"
+    },
+    {
+      "name": "Token desain dari design.md §4.9 toleran terhadap CRLF pada hasil generate, tetapi tetap mendeteksi perbedaan isi",
+      "status": "PASS"
+    },
+    {
+      "name": "Token desain dari design.md §4.9 seluruh alias valid dan tidak siklik",
+      "status": "PASS"
+    },
+    {
+      "name": "Token desain dari design.md §4.9 mengunci tema terang sebagai default dan menyediakan tema cadangan",
+      "status": "PASS"
+    },
+    {
+      "name": "Token desain dari design.md §4.9 menerapkan satuan ch pada lebar prosa",
+      "status": "PASS"
+    },
+    {
+      "name": "Token desain dari design.md §4.9 semua var(--x) pada tokens.css terdefinisi",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar menemukan enam komponen dasar",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar AlertBanner.vue tidak memakai warna atau piksel literal",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar BaseButton.vue tidak memakai warna atau piksel literal",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar BaseInput.vue tidak memakai warna atau piksel literal",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar BaseSelect.vue tidak memakai warna atau piksel literal",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar FormField.vue tidak memakai warna atau piksel literal",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar StatusBadge.vue tidak memakai warna atau piksel literal",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar AlertBanner.vue hanya merujuk token yang ada dan bukan token primitif",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar BaseButton.vue hanya merujuk token yang ada dan bukan token primitif",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar BaseInput.vue hanya merujuk token yang ada dan bukan token primitif",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar BaseSelect.vue hanya merujuk token yang ada dan bukan token primitif",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar FormField.vue hanya merujuk token yang ada dan bukan token primitif",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar StatusBadge.vue hanya merujuk token yang ada dan bukan token primitif",
+      "status": "PASS"
+    },
+    {
+      "name": "Aturan token-only pada gaya komponen dasar base.css hanya merujuk token yang ada",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseButton memakai type=\"button\" secara default dan varian primary ukuran md",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseButton meneruskan type=\"submit\" ketika diminta",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseButton mengirim event click saat aktif",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseButton nonaktif: aria-disabled, tetap dapat difokuskan, klik diblokir, alasan terbaca",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseButton loading: aria-busy, label kata kerja tampil, klik ganda diblokir",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseButton nonaktif: klik tidak merambat ke handler elemen induk, fokus dan alasan tetap ada",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseButton loading: klik tidak merambat ke handler elemen induk",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseButton aktif: klik tetap merambat ke handler elemen induk",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseButton tidak memakai opacity untuk keadaan nonaktif",
+      "status": "PASS"
+    },
+    {
+      "name": "FormField + BaseInput mengaitkan label ke input lewat for/id",
+      "status": "PASS"
+    },
+    {
+      "name": "FormField + BaseInput menghubungkan hint lewat aria-describedby",
+      "status": "PASS"
+    },
+    {
+      "name": "FormField + BaseInput galat: aria-invalid, role alert, teks galat terhubung ke input",
+      "status": "PASS"
+    },
+    {
+      "name": "FormField + BaseInput tanpa galat: tidak ada aria-invalid dan role alert",
+      "status": "PASS"
+    },
+    {
+      "name": "FormField + BaseInput wajib diisi ditandai dengan teks, bukan hanya simbol",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseInput mendukung v-model dan tipe password",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseInput keadaan disabled memakai atribut native",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseSelect merender opsi dan placeholder, serta mendukung v-model",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseSelect meneruskan id dan aria-describedby ke elemen select",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseSelect loading: dinonaktifkan dengan teks \"Memuat opsi…\"",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseSelect kosong: dinonaktifkan dengan teks yang menjelaskan keadaan",
+      "status": "PASS"
+    },
+    {
+      "name": "BaseSelect galat: aria-invalid terpasang",
+      "status": "PASS"
+    },
+    {
+      "name": "StatusBadge selalu menampilkan teks status dan menandai varian",
+      "status": "PASS"
+    },
+    {
+      "name": "StatusBadge varian default adalah neutral",
+      "status": "PASS"
+    },
+    {
+      "name": "AlertBanner danger dan warning memakai role alert",
+      "status": "PASS"
+    },
+    {
+      "name": "AlertBanner info dan success memakai role status",
+      "status": "PASS"
+    },
+    {
+      "name": "AlertBanner menampilkan judul dan pesan, ikon disembunyikan dari pembaca layar",
+      "status": "PASS"
+    },
+    {
+      "name": "AlertBanner dismissible: tombol tutup berlabel dan memicu event dismiss",
+      "status": "PASS"
+    },
+    {
+      "name": "AlertBanner tanpa dismissible: tidak ada tombol",
+      "status": "PASS"
+    },
+    {
+      "name": "Monorepo Integration: API & Shared Contracts Harus berhasil melayani GET /api/v1/health dengan tipe ApiResponse<HealthCheckData>",
+      "status": "PASS"
+    },
+    {
+      "name": "pengaman dan redaksi audit tanpa database menolak raw/credential/storage key dan action bebas sebelum koneksi",
+      "status": "PASS"
+    },
+    {
+      "name": "pengaman dan redaksi audit tanpa database mengganti header correlation non-UUID dengan UUID tanpa menyimpan raw",
+      "status": "PASS"
+    },
+    {
+      "name": "pengaman dan redaksi audit tanpa database outage total hanya menulis kode aman, bukan audit sukses",
+      "status": "PASS"
+    },
+    {
+      "name": "pengaman dan redaksi audit tanpa database guard UJI menolak database ACTUAL, role bootstrap dan URL remote tanpa mengungkap credential",
+      "status": "PASS"
+    },
+    {
+      "name": "SRS-49/54 PostgreSQL16.6 UJI fixture empat role/dua gudang, runtime non-admin dan append-only tersedia",
+      "status": "PASS"
+    },
+    {
+      "name": "SRS-49/54 PostgreSQL16.6 UJI domain dan audit SUCCESS dengan source row/scope yang sama committed atomik",
+      "status": "PASS"
+    },
+    {
+      "name": "SRS-49/54 PostgreSQL16.6 UJI kegagalan mutasi rollback domain, lalu audit FAILURE ditulis terpisah tanpa raw",
+      "status": "PASS"
+    },
+    {
+      "name": "SRS-49/54 PostgreSQL16.6 UJI kegagalan audit SUCCESS juga rollback mutasi domain",
+      "status": "PASS"
+    },
+    {
+      "name": "SRS-49/54 PostgreSQL16.6 UJI CANCELLED atomik dan DENIED tersedia tanpa perubahan domain",
+      "status": "PASS"
+    },
+    {
+      "name": "SRS-49/54 PostgreSQL16.6 UJI source row dari batch lain ditolak oleh FK komposit dan audit immutable",
+      "status": "PASS"
+    },
+    {
+      "name": "SRS-49/54 PostgreSQL16.6 UJI koneksi audit sempat gagal lalu pulih; event hanya tercatat sekali",
+      "status": "PASS"
+    },
+    {
+      "name": "SRS-49/54 PostgreSQL16.6 UJI INSERT audit sukses tetapi response hilang diretry dengan ID sama tanpa duplikasi",
+      "status": "PASS"
+    },
+    {
+      "name": "SRS-49/54 PostgreSQL16.6 UJI ledger UJI membuat reapply aman dan menolak checksum migrasi berubah",
+      "status": "PASS"
+    },
+    {
+      "name": "SRS-49/54 PostgreSQL16.6 UJI migrasi audit dapat direapply langsung dan menolak drift tanpa mengubah event",
+      "status": "PASS"
+    },
+    {
+      "name": "SRS-49/54 PostgreSQL16.6 UJI response COMMIT hilang setelah sukses menghasilkan UNKNOWN tanpa FAILURE palsu",
+      "status": "PASS"
+    },
+    {
+      "name": "SRS-49/54 PostgreSQL16.6 UJI schema dan storage terpisah antar pengguna harness",
+      "status": "PASS"
+    },
+    {
+      "name": "Database Connection Integration Test Harus menangani ketiadaan koneksi database secara aman tanpa crash",
+      "status": "PASS"
+    },
+    {
+      "name": "Environment Configuration Validation Tests Harus memuat nilai default yang aman saat env kosong",
+      "status": "PASS"
+    },
+    {
+      "name": "Environment Configuration Validation Tests Harus menolak konfigurasi PORT yang tidak valid",
+      "status": "PASS"
+    },
+    {
+      "name": "Environment Configuration Validation Tests Harus menolak konfigurasi NODE_ENV di luar enum",
+      "status": "PASS"
+    },
+    {
+      "name": "Error Handling Middleware Tests Route yang tidak ada harus menghasilkan 404 dengan struktur ApiErrorResponse DOC-09",
+      "status": "PASS"
+    },
+    {
+      "name": "Error Handling Middleware Tests Payload JSON rusak harus menghasilkan 400 INVALID_JSON",
+      "status": "PASS"
+    },
+    {
+      "name": "Health Endpoint Tests GET /health harus mengembalikan status 200 dan data health yang valid",
+      "status": "PASS"
+    },
+    {
+      "name": "Health Endpoint Tests GET /api/v1/health harus mengembalikan status 200 sesuai kontrak DOC-09",
+      "status": "PASS"
+    },
+    {
+      "name": "Health Endpoint Tests Harus menghormati header X-Correlation-ID yang dikirimkan klien",
+      "status": "PASS"
+    }
+  ],
+  "redaction": "Userinfo URL sintetis pada nama assertion disamarkan; status, SHA build/schema/dataset dan waktu tidak diubah."
+}
