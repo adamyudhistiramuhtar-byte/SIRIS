@@ -1,0 +1,18 @@
+{
+  "evidence_version": "SRS-54/proposed-0.1",
+  "mode": "UJI",
+  "build_commit": "5223bd3ef7df79768e25e35d1810eef58fbdb1b4",
+  "build_sha256": "d376cce736e029361ed849374658999efc93ca4b4ae4a5abeb2f9ba6382fdb96",
+  "schema_sha256": "d723e3f8f63fe098884814d34dbd25319d03cf0a02620df22963b839845ff644",
+  "dataset_sha256": "c53f4d266a593f3cdf259835742e6371cbdff404131aeb1043af547d4d8327d8",
+  "node": "v22.22.2",
+  "baseline_postgresql": "16.6",
+  "clock": "2026-11-20T03:00:00.000Z",
+  "started_at": "2026-11-22T19:08:41.042Z",
+  "finished_at": "2026-11-22T19:08:47.725Z",
+  "exit_code": 0,
+  "assertion_counts": {
+    "PASS": 200
+  },
+  "scope": "Suite aktual staging UJI termasuk 22 tes staging; HTTP upload dan autentikasi backend belum diintegrasikan."
+}
