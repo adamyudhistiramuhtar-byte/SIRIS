@@ -100,3 +100,14 @@ Pekerjaan 20 November menghasilkan baseline UJI merged, bukti DB reviewer, kandi
 ## Akses dan keamanan
 
 Konektor GitHub menolak review/create PR/metadata dengan HTTP 403 Resource not accessible by integration. Akses GitHub Adam melalui credential helper Git yang telah dikonfigurasi diverifikasi dan berhasil dipakai, tanpa mencetak credential. Tidak ada izin integrasi yang dibypass atau secret yang di-commit. Credential DB unik berada di penyimpanan sementara privat; artefak Git/CI mengecualikannya. Data UJI dan ACTUAL tetap terpisah.
+
+
+## Pembaruan terakhir — 22 November 2026 pukul 16.51 WIB
+
+Snapshot baru menggantikan forecast waktu tersisa pada bagian historis 21 November. Deadline tetap 22 November pukul 18.00 WIB, sekitar satu jam sembilan menit dari snapshot ini. Sprint 2 masih 144 SP dengan 5 SP Done, sehingga **139 SP belum Done**. Keadaan terkini: 13 issue In Progress/42 SP, 26 To Do/95 SP, satu In Testing/2 SP, dua Done/5 SP. SRS-46 telah beralih ke In Progress oleh owner setelah dependency dibuka; status ini tidak diubah oleh Adam dalam sesi ini.
+
+SRS-43/44/49/54/58 masih In Progress. SRS-47/48/50/51/52 masih To Do. PR #21 dan #22 belum memiliki review independen menurut pembacaan GitHub terbaru; tidak dilakukan self-approval atau merge melampaui gate. Pertanyaan OD-07, state UJI, F-03 dan sumber/domain tidak mendapat jawaban dalam percakapan ini. Endpoint staging/auth/impor utuh tetap belum tersedia. Develop masih 23f59a0; pekerjaan lokal pengguna tetap dipertahankan.
+
+CI kontrak/handoff pada commit651e224 SUCCESS (run44910205437). Kandidat audit7c20a65 dan gabungan9a70b03 tetap mempunyai bukti CI standar serta PostgreSQL/Chromium SUCCESS sebagaimana tercantum di atas. Pembaruan ini hanya dokumentasi; source aplikasi dan hasil tes yang dilaporkan tidak diubah.
+
+Dengan core auth, staging, preview dan commit masih To Do serta sumber/review belum tersedia, target seluruh scope pada pukul18.00 WIB tidak dapat dikonfirmasi dari evidence saat ini. Tindakan segera adalah Luthfi/Dwi memeriksa kandidat dan menyelesaikan gate fondasi, PM/pemilik domain mencatat keputusan yang benar-benar sah, Vassell meneruskan46/53, dan tim mencatat status aktual pada tenggat. Setelah48/49 serta kontrak sumber siap, Adam kembali ke50 untuk membuka51→52. Scope, AC dan DoD tidak dikurangi tanpa persetujuan eksplisit.
