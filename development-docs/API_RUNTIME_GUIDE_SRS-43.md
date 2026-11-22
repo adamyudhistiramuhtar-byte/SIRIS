@@ -193,9 +193,26 @@ Test yang ditambahkan:
 - `apps/api/src/tests/error.test.ts` — error tak terduga tidak membocorkan SQL/pesan mentah/stack, payload terlalu besar menghasilkan 413.
 - `apps/api/src/tests/request-logger.test.ts` — log akses tidak memuat query string.
 
-## 8. Batas dan tindak lanjut
+## 8. Batas dan tindak lanjut historis
 
 - Kontrak wire DOC-09 masih PROPOSED; bentuk envelope `{data, meta}` pada health endpoint belum disepakati sebagai kontrak seluruh endpoint.
 - Autentikasi, sesi, CSRF, dan pemeriksaan role/gudang belum diterapkan; lihat SRS-47 dan SRS-48.
 - `npm run db:check` PASS terhadap PostgreSQL 16.6 UJI lokal (lihat §6); CI pada commit final dan review ulang masih diperlukan.
 - Review independen, CI pada commit final, dan merge PR belum dilakukan.
+
+## 9. Verifikasi reviewer setelah stacked PR #21
+
+Pemeriksaan 22 November 2026 pada HEAD `c2105a6083bbb7ba2b81a51b49aab18fd6524c4f` memakai Node.js 22.22.2, PostgreSQL 16.6 UJI lokal, dan role runtime `siris_app`. `842b406a75690da031bf37a555cdcdc72f317838` adalah ancestor HEAD tersebut; isi tree keduanya sama. Perbaikan shutdown tidak perlu di-cherry-pick lagi.
+
+| Pemeriksaan | Hasil dan batas |
+| --- | --- |
+| `npm ci` | PASS pada worktree reviewer terpisah |
+| `npm test` | PASS 109/109, termasuk 6 regresi shutdown dan koneksi PostgreSQL nyata |
+| `python3 scripts/check_repository.py --tracked` | PASS, 127 berkas, 0 temuan |
+| Repository workspace pengguna | PASS, 122 berkas, 0 temuan; konteks berbeda dari tracked HEAD PR |
+| Tiga temuan yang dilaporkan sebelumnya | Tidak tereproduksi pada kedua pemeriksaan di atas; log dan lokasi temuan asal belum tersedia. Tidak disimpulkan sebagai temuan yang telah diperbaiki tanpa bukti asal. |
+| Review nonpenulis atas shutdown | Belum ditemukan: daftar review PR #21 kosong, merge pemilik PR bukan bukti review formal. Adam menulis shutdown sehingga tidak dapat mengesahkannya sendiri. Dwi diminta memeriksa HEAD PR #18. |
+
+Tes shutdown mencakup kegagalan HTTP/pool/deadline dengan exit gagal, pesan log aman, sinyal berulang, resource dan timer. Riwayat §6–8 dipertahankan sebagai evidence historis; klaim failure-path NOT RUN di versi lama telah digantikan oleh hasil di atas. Tes bukan bukti autentikasi/otorisasi SRS-47/48 atau endpoint bisnis.
+
+Dokumen ini dipindahkan ke `development-docs/` mengikuti AGENTS.md. Tidak ada perubahan source runtime. HEAD dokumentasi baru tetap perlu CI dan review; bukti eksekusi runtime mengikat SHA `c2105a6`, bukan otomatis semua perubahan runtime sesudahnya.
