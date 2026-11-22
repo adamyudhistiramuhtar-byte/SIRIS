@@ -39,11 +39,13 @@ Dasar: baseline RBAC UJI v0.1 (`MATRIK_PERMUTASI_SRS-36.md`, §6.2, §7, §8.3, 
 
 | Pemeriksaan | Hasil |
 | --- | --- |
-| `npx vitest run apps/web` | 119 lulus (8 berkas) |
-| `npx vitest run` (seluruh repo) | 129 lulus (13 berkas) |
+| `npx vitest run apps/web` | 122 lulus (9 berkas) |
+| `npx vitest run` (seluruh repo) | 132 lulus (14 berkas) |
 | `vue-tsc --noEmit` (web) | tanpa galat |
 | `eslint apps/web/src` | tanpa temuan |
 | `npm run build --workspace=@siris/web` | berhasil |
 | `scripts/check_repository.py --tracked` | 0 temuan |
 
-Belum dijalankan: pengujian manual di browser, pengujian dengan sesi/backend nyata, code review oleh reviewer lain, CI remote. **SRS-46 belum memenuhi DoD.**
+Pemeriksaan browser headless (Chrome, Linux) per role pada server dev: menu, Context Strip, route terlarang, dan evaluasi ulang saat role berubah sesuai matriks; ditemukan dan diperbaiki judul pintasan kosong pada Beranda Production. Ini bukan pengujian manual oleh pengguna.
+
+Belum dijalankan: pengujian manual oleh pengguna di browser, pengujian dengan sesi/backend nyata, code review oleh reviewer lain, CI remote. **SRS-46 belum memenuhi DoD.**

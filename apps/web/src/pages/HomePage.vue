@@ -65,8 +65,8 @@ const quickTasks = computed(() =>
       </div>
     </div>
 
-    <!-- Quick Tasks Section -->
-    <div>
+    <!-- Quick Tasks Section: disembunyikan bila tidak ada pintasan yang diizinkan bagi role ini -->
+    <div v-if="quickTasks.length > 0">
       <h2 class="text-sm font-bold uppercase tracking-wider text-siris-muted mb-3">
         Alur Kerja Utama (Sprint 1)
       </h2>
