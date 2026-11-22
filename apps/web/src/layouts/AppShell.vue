@@ -1,72 +1,24 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import {
-  Home,
-  FileSpreadsheet,
-  CalendarCheck,
-  PackageCheck,
-  AlertTriangle,
-  Bell,
-  History,
-  BarChart3,
-  Boxes,
-  ClipboardList,
-  FileText,
-  GitCompare,
-  TrendingUp,
-  ShieldCheck,
-  Menu,
-  X,
-  LogOut,
-  Warehouse,
-} from 'lucide-vue-next';
+import { Menu, X, LogOut, Warehouse } from 'lucide-vue-next';
+import { ROLE_LABELS } from '../shared/access/access-matrix';
+import { getNavigationFor } from '../shared/access/navigation';
+import { sessionStore } from '../shared/session/session-context';
 
 const route = useRoute();
 const router = useRouter();
 const isMobileMenuOpen = ref(false);
 
-const navigationGroups = [
-  {
-    title: 'Utama',
-    items: [{ name: 'Beranda', path: '/', icon: Home }],
-  },
-  {
-    title: 'Supplier Inbound',
-    items: [
-      { name: 'Impor Referensi Inbound', path: '/inbound/import-reference', icon: FileSpreadsheet },
-      { name: 'Impor Janji Supplier', path: '/inbound/import-commitment', icon: CalendarCheck },
-      { name: 'Impor Penerimaan', path: '/inbound/import-receiving', icon: PackageCheck },
-      { name: 'Exception Inbound', path: '/inbound/exceptions', icon: AlertTriangle },
-      { name: 'Pemberitahuan Inbound', path: '/inbound/notices', icon: Bell },
-      { name: 'Riwayat Inbound', path: '/inbound/history', icon: History },
-      { name: 'Metrik Supplier', path: '/inbound/metrics', icon: BarChart3 },
-    ],
-  },
-  {
-    title: 'Persediaan',
-    items: [
-      { name: 'Impor Data Stok', path: '/inventory/import-stock', icon: Boxes },
-      { name: 'Impor Hasil Hitung Fisik', path: '/inventory/import-count', icon: ClipboardList },
-      { name: 'Arsip Bukti Kartu Stok', path: '/inventory/evidence', icon: FileText },
-      { name: 'Rekonsiliasi Stok', path: '/inventory/reconcile', icon: GitCompare },
-      { name: 'Riwayat Selisih Stok', path: '/inventory/history', icon: History },
-      { name: 'Metrik Persediaan', path: '/inventory/metrics', icon: TrendingUp },
-    ],
-  },
-  {
-    title: 'Referensi',
-    items: [
-      { name: 'Referensi Material WO', path: '/materials/work-orders', icon: Boxes },
-    ],
-  },
-  {
-    title: 'Pengawasan',
-    items: [
-      { name: 'Audit Proses', path: '/audit', icon: ShieldCheck },
-    ],
-  },
-];
+const session = sessionStore.state;
+
+// Menu mengikuti matriks halaman UJI SRS-36 §6.2; halaman yang tidak diizinkan tidak ditampilkan.
+const navigationGroups = computed(() => getNavigationFor(session.role, session.mode));
+
+const roleLabel = computed(() => ROLE_LABELS[session.role]);
+const warehouseName = computed(() => sessionStore.activeWarehouse.value?.name ?? 'Belum ada gudang aktif');
+const warehouseCode = computed(() => sessionStore.activeWarehouse.value?.code ?? '-');
+const modeLabel = computed(() => (session.mode === 'UJI' ? 'UJI (Simulasi)' : session.mode));
 
 const currentTitle = computed(() => {
   return (route.meta.title as string) || 'Sistem Informasi Rekonsiliasi & Inbound';
@@ -118,18 +70,18 @@ function handleLogout() {
         <!-- Active Warehouse Badge -->
         <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-100 text-xs font-medium text-siris-ink border border-siris-border">
           <Warehouse class="w-3.5 h-3.5 text-siris-muted" />
-          <span>Gudang Bahan Baku</span>
+          <span>{{ warehouseName }}</span>
         </div>
 
         <!-- Mode Badge (Default UJI) -->
         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
-          MODE UJI
+          MODE {{ session.mode }}
         </span>
 
         <!-- User role info -->
         <div class="hidden md:flex flex-col text-right">
-          <span class="text-xs font-semibold text-siris-ink">yudha</span>
-          <span class="text-[10px] text-siris-muted">Purchasing / Tim 42</span>
+          <span class="text-xs font-semibold text-siris-ink">{{ session.displayName }}</span>
+          <span class="text-[10px] text-siris-muted">{{ roleLabel }} / Tim 42</span>
         </div>
 
         <!-- Logout button -->
@@ -206,9 +158,11 @@ function handleLogout() {
             <!-- Context Strip: design.md §2 signature element -->
             <div class="mt-3 py-1.5 px-3 bg-siris-canvas rounded border border-siris-border flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-siris-muted">
               <span class="font-medium text-siris-ink">Konteks:</span>
-              <span>Gudang: <strong class="text-siris-ink font-semibold">Gudang Bahan Baku (WH-01)</strong></span>
+              <span>Peran: <strong class="text-siris-ink font-semibold">{{ roleLabel }}</strong></span>
               <span class="text-slate-300">|</span>
-              <span>Mode: <strong class="text-amber-700 font-semibold">UJI (Simulasi)</strong></span>
+              <span>Gudang: <strong class="text-siris-ink font-semibold">{{ warehouseName }} ({{ warehouseCode }})</strong></span>
+              <span class="text-slate-300">|</span>
+              <span>Mode: <strong class="text-amber-700 font-semibold">{{ modeLabel }}</strong></span>
               <span class="text-slate-300">|</span>
               <span>Periode: <strong class="text-siris-ink font-semibold">Sprint 1 (9–15 Nov 2026)</strong></span>
               <span class="text-slate-300">|</span>
