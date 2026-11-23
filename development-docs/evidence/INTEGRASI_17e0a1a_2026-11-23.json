@@ -1,0 +1,22 @@
+{
+  "evidence_version": "SRS-54/proposed-0.1",
+  "mode": "UJI",
+  "build_commit": "17e0a1a366c5cabc0bfe0e01f45875c22880c6e5",
+  "build_sha256": "12d1a4b22a4ec5f4f188b1571fdedc26732d636417e21805a425ded7de2e0598",
+  "schema_sha256": "a57c1bb4f6a0bb0acd2798b2c2cf3274c44935ee0b695234eb90da7e955a00fb",
+  "dataset_sha256": "c53f4d266a593f3cdf259835742e6371cbdff404131aeb1043af547d4d8327d8",
+  "node": "v22.22.2",
+  "baseline_postgresql": "16.6",
+  "clock": "2026-11-20T03:00:00.000Z",
+  "started_at": "2026-11-22T19:07:55.532Z",
+  "finished_at": "2026-11-22T19:08:02.240Z",
+  "exit_code": 0,
+  "assertion_counts": {
+    "PASS": 178
+  },
+  "browser_smoke": {
+    "PASS": 2,
+    "SKIPPED": 1,
+    "scope": "App shell dan health API nyata; login SRS-47/48 SKIPPED."
+  }
+}

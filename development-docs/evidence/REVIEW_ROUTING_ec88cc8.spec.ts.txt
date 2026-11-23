@@ -1,0 +1,62 @@
+import { describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
+import { createRouter, createMemoryHistory } from 'vue-router';
+import { router as declaredRouter } from '../router';
+import { installAccessGuard } from '../router/access-guard';
+import { createSessionStore, DEFAULT_UJI_CONTEXT } from '../shared/session/session-context';
+import { getNavigationFor } from '../shared/access/navigation';
+import type { UserRole } from '@siris/contracts';
+
+// Expected berasal dari baseline SRS-36 §6.2, bukan PAGE_ACCESS implementasi.
+const source: Record<UserRole, string[]> = {
+  PURCHASING:['UC-01','UC-02','UC-04','UC-05','UC-06','UC-07','UC-08'],
+  WAREHOUSE:['UC-03','UC-04','UC-05','UC-07','UC-09','UC-10','UC-11','UC-12','UC-13','UC-14','UC-15'],
+  PRODUCTION:['UC-06'], MANAGEMENT:['UC-08','UC-13','UC-14'],
+};
+const pages=declaredRouter.getRoutes().filter((r)=>r.meta.ucId);
+describe('Reviewer PR24: URL nyata dari route declaration terhadap sumber RBAC',()=>{
+  for(const role of Object.keys(source) as UserRole[]) for(const page of pages) {
+    it(`${role} URL ${page.path} ${source[role].includes(String(page.meta.ucId))?'ALLOW':'DENY'}`,async()=>{
+      const session=createSessionStore({...DEFAULT_UJI_CONTEXT,role});
+      const router=createRouter({history:createMemoryHistory(),routes:declaredRouter.options.routes});
+      const dispose=installAccessGuard(router,session);
+      try {
+        await router.push(page.path+'?fixture=UJI');
+        expect(router.currentRoute.value.path).toBe(source[role].includes(String(page.meta.ucId))?page.path:'/akses-ditolak');
+        if(!source[role].includes(String(page.meta.ucId))) expect(router.currentRoute.value.query).toEqual({});
+      } finally {dispose();}
+    });
+  }
+  it('reset selection/preview/cache pada pergantian akun dan pencabutan assignment',()=>{
+    const session=createSessionStore();
+    const state={selection:'UJI',preview:'UJI',cache:'UJI'};
+    for(const key of ['selection','preview','cache'] as const)session.onContextReset(()=>{state[key]='';});
+    session.setAccount({...DEFAULT_UJI_CONTEXT,warehouses:[],activeWarehouseId:null});
+    expect(state).toEqual({selection:'',preview:'',cache:''});
+    expect(session.setActiveWarehouse('WH-01').ok).toBe(false);
+  });
+  it('akun dengan role baru memicu evaluasi ulang route aktif',async()=>{
+    const session=createSessionStore({...DEFAULT_UJI_CONTEXT,role:'WAREHOUSE'});
+    const router=createRouter({history:createMemoryHistory(),routes:declaredRouter.options.routes});
+    const dispose=installAccessGuard(router,session);
+    try {
+      await router.push('/inventory/import-stock');
+      session.setAccount({...DEFAULT_UJI_CONTEXT,accountId:'UJI-SECOND',role:'PRODUCTION'});
+      await nextTick();await new Promise((done)=>setTimeout(done,0));
+      expect(router.currentRoute.value.path).toBe('/akses-ditolak');
+    } finally {dispose();}
+  });
+  it('reload menghasilkan konteks default sementara, tidak mempercayai storage',()=>{
+    const first=createSessionStore();first.setRole('MANAGEMENT');
+    localStorage.setItem('siris-role','MANAGEMENT');
+    expect(createSessionStore().state.role).toBe('PURCHASING');
+    localStorage.clear();
+  });
+  it('ACTUAL ditolak dan UC16 tidak memiliki route/menu; UC11/12 view saja',()=>{
+    expect(createSessionStore().setMode('ACTUAL').ok).toBe(false);
+    expect(pages).toHaveLength(15);
+    expect(pages.some((page)=>page.meta.ucId==='UC-16')).toBe(false);
+    expect(pages.filter((page)=>['UC-11','UC-12'].includes(String(page.meta.ucId))).every((page)=>page.meta.viewOnly===true)).toBe(true);
+    for(const role of Object.keys(source) as UserRole[])expect(getNavigationFor(role,'UJI').flatMap((group)=>group.items).some((item)=>String(item.ucId)==='UC-16')).toBe(false);
+  });
+});
