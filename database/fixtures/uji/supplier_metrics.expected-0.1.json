@@ -1,0 +1,75 @@
+{
+  "_keterangan": "Oracle UJI berversi untuk enam metrik supplier (SRS-24 / SRS-90). Angka dihitung dari supplier_metrics.uji-0.1.json dan definisi design.md §6.6. Bukan data operasional mitra.",
+  "fixture_version": "uji-0.1",
+  "oracle_version": "oracle-0.1",
+  "decision_status": "CANDIDATE_UJI",
+  "expected": {
+    "otd_r": {
+      "value": 75,
+      "numerator": 3,
+      "denominator": 4,
+      "excluded_count": 1
+    },
+    "otd_c": {
+      "value": 100,
+      "numerator": 4,
+      "denominator": 4,
+      "excluded_count": 1
+    },
+    "quantity_mismatch_rate": {
+      "value": 50,
+      "numerator": 2,
+      "denominator": 4,
+      "excluded_count": 1
+    },
+    "s_lead": {
+      "value": 10.25,
+      "numerator": 41,
+      "denominator": 4,
+      "excluded_count": 1
+    },
+    "s_change": {
+      "value": 2,
+      "numerator": 2,
+      "denominator": null,
+      "excluded_count": 0
+    },
+    "s_fill": [
+      {
+        "supplier_code": "UJI-SUP-A",
+        "material_code": "UJI-MAT-A",
+        "uom": "KG",
+        "value": 93.33333333333333,
+        "numerator": 280,
+        "denominator": 300,
+        "excluded_count": 0
+      },
+      {
+        "supplier_code": "UJI-SUP-B",
+        "material_code": "UJI-MAT-B",
+        "uom": "L",
+        "value": 100,
+        "numerator": 50,
+        "denominator": 50,
+        "excluded_count": 0
+      },
+      {
+        "supplier_code": "UJI-SUP-B",
+        "material_code": "UJI-MAT-C",
+        "uom": "KG",
+        "value": 83.33333333333334,
+        "numerator": 250,
+        "denominator": 300,
+        "excluded_count": 0
+      }
+    ]
+  },
+  "notes": [
+    "OTD-R 75%: 4 final eligible, 1 final (UJI-IN-001) tiba setelah requested date.",
+    "OTD-C 100%: janji terakhir UJI-IN-001 (CHANGE 2026-11-13) menutup keterlambatan terhadap requested date.",
+    "Quantity Mismatch Rate 50%: UJI-IN-002 (180 vs 200) dan UJI-IN-004 (250 vs 300).",
+    "S-LEAD 10,25 hari: (10 + 10 + 10 + 11) / 4.",
+    "S-CHANGE 2: UJI-COM-002 dan UJI-COM-003.",
+    "S-FILL tidak digabung lintas material/UOM; UJI-IN-005 OPEN tidak masuk metrik final."
+  ]
+}
