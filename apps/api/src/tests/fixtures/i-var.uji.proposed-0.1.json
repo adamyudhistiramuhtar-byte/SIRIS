@@ -1,0 +1,173 @@
+{
+  "_keterangan": "Fixture sintetis berlabel UJI untuk I-VAR SRS-32. Bukan data mitra dan bukan penilaian aktual perusahaan.",
+  "mode": "UJI",
+  "status": "PROPOSED",
+  "sumber": "design.md §Fixture persediaan (UI-14): union 9, valid 5, matched 2, discrepancy 3, nonvalid 4; I-VAR MAT-001=0, MAT-002=-5, MAT-003=+3, MAT-005=-20, MAT-008=0.",
+  "asumsi_pengisi": [
+    "design.md tidak menyebut material nonvalid; pembagian MAT-004 NOT_COUNTED, MAT-006 UOM_MISMATCH, MAT-007 COUNT_MISSING, MAT-009 STOCK_MISSING diisi untuk tes.",
+    "design.md tidak menyebut kuantitas mentah; system_quantity dan physical_quantity diisi agar selisihnya sama dengan I-VAR sumber.",
+    "Run kedua (cutoff B) seluruhnya sintetis untuk menguji dua cutoff tanpa memilih latest run."
+  ],
+  "runs": [
+    {
+      "run_id": "20000000-0000-4000-8000-00000000000a",
+      "cutoff_id": "00000000-0000-4000-8000-0000000000c1",
+      "rule_version": "uji-engine/proposed-0.1",
+      "lines": [
+        {
+          "material_code": "MAT-001",
+          "material_id": "10000000-0000-4000-8000-000000000001",
+          "status": "MATCHED",
+          "variance": "0.000000",
+          "system_quantity": "10.000000",
+          "physical_quantity": "10.000000",
+          "stock_uom": "KG",
+          "count_uom": "KG"
+        },
+        {
+          "material_code": "MAT-002",
+          "material_id": "10000000-0000-4000-8000-000000000002",
+          "status": "DISCREPANCY",
+          "variance": "-5.000000",
+          "system_quantity": "25.000000",
+          "physical_quantity": "20.000000",
+          "stock_uom": "KG",
+          "count_uom": "KG"
+        },
+        {
+          "material_code": "MAT-003",
+          "material_id": "10000000-0000-4000-8000-000000000003",
+          "status": "DISCREPANCY",
+          "variance": "3.000000",
+          "system_quantity": "7.000000",
+          "physical_quantity": "10.000000",
+          "stock_uom": "L",
+          "count_uom": "L"
+        },
+        {
+          "material_code": "MAT-004",
+          "material_id": "10000000-0000-4000-8000-000000000004",
+          "status": "NOT_COUNTED",
+          "variance": null,
+          "system_quantity": "12.000000",
+          "physical_quantity": null,
+          "stock_uom": "KG",
+          "count_uom": "KG"
+        },
+        {
+          "material_code": "MAT-005",
+          "material_id": "10000000-0000-4000-8000-000000000005",
+          "status": "DISCREPANCY",
+          "variance": "-20.000000",
+          "system_quantity": "50.000000",
+          "physical_quantity": "30.000000",
+          "stock_uom": "PCS",
+          "count_uom": "PCS"
+        },
+        {
+          "material_code": "MAT-006",
+          "material_id": "10000000-0000-4000-8000-000000000006",
+          "status": "UOM_MISMATCH",
+          "variance": null,
+          "system_quantity": "8.000000",
+          "physical_quantity": "8.000000",
+          "stock_uom": "KG",
+          "count_uom": "L"
+        },
+        {
+          "material_code": "MAT-007",
+          "material_id": "10000000-0000-4000-8000-000000000007",
+          "status": "COUNT_MISSING",
+          "variance": null,
+          "system_quantity": "5.000000",
+          "physical_quantity": null,
+          "stock_uom": "KG",
+          "count_uom": null
+        },
+        {
+          "material_code": "MAT-008",
+          "material_id": "10000000-0000-4000-8000-000000000008",
+          "status": "MATCHED",
+          "variance": "0.000000",
+          "system_quantity": "0.000000",
+          "physical_quantity": "0.000000",
+          "stock_uom": "KG",
+          "count_uom": "KG"
+        },
+        {
+          "material_code": "MAT-009",
+          "material_id": "10000000-0000-4000-8000-000000000009",
+          "status": "STOCK_MISSING",
+          "variance": null,
+          "system_quantity": null,
+          "physical_quantity": "4.000000",
+          "stock_uom": null,
+          "count_uom": "KG"
+        }
+      ]
+    },
+    {
+      "run_id": "20000000-0000-4000-8000-00000000000b",
+      "cutoff_id": "00000000-0000-4000-8000-0000000000c2",
+      "rule_version": "uji-engine/proposed-0.1",
+      "lines": [
+        {
+          "material_code": "MAT-002",
+          "material_id": "10000000-0000-4000-8000-000000000002",
+          "status": "DISCREPANCY",
+          "variance": "-1.500000",
+          "system_quantity": "21.500000",
+          "physical_quantity": "20.000000",
+          "stock_uom": "KG",
+          "count_uom": "KG"
+        },
+        {
+          "material_code": "MAT-003",
+          "material_id": "10000000-0000-4000-8000-000000000003",
+          "status": "MATCHED",
+          "variance": "0.000000",
+          "system_quantity": "10.000000",
+          "physical_quantity": "10.000000",
+          "stock_uom": "L",
+          "count_uom": "L"
+        },
+        {
+          "material_code": "MAT-004",
+          "material_id": "10000000-0000-4000-8000-000000000004",
+          "status": "NOT_COUNTED",
+          "variance": null,
+          "system_quantity": "12.000000",
+          "physical_quantity": null,
+          "stock_uom": "KG",
+          "count_uom": "KG"
+        }
+      ]
+    }
+  ],
+  "oracle": {
+    "run_a": {
+      "i_var": {
+        "MAT-001": "0.000000",
+        "MAT-002": "-5.000000",
+        "MAT-003": "3.000000",
+        "MAT-005": "-20.000000",
+        "MAT-008": "0.000000"
+      },
+      "excluded": {
+        "MAT-004": "NOT_COUNTED",
+        "MAT-006": "UOM_MISMATCH",
+        "MAT-007": "COUNT_MISSING",
+        "MAT-009": "STOCK_MISSING"
+      },
+      "union": 9,
+      "valid": 5,
+      "matched": 2,
+      "discrepancy": 3,
+      "nonvalid": 4
+    },
+    "run_b": {
+      "i_var": { "MAT-002": "-1.500000", "MAT-003": "0.000000" },
+      "excluded": { "MAT-004": "NOT_COUNTED" }
+    }
+  }
+}
