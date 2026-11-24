@@ -214,7 +214,7 @@ describe('Pengendali alur impor: hasil tidak pasti', () => {
     expect(flow.state.value).toEqual({ phase: 'cancel-unknown', batchId: 'b-1' });
   });
 
-  it('kegagalan validasi tampil sebagai galat umum tanpa membocorkan pesan mentah', async () => {
+  it('kegagalan validasi mempertahankan ketidakpastian tanpa membocorkan pesan mentah', async () => {
     const session = createSessionStore(TWO_WAREHOUSES);
     const service = makeService({
       validate: vi.fn(async () => {
@@ -225,7 +225,7 @@ describe('Pengendali alur impor: hasil tidak pasti', () => {
     flow.handlers.selectFile(FILE);
     await flow.handlers.submit();
     const result = flow.state.value;
-    expect(result.phase).toBe('error');
+    expect(result.phase).toBe('preparation-unknown');
     expect(JSON.stringify(result)).not.toContain('SELECT');
   });
 
@@ -281,5 +281,30 @@ describe('Pengendali alur impor terpasang pada ImportWizard', () => {
     expect(flow.state.value).toEqual({ phase: 'initial' });
     expect(wrapper.text()).not.toContain('b-1');
     wrapper.unmount();
+  });
+});
+
+
+describe('Regresi review PM: operasi terlambat dan hasil tidak pasti', () => {
+  it('progress lama tidak mengisi ulang progres setelah reset konteks', async () => {
+    const pending = deferred<ImportWizardState>();
+    let progress!: (value: number) => void;
+    const session = createSessionStore(TWO_WAREHOUSES);
+    const flow = useImportFlow(session, makeService({validate: ({onProgress}) => {progress=onProgress;return pending.promise;}}));
+    flow.handlers.selectFile(FILE);const running=flow.handlers.submit();
+    progress(20);expect(flow.uploadProgress.value).toBe(20);
+    session.setActiveWarehouse('WH-02');progress(99);
+    expect(flow.uploadProgress.value).toBeNull();
+    pending.resolve(PREVIEW);await running;
+  });
+  it('AbortError dari transport simpan tidak meninggalkan fase committing', async () => {
+    const flow=useImportFlow(createSessionStore(TWO_WAREHOUSES),makeService({commit:async()=>{throw new DOMException('timeout','AbortError');}}));
+    flow.handlers.selectFile(FILE);await flow.handlers.submit();await flow.handlers.confirm([]);
+    expect(flow.state.value.phase).toBe('unknown');
+  });
+  it('validasi terputus tidak mengizinkan unggah ulang otomatis', async () => {
+    const flow=useImportFlow(createSessionStore(TWO_WAREHOUSES),makeService({validate:async()=>{throw new Error('network');}}));
+    flow.handlers.selectFile(FILE);await flow.handlers.submit();
+    expect(flow.state.value.phase).toBe('preparation-unknown');
   });
 });

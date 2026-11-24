@@ -42,14 +42,6 @@ export interface ImportFlowService {
 const MODE_NOT_ENABLED = 'Mode ACTUAL belum diaktifkan.';
 const WAREHOUSE_NOT_ASSIGNED = 'Gudang tersebut bukan assignment akun ini.';
 
-function isAbort(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    (error as { name?: unknown }).name === 'AbortError'
-  );
-}
-
 function newIdempotencyKey(): string {
   const c = globalThis.crypto;
   if (c && typeof c.randomUUID === 'function') return c.randomUUID();
@@ -102,7 +94,7 @@ export function useImportFlow(session: SessionStore, service: ImportFlowService)
       if (mine !== generation) return;
       state.value = next;
     } catch (error) {
-      if (mine !== generation || isAbort(error)) return;
+      if (mine !== generation) return;
       state.value = onFailure(error);
     } finally {
       if (mine === generation) {
@@ -151,10 +143,10 @@ export function useImportFlow(session: SessionStore, service: ImportFlowService)
           context: context.value,
           signal,
           onProgress: (percent) => {
-            uploadProgress.value = percent;
+            if (controller?.signal === signal && !signal.aborted) uploadProgress.value = percent;
           },
         }),
-      () => ({ phase: 'error', message: 'Berkas belum dapat diproses. Coba lagi.' }),
+      () => ({ phase: 'preparation-unknown' }),
     );
   }
 
