@@ -198,7 +198,7 @@ function latestCommitmentBefore(
 
   for (const event of history.events) {
     const eventMs = Date.parse(event.event_at ?? '');
-    if (Number.isNaN(eventMs) || eventMs > completionMs) {
+    if (Number.isNaN(eventMs) || eventMs >= completionMs) {
       continue;
     }
     if (
@@ -382,7 +382,7 @@ export function calculateQuantityMismatchRate(source: SupplierMetricSource): Met
       excludeRecord(tally, 'MISSING_EXPECTED_QUANTITY', record.inbound_ref);
       continue;
     }
-    if (expectedMicro === null) {
+    if (expectedMicro === null || expectedMicro < 0n) {
       excludeRecord(tally, 'INVALID_EXPECTED_QUANTITY', record.inbound_ref);
       continue;
     }
@@ -461,7 +461,7 @@ export function calculateSFill(source: SupplierMetricSource): SupplierFillResult
       excludeRecord(group.tally, 'MISSING_EXPECTED_QUANTITY', record.inbound_ref);
       continue;
     }
-    if (expectedMicro === null) {
+    if (expectedMicro === null || expectedMicro < 0n) {
       excludeRecord(group.tally, 'INVALID_EXPECTED_QUANTITY', record.inbound_ref);
       continue;
     }
