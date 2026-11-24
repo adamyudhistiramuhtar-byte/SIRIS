@@ -38,6 +38,8 @@ TECH_BRANCHES = {
 
 def private_path(path):
     """Default-deny untuk berkas yang memerlukan review tambahan sebelum tracking."""
+    if path == Path("planning/sprints/SPRINT_01_WORKLOAD.csv"):
+        return False
     if any(part in SKIP_DIRS for part in path.parts):
         return True
     if path.name == ".env" or (path.name.startswith(".env.") and path.name != ".env.example"):
