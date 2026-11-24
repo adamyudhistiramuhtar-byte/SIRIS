@@ -17,4 +17,3 @@ export type ImportType =
 export type BatchStatus = 'STAGED' | 'VALIDATED' | 'COMMITTED' | 'CANCELLED';
 
 export type ValidationSeverity = 'ERROR' | 'WARNING';
-

@@ -1,0 +1,79 @@
+{
+  "_keterangan": "Fixture sintetis berlabel UJI untuk kontrak COUNT proposed-0.1 (SRS-37). Bukan data mitra. Header sumber asli SOURCE REQUIRED.",
+  "contract_version": "proposed-0.1",
+  "contract_status": "PROPOSED",
+  "kind": "COUNT",
+  "raw_header_status": "SOURCE REQUIRED",
+  "open_decisions": [
+    "CF-04: kontrak cutoff ditangani SRS-38.",
+    "Padanan item_code (design.md UI-10) dengan material_code perlu konfirmasi."
+  ],
+  "metadata": {
+    "kind": "COUNT",
+    "warehouse_id": "00000000-0000-4000-8000-000000000001",
+    "mode": "UJI",
+    "cutoff_id": "00000000-0000-4000-8000-000000000002",
+    "source_name": "UJI-count.csv",
+    "source_reference": "UJI-SRC-CNT-001",
+    "contract_version": "proposed-0.1"
+  },
+  "rows": [
+    {
+      "row_number": 1,
+      "description": "Dihitung dan fisik nol: sah, bukan belum dihitung",
+      "normalized": {
+        "material_code": "UJI-MAT-01",
+        "uom": "KG",
+        "is_counted": true,
+        "physical_quantity": "0.000000"
+      }
+    },
+    {
+      "row_number": 2,
+      "description": "Belum dihitung: physical_quantity null, bukan 0",
+      "normalized": {
+        "material_code": "UJI-MAT-02",
+        "uom": "L",
+        "is_counted": false,
+        "physical_quantity": null
+      }
+    }
+  ],
+  "negative_cases": [
+    {
+      "case_id": "UJI-CNT-NEG-01",
+      "description": "is_counted=false tetapi physical_quantity terisi",
+      "normalized": {
+        "material_code": "UJI-MAT-03",
+        "uom": "KG",
+        "is_counted": false,
+        "physical_quantity": "5.000000"
+      },
+      "expected_issue": "NOT_COUNTED_VALUE"
+    },
+    {
+      "case_id": "UJI-CNT-NEG-02",
+      "description": "is_counted=true tetapi physical_quantity null",
+      "normalized": {
+        "material_code": "UJI-MAT-03",
+        "uom": "KG",
+        "is_counted": true,
+        "physical_quantity": null
+      },
+      "expected_issue": "INVALID_FILE",
+      "note": "Gap G-04."
+    },
+    {
+      "case_id": "UJI-CNT-NEG-03",
+      "description": "is_counted kosong; tidak boleh diturunkan dari blank/zero",
+      "normalized": {
+        "material_code": "UJI-MAT-03",
+        "uom": "KG",
+        "is_counted": null,
+        "physical_quantity": null
+      },
+      "expected_issue": "INVALID_FILE",
+      "note": "Gap G-04."
+    }
+  ]
+}

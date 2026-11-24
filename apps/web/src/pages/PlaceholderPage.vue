@@ -7,6 +7,7 @@ const route = useRoute();
 
 const useCaseId = computed(() => (route.meta.ucId as string) || 'UC-XX');
 const plannedSprint = computed(() => (route.meta.sprint as string) || 'Sprint 1 / 2');
+const isViewOnly = computed(() => route.meta.viewOnly === true);
 const targetRole = computed(() => (route.meta.role as string) || 'Purchasing / Warehouse');
 </script>
 
@@ -17,8 +18,14 @@ const targetRole = computed(() => (route.meta.role as string) || 'Purchasing / W
       <div class="flex items-start justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-siris-primary">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-siris-info-bg text-siris-info">
               {{ useCaseId }}
+            </span>
+            <span
+              v-if="isViewOnly"
+              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-siris-ink"
+            >
+              Hanya lihat (UJI)
             </span>
             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">
               Jadwal: {{ plannedSprint }}
@@ -66,4 +73,3 @@ const targetRole = computed(() => (route.meta.role as string) || 'Purchasing / W
     </div>
   </div>
 </template>
-

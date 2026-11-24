@@ -18,4 +18,3 @@ describe('Database Connection Integration Test', () => {
     }
   });
 });
-

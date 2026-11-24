@@ -1,0 +1,70 @@
+{
+  "_keterangan": "Fixture sintetis berlabel UJI untuk kontrak STOCK proposed-0.1 (SRS-37). Bukan data mitra. Hanya header QTY AKHIR yang diketahui dari SRC-01.",
+  "contract_version": "proposed-0.1",
+  "contract_status": "PROPOSED",
+  "kind": "STOCK",
+  "raw_header_status": "Hanya QTY AKHIR diketahui; header material_code dan uom SOURCE REQUIRED",
+  "open_decisions": [
+    "CF-04: kontrak cutoff (DATE/DATETIME, basis, precision, UJI SIMULATED) ditangani SRS-38.",
+    "OD-05: schema komponen support (master/movement/WO) dan kebijakan saldo negatif."
+  ],
+  "metadata": {
+    "kind": "STOCK",
+    "warehouse_id": "00000000-0000-4000-8000-000000000001",
+    "mode": "UJI",
+    "cutoff_id": "00000000-0000-4000-8000-000000000002",
+    "source_name": "UJI-stock.csv",
+    "source_reference": "UJI-SRC-STK-001",
+    "contract_version": "proposed-0.1"
+  },
+  "components": {
+    "balance_file": "wajib",
+    "support_files": "opsional; tidak dijumlahkan ke system_quantity"
+  },
+  "rows": [
+    {
+      "row_number": 1,
+      "component": "balance",
+      "raw": { "QTY AKHIR": "10" },
+      "normalized": { "material_code": "UJI-MAT-01", "uom": "KG", "system_quantity": "10.000000" }
+    },
+    {
+      "row_number": 2,
+      "component": "balance",
+      "raw": { "QTY AKHIR": "7.25" },
+      "normalized": { "material_code": "UJI-MAT-02", "uom": "L", "system_quantity": "7.250000" }
+    }
+  ],
+  "expected_warnings": [
+    {
+      "code": "OPTIONAL_COMPONENT_ABSENT",
+      "description": "Paket tanpa support_files; saldo tetap dapat diimpor"
+    }
+  ],
+  "negative_cases": [
+    {
+      "case_id": "UJI-STK-NEG-01",
+      "description": "Nilai QTY AKHIR ambigu terhadap locale (pemisah ribuan/desimal tidak dapat dipastikan)",
+      "raw": { "QTY AKHIR": "1.234,5" },
+      "expected_issue": "INVALID_FILE",
+      "note": "Locale sumber SOURCE REQUIRED; nilai ambigu ditolak, bukan ditebak. Gap G-04."
+    },
+    {
+      "case_id": "UJI-STK-NEG-02",
+      "description": "material_code tidak ada pada referensi mode UJI",
+      "normalized": {
+        "material_code": "UJI-MAT-TIDAK-ADA",
+        "uom": "KG",
+        "system_quantity": "3.000000"
+      },
+      "expected_issue": "MISSING_REFERENCE"
+    },
+    {
+      "case_id": "UJI-STK-NEG-03",
+      "description": "Metadata STOCK tanpa cutoff_id",
+      "metadata_override": { "cutoff_id": null },
+      "expected_issue": "INVALID_FILE",
+      "note": "DOC-09: STOCK/COUNT wajib cutoff_id. Gap G-04."
+    }
+  ]
+}

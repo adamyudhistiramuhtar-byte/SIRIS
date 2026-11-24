@@ -18,4 +18,3 @@ export function correlationIdMiddleware(req: Request, res: Response, next: NextF
 
   next();
 }
-

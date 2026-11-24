@@ -3,6 +3,9 @@ import AppShell from '../layouts/AppShell.vue';
 import HomePage from '../pages/HomePage.vue';
 import LoginPage from '../pages/LoginPage.vue';
 import PlaceholderPage from '../pages/PlaceholderPage.vue';
+import ForbiddenPage from '../pages/ForbiddenPage.vue';
+import { sessionStore } from '../shared/session/session-context';
+import { FORBIDDEN_ROUTE_NAME, installAccessGuard } from './access-guard';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -25,6 +28,16 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Beranda',
           description: 'Pintu masuk alur kerja dan ringkasan aktivitas gudang',
+          role: 'Semua Role',
+        },
+      },
+      {
+        path: 'akses-ditolak',
+        name: FORBIDDEN_ROUTE_NAME,
+        component: ForbiddenPage,
+        meta: {
+          title: 'Akses Ditolak',
+          description: 'Halaman tidak tersedia untuk peran atau mode saat ini',
           role: 'Semua Role',
         },
       },
@@ -158,6 +171,7 @@ const routes: RouteRecordRaw[] = [
           title: 'Arsip Bukti Kartu Stok',
           description: 'Pengunggahan bukti foto/dokumen kartu stok fisik',
           ucId: 'UC-11',
+          viewOnly: true,
           sprint: 'Sprint 3',
           role: 'Warehouse',
         },
@@ -170,6 +184,7 @@ const routes: RouteRecordRaw[] = [
           title: 'Rekonsiliasi Stok',
           description: 'Eksekusi perbandingan stok sistem dengan hitung fisik',
           ucId: 'UC-12',
+          viewOnly: true,
           sprint: 'Sprint 2',
           role: 'Warehouse',
         },
@@ -224,8 +239,9 @@ export const router = createRouter({
   routes,
 });
 
+installAccessGuard(router, sessionStore);
+
 router.afterEach((to) => {
   const pageTitle = to.meta.title as string | undefined;
   document.title = pageTitle ? `${pageTitle} — SIRIS` : 'SIRIS';
 });
-

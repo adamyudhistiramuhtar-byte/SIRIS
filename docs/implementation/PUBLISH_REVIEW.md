@@ -2,6 +2,8 @@
 
 Tanggal 10 November 2026. Status: **DONE** — kandidat lokal diperiksa, scan keamanan **PASS**, rekonsiliasi non-destruktif selesai, commit `4dbc74f` dan seluruh 22 remote branch berhasil dipush dan diverifikasi di GitHub remote `origin`.
 
+**Batas pembaruan SRS-41:** Status di atas hanya untuk pemeriksaan kandidat awal `4dbc74f`, bukan jaminan bahwa seluruh histori atau scaffold bebas secret dan data privat. Scaffold sudah diterbitkan melalui PR #2 ke main, sedangkan [PR #4](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/4) ke develop belum di-merge. Pemeriksaan terkini, cakupan scanner dan pekerjaan review yang tersisa dicatat pada [status fondasi](../../development-docs/STATUS_FONDASI_SRS-41.md).
+
 ## Inspeksi yang benar-benar dilakukan
 
 - Seluruh 22 berkas awal dibaca/dihash: AGENTS.md, design.md, 19 Markdown development dan satu ZIP. Struktur ZIP diperiksa: 19 Markdown dan CRC valid.
@@ -30,7 +32,7 @@ Tanggal 10 November 2026. Status: **DONE** — kandidat lokal diperiksa, scan ke
 3. Push main: Berhasil (`0c243c0..4dbc74f`), upstream tracking aktif.
 4. Push develop: Berhasil, upstream tracking aktif.
 5. Push 20 feature & chore branches: Berhasil, seluruhnya diverifikasi via `git ls-remote --heads origin`.
-6. Working branch lokal: `develop` (clean tree).
+6. Working branch lokal saat publikasi awal: `develop` (clean tree); tidak merupakan klaim status workspace sekarang.
 
 ## Pengamanan berkelanjutan
 
