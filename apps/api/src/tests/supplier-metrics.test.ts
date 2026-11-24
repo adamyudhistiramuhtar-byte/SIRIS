@@ -444,3 +444,15 @@ describe('SRS-24 DTO kandidat', () => {
     expect(dto.s_fill).toHaveLength(3);
   });
 });
+
+
+describe('Regresi review PM terhadap sumber DESAIN-42-1.1',()=>{
+  it('kuantitas expected negatif tidak masuk denominator',()=>{
+    const source=makeSource({inbound:[makeInbound({expected_quantity:'-100.000000'})],receipts:[makeReceipt()]});
+    expect(calculateQuantityMismatchRate(source).denominator).toBe(0);
+  });
+  it('janji pada instant final tidak dipakai sebagai janji sebelum final',()=>{
+    const source=makeSource({inbound:[makeInbound({final_arrival_date:'2026-11-10'})],commitments:[makeCommitment({promised_date:'2026-11-09'}),makeCommitment({event_ref:'T-COM-002',event_type:'CHANGE',event_at:'2026-11-10T10:00:00+07:00',promised_date:'2026-11-12'})]});
+    expect(calculateOtdC(source).value).toBe(0);
+  });
+});
