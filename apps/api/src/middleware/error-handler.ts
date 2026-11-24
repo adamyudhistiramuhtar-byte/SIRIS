@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { ApiErrorDetail, ApiErrorResponse } from '@siris/contracts';
 import { AppError } from '../errors/app-error.js';
-import { env } from '../config/env.js';
 
 function buildErrorResponse(
   code: string,
@@ -22,20 +21,15 @@ function buildErrorResponse(
 /**
  * Log aman untuk error tak terduga. Pesan mentah, SQL, stack lengkap, dan
  * objek error tidak dicatat karena dapat memuat nilai sensitif atau storage key.
- * Stack frame hanya dicatat saat LOG_LEVEL=debug dan tanpa baris pesan.
+ * Nama, code, dan stack milik exception juga dapat memuat data privat.
+ * LOG_LEVEL=debug tidak mengubah batas kerahasiaan ini.
  */
-function logUnexpectedError(err: Error, correlationId: string): void {
-  const rawCode = (err as { code?: unknown }).code;
-  const safeCode = typeof rawCode === 'string' && /^[A-Za-z0-9_]+$/.test(rawCode) ? rawCode : undefined;
-  const summary = `[${correlationId}] Unhandled Error: ${err.name}${safeCode ? ` code=${safeCode}` : ''}`;
-
-  if (env.LOG_LEVEL === 'debug' && typeof err.stack === 'string') {
-    const frames = err.stack.split('\n').slice(1).join('\n');
-    console.error(frames ? `${summary}\n${frames}` : summary);
-    return;
-  }
-
-  console.error(summary);
+function logUnexpectedError(correlationId: string): void {
+  // Kontrak wire correlation tidak diubah; header yang belum tervalidasi
+  // tidak disalin ke log. UUID sah tetap menghubungkan log dengan response.
+  const safeCorrelationId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(correlationId)
+    ? correlationId : 'CORRELATION_UNAVAILABLE';
+  console.error(`[${safeCorrelationId}] Unhandled Error: INTERNAL_SERVER_ERROR`);
 }
 
 export function errorHandler(
@@ -79,7 +73,7 @@ export function errorHandler(
     return;
   }
 
-  logUnexpectedError(error, correlationId);
+  logUnexpectedError(correlationId);
 
   res
     .status(500)
