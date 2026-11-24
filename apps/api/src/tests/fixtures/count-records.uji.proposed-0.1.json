@@ -1,0 +1,83 @@
+{
+  "_keterangan": "Fixture sintetis berlabel UJI untuk kontrak record COUNT SRS-27. Bukan data mitra. Diturunkan dari database/fixtures/uji/count.proposed-0.1.json (SRS-37).",
+  "mode": "UJI",
+  "status": "PROPOSED",
+  "asumsi_pengisi": [
+    "UUID sesi, batch, material, baris dan source_row diisi untuk tes; tidak berasal dari sumber.",
+    "warehouse_id dan cutoff_id sama dengan metadata fixture COUNT SRS-37."
+  ],
+  "batch": {
+    "id": "30000000-0000-4000-8000-000000000001",
+    "kind": "COUNT",
+    "warehouse_id": "00000000-0000-4000-8000-000000000001",
+    "mode": "UJI",
+    "cutoff_id": "00000000-0000-4000-8000-000000000002"
+  },
+  "session": {
+    "id": "40000000-0000-4000-8000-000000000001",
+    "batch_id": "30000000-0000-4000-8000-000000000001",
+    "cutoff_id": "00000000-0000-4000-8000-000000000002",
+    "warehouse_id": "00000000-0000-4000-8000-000000000001",
+    "mode": "UJI"
+  },
+  "lines": [
+    {
+      "source_row_number": 1,
+      "material_code": "UJI-MAT-01",
+      "record": {
+        "id": "50000000-0000-4000-8000-000000000001",
+        "session_id": "40000000-0000-4000-8000-000000000001",
+        "material_id": "10000000-0000-4000-8000-000000000001",
+        "uom": "KG",
+        "is_counted": true,
+        "physical_quantity": "0.000000",
+        "source_row_id": "60000000-0000-4000-8000-000000000001"
+      },
+      "makna": "Dihitung dan fisik nol: hitung sah, bukan belum dihitung"
+    },
+    {
+      "source_row_number": 2,
+      "material_code": "UJI-MAT-02",
+      "record": {
+        "id": "50000000-0000-4000-8000-000000000002",
+        "session_id": "40000000-0000-4000-8000-000000000001",
+        "material_id": "10000000-0000-4000-8000-000000000002",
+        "uom": "L",
+        "is_counted": false,
+        "physical_quantity": null,
+        "source_row_id": "60000000-0000-4000-8000-000000000002"
+      },
+      "makna": "Belum dihitung: physical_quantity null, bukan 0"
+    }
+  ],
+  "contoh_ditolak": [
+    {
+      "case_id": "UJI-CNT-REC-NEG-01",
+      "is_counted": false,
+      "physical_quantity": "0.000000",
+      "kode_sumber": "NOT_COUNTED_VALUE",
+      "sumber": "DOC-08 katalog error; AC SRS-27: false dengan 0 ditolak"
+    },
+    {
+      "case_id": "UJI-CNT-REC-NEG-02",
+      "is_counted": false,
+      "physical_quantity": "5.000000",
+      "kode_sumber": "NOT_COUNTED_VALUE",
+      "sumber": "Fixture SRS-37 UJI-CNT-NEG-01"
+    },
+    {
+      "case_id": "UJI-CNT-REC-NEG-03",
+      "is_counted": true,
+      "physical_quantity": null,
+      "kode_sumber": "INVALID_FILE",
+      "sumber": "Fixture SRS-37 UJI-CNT-NEG-02"
+    },
+    {
+      "case_id": "UJI-CNT-REC-NEG-04",
+      "is_counted": true,
+      "physical_quantity": "-1.000000",
+      "kode_sumber": null,
+      "sumber": "CHECK DOC-07 count_lines (physical_quantity >= 0); kode error belum ditetapkan sumber"
+    }
+  ]
+}
