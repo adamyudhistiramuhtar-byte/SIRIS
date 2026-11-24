@@ -10,7 +10,7 @@ import {
   type CommitmentRow,
   type ExpectedRow,
   type ReceivingRow,
-} from './inbound-oracle';
+} from './inbound-oracle.js';
 
 /**
  * SRS-60 (T-26): suite table-driven alur inbound parsial, final, dan exception
