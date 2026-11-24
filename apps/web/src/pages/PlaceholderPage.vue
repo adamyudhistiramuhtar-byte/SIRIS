@@ -18,7 +18,7 @@ const targetRole = computed(() => (route.meta.role as string) || 'Purchasing / W
       <div class="flex items-start justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-siris-primary">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-siris-info-bg text-siris-info">
               {{ useCaseId }}
             </span>
             <span
