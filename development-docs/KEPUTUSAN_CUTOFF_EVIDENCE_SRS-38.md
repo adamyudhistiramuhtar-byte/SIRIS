@@ -5,9 +5,9 @@
 | Issue | [SRS-38](https://adamyudhistiramuhtar.atlassian.net/browse/SRS-38) (T-04), parent SRS-11 / EPIC-08 |
 | UC terkait | UC-09, UC-10, UC-11, UC-12, UC-13, UC-14 |
 | Konflik yang ditangani | CF-03 (target evidence), CF-04 (cutoff), CF-05 (identitas/reuse hasil rekonsiliasi) |
-| Status dokumen | **PROPOSED — NEEDS DECISION**. Tidak ada keputusan di dokumen ini yang berstatus ACCEPTED. Dokumen ini **belum siap merge** sebagai penyelesaian SRS-38 sampai keputusan berwenang tersedia. Butir yang tercakup arahan baseline UJI (Adam, 15 Nov 2026) dicatat terpisah di §13 dan tidak dinaikkan menjadi ACCEPTED. |
-| Tanggal | 12 November 2026, diperbarui 15 November 2026, Asia/Jakarta |
-| Baseline repo | `origin/develop` @ `dba5c66` |
+| Status dokumen | **PROPOSED — NEEDS DECISION**. Tidak ada keputusan di dokumen ini yang berstatus ACCEPTED. Dokumen ini **belum siap merge** sebagai penyelesaian SRS-38 sampai keputusan berwenang tersedia. Butir yang tercakup arahan baseline UJI (Adam, 15 Nov 2026) dicatat terpisah di §13 dan tidak dinaikkan menjadi ACCEPTED. Perbedaan cara baca dengan register PR #28 untuk D-01, D-02, D-05, dan D-06 dicatat sebagai **TERBUKA** pada bagian masing-masing. |
+| Tanggal | 12 November 2026, diperbarui 15 November 2026 dan 24 November 2026, Asia/Jakarta |
+| Baseline repo | Disusun pada `origin/develop` @ `dba5c66`. Rujukan terbaru yang dibaca: `origin/develop` @ `28b8501` (24 November 2026; memuat merge PR #15 `d1acfb4`). Branch ini tidak di-rebase atau digabung dengan `develop`. Pembanding: [PR #26](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/26) @ `1886b2c` dan [PR #28](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/28) @ `c68893a` |
 | Pemilik | Backend & Database (Dwi Rani Amelia) |
 
 Dokumen ini menyusun opsi, rekomendasi, dan dampak untuk setiap konflik. Keputusan akhir berada pada pihak berwenang yang tercantum di §2. Sampai keputusan dicatat, berlaku aturan §9: **kontrak yang bertentangan tidak diberlakukan bersamaan**.
@@ -26,6 +26,9 @@ Dokumen ini menyusun opsi, rekomendasi, dan dampak untuk setiap konflik. Keputus
 | `design.md` (SRC-09) | 1.0.0 | §6.4 UI-09–UI-14, §6.5 eligibility rekonsiliasi, §7 aturan tanggal (`effective_precision=DATE` bukan 00.00), AC-13 |
 | `KONTRAK_SUMBER_SRS-37.md` ([PR #13](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/13), sudah merged ke develop `761a183`) | proposed-0.1 | Metadata `cutoff_id`, kontrak STOCK/COUNT |
 | `database/migrations/001_initial_schema.sql` | `dba5c66` | Tabel `cutoff_contexts` aktual pada repo (temuan F-03) |
+| [PR #26](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/26), branch `feature/SRS-38-cutoff-time-nullable` | `1886b2c` (Draft, base `integration/adam-20261121`, belum merged) | Kandidat F3-1: `005_cutoff_time_nullable.sql`, `recovery/005_restore_cutoff_time_required.sql`, `tests/integration/database/cutoff-nullable.test.ts`, `KANDIDAT_CUTOFF_F3-1_SRS-38.md` |
+| [PR #28](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/28), branch `docs/adam-decisions-20261122` | `c68893a` (terbuka, base `docs/SRS-58-contract-matrix`, belum merged) | `KEPUTUSAN_HANDOFF_ADAM_2026-11-23.md`: register D-01–D-06, C58-06, urutan migrasi 004/005/006, prosedur pemulihan 005 |
+| `MIGRASI_DATABASE_SRS-44.md` | `origin/develop` @ `28b8501` | PostgreSQL 16.6 untuk UJI lokal (PROPOSED, OD-07 OPEN) |
 
 Sumber yang belum tersedia: SRS/PRD final (OD-01, OD-03), sampel kartu stok dan hasil hitung mitra (OD-05), keputusan verifikator cutoff dan retensi (OD-08).
 
@@ -54,7 +57,9 @@ Pemilik issue SRS-38 hanya menyiapkan usulan; penetapan menjadi ACCEPTED memerlu
 - Nilai `effective_basis` (misalnya akhir hari kerja, waktu cetak laporan): **SOURCE REQUIRED**; tidak dikarang. Sampai tersedia, kolom berisi teks bebas yang wajib diisi dan `basis_reference` wajib.
 - **Tanggal laporan bukan bukti waktu efektif.** Tanggal cetak, periode laporan, atau tanggal yang tertera pada laporan tidak otomatis membuktikan effective timestamp, dan tidak membuktikan bahwa STOCK dan COUNT sebanding waktunya. Label tanggal tersebut tidak dipertukarkan dengan effective cutoff (design.md §7).
 - **`cutoff_id` identik adalah syarat perlu, bukan syarat cukup.** Pasangan STOCK–COUNT wajib memakai `cutoff_id` yang sama (DOC-08 §15), tetapi `cutoff_id` yang sama tidak menggantikan bukti basis efektif. Kesebandingan juga memerlukan `effective_basis` dan `basis_reference` yang dapat ditelusuri. Tidak ada toleransi waktu tersembunyi; konteks berbeda ditolak `CUTOFF_MISMATCH`.
-- Unique usulan: (`warehouse_id`, `mode`, `effective_date`, `effective_time`, `effective_precision`, `effective_basis`), dengan `NULLS NOT DISTINCT` atau indeks parsial, menunggu versi PostgreSQL (OD-07).
+- Unique usulan: (`warehouse_id`, `mode`, `effective_date`, `effective_time`, `effective_precision`, `effective_basis`) dengan `NULLS NOT DISTINCT`, karena `effective_time` boleh NULL. Lingkungan UJI saat ini memakai PostgreSQL 16.6 (PROPOSED untuk UJI lokal, `MIGRASI_DATABASE_SRS-44.md`), yang sudah mendukung `NULLS NOT DISTINCT` (tersedia sejak PostgreSQL 15), sehingga indeks parsial tidak diperlukan untuk UJI. Versi runtime dan deployment tetap OD-07 (OPEN DECISION); bila versi akhir di bawah 15, indeks parsial menjadi alternatif.
+
+**Catatan cara baca terhadap PR #28 — TERBUKA.** Register PR #28 menulis butir ini sebagai "D-01 / F3-1" dan menyebut F3-1 (`cutoff_time` boleh NULL untuk tanggal-saja) sebagai kandidat PM. Dokumen ini membaca D-01 sebagai opsi B (kolom `effective_*` dengan precision eksplisit), sedangkan F3-1 adalah perubahan minimal F-03 (§13.4) untuk menegakkan aturan UJI §13.1. Belum disepakati apakah F3-1 menggantikan, mendahului, atau menjadi bagian dari D-01. Opsi B dan F3-1 sama-sama tetap PROPOSED.
 
 ## 4. D-02 — Status verifikasi: VERIFIED dan UJI SIMULATED (CF-04)
 
@@ -62,12 +67,15 @@ Pemilik issue SRS-38 hanya menyiapkan usulan; penetapan menjadi ACCEPTED memerlu
 
 **Rekomendasi (PROPOSED):**
 - Domain status per mode, ditegakkan dengan CHECK:
-  - `mode = 'UJI'` ⇒ `verification_status = 'SIMULATED'`.
-  - `mode = 'ACTUAL'` ⇒ `verification_status IN ('VERIFIED','UNVERIFIED')`, default `UNVERIFIED`.
-  - `VERIFIED` ⇒ `verification_reference IS NOT NULL`, `verified_by IS NOT NULL`, `verified_at IS NOT NULL`.
+  - `mode = 'UJI'` ⇒ `status = 'SIMULATED'`.
+  - `mode = 'ACTUAL'` ⇒ `status IN ('VERIFIED','UNVERIFIED')`, default `UNVERIFIED`.
+  - `status = 'VERIFIED'` ⇒ `verification_reference IS NOT NULL`, `verified_by IS NOT NULL`, `verified_at IS NOT NULL`.
+- **Nama kolom.** Usulan ini memakai kolom `status` yang sudah ada pada `cutoff_contexts` di migrasi 001 (`VARCHAR(32) NOT NULL DEFAULT 'OPEN'`, tanpa CHECK), bukan kolom baru `verification_status`. Kolom `verification_reference`, `verified_by`, dan `verified_at` belum ada di 001 dan tetap usulan. Default `OPEN` pada 001 tidak termasuk domain usulan di atas; perlakuan nilai `OPEN` dan perubahan default belum diputuskan.
 - Tidak menambah workflow/layar verifikasi baru (di luar scope). Status `VERIFIED` hanya mencatat referensi bukti eksternal.
 - **Kewenangan siapa yang boleh menandai VERIFIED: BLOCKED oleh OD-08.** Sampai diputuskan, sistem *fail-closed*: rekonsiliasi ACTUAL ditolak `CUTOFF_UNVERIFIED` (AC-13), UJI hanya berjalan dengan `SIMULATED`.
 - Rekonsiliasi tidak boleh mencampur ACTUAL dan UJI (`MODE_MISMATCH`).
+
+**Catatan cara baca terhadap PR #28 — TERBUKA.** PR #28 merekomendasikan agar CHECK status dipisah dari perubahan nullable `cutoff_time`, dan kandidat migrasi 005 (PR #26) tidak mengubah status, default, maupun menambah CHECK. Versi sebelumnya dokumen ini (§13.4) menyerahkan pilihan gabung atau pisah kepada Adam. Rekomendasi pemisahan belum menjadi keputusan; sampai diputuskan, label SIMULATED tetap diterapkan pada fixture UJI.
 
 ## 5. D-03 — Target evidence (CF-03)
 
@@ -112,7 +120,7 @@ Pemilik issue SRS-38 hanya menyiapkan usulan; penetapan menjadi ACCEPTED memerlu
 **Konflik.** DOC-07/08: Idempotency-Key sama mengembalikan run sama; key berbeda dapat membuat run baru. SRC-09 §6.5: "Result existing fingerprint dibaca ulang; tidak menampilkan run duplikat seolah hasil baru". PVT-20 ditahan.
 
 **Rekomendasi (PROPOSED):**
-- `result_fingerprint` = SHA-256 atas representasi kanonik (`stock_snapshot_id`, `count_session_id`, `cutoff_id`, `rule_version`). Snapshot/sesi bersifat immutable setelah commit, sehingga ID mewakili isinya. Hash isi baris dapat ditambahkan bila koreksi data kelak diizinkan.
+- `result_fingerprint` = SHA-256 atas representasi kanonik (`stock_snapshot_id`, `count_session_id`, `cutoff_id`, `rule_version`). Usulan ini **mengasumsikan** snapshot/sesi immutable setelah commit, sehingga ID mewakili isinya. Hash isi baris dapat ditambahkan bila koreksi data kelak diizinkan.
 - Unique `reconciliation_runs(stock_snapshot_id, count_session_id, rule_version)`.
 - Perilaku API-13:
   - **Key sama + payload sama** ⇒ respons lama (idempotency).
@@ -120,6 +128,8 @@ Pemilik issue SRS-38 hanya menyiapkan usulan; penetapan menjadi ACCEPTED memerlu
   - **Key berbeda + input identik** ⇒ tidak membuat run baru; mengembalikan run yang ada (usulan HTTP 200 dengan penanda `reused: true`, bukan 201). Bentuk respons perlu persetujuan kontrak API.
   - **Input atau `rule_version` berbeda** ⇒ run baru; histori lama tetap ada (PVT-20).
 - Konkurensi dua key untuk input identik ditangani unique constraint: transaksi kedua membaca run pemenang.
+
+**Catatan cara baca terhadap PR #28 — TERBUKA.** PR #28 mencatat bahwa koreksi input immutable masih memerlukan keputusan domain. Karena itu, asumsi immutable di atas belum menjadi dasar yang disahkan. Bila koreksi snapshot/sesi diizinkan, fingerprint berbasis ID tidak lagi cukup dan hash isi baris diperlukan.
 
 ## 8. D-06 — Pemilihan latest run untuk metrik (UI-13/UI-14)
 
@@ -130,6 +140,11 @@ Pemilik issue SRS-38 hanya menyiapkan usulan; penetapan menjadi ACCEPTED memerlu
 - Dengan D-05, input identik tidak menghasilkan dua run. Beberapa run dalam satu kelompok hanya muncul bila snapshot atau count yang berbeda di-commit untuk cutoff yang sama. Apakah kondisi itu sah, atau harus ditolak saat impor, adalah **OPEN DECISION** (OD-05/OD-06).
 - Run lama tidak dihapus atau ditimpa; hanya tidak dipilih untuk agregasi.
 - Run ACTUAL dengan cutoff `UNVERIFIED` tidak eligible untuk metrik.
+
+**Catatan cara baca terhadap PR #28 — TERBUKA.** Kelompok dan tie-breaker usulan sama dengan PR #28 (gudang/mode/cutoff/rule; `created_at`, lalu UUID). Perbedaan yang belum disepakati:
+- PR #28 menambahkan tes pemisahan scope dan metadata run terpilih, yang belum tercantum pada §10.
+- Indeks usulan §10 tidak memuat `warehouse_id` dan `mode`, padahal kelompok memuatnya. Apakah keduanya cukup diwakili `cutoff_id` (karena `cutoff_contexts` menyimpan `warehouse_id` dan `mode`) belum diputuskan.
+- PR #28 menyerahkan sah atau tidaknya beberapa snapshot/sesi pada cutoff yang sama kepada mitra, sedangkan dokumen ini mencatatnya sebagai OPEN DECISION OD-05/OD-06. Pemilik keputusannya belum disepakati.
 
 ## 9. Kontrak yang berlaku sampai keputusan diambil
 
@@ -144,8 +159,8 @@ Pemilik issue SRS-38 hanya menyiapkan usulan; penetapan menjadi ACCEPTED memerlu
 
 | Keputusan | Schema (DOC-07 / migrasi) | API (DOC-09) | UI (design.md / DOC-10) | Tes (DOC-13) | Issue terdampak |
 | --- | --- | --- | --- | --- | --- |
-| D-01 cutoff | `cutoff_contexts`: ganti `cutoff_at` dengan kolom effective_* + CHECK; `cutoff_time NOT NULL` ditangani lewat migrasi baru sesuai usulan §13.4, migrasi 001 tidak diubah | API-01 metadata cutoff; API-11/12/14/15 menampilkan precision/basis | UI-09/UI-10 metadata cutoff; Context Strip; tanggal-saja tanpa jam | PVT-18; boundary DATE vs DATETIME; `CUTOFF_MISMATCH` | SRS-44, SRS-25, SRS-27, SRS-58 |
-| D-02 status | `verification_status` + CHECK per mode; `verified_by`, `verified_at` | API-13 error `CUTOFF_UNVERIFIED`/`MODE_MISMATCH` | Label UNVERIFIED/SIMULATED; alasan spesifik (§6.5) | AC-13; tolak ACTUAL UNVERIFIED; UJI wajib SIMULATED | SRS-44, SRS-58 |
+| D-01 cutoff | `cutoff_contexts`: kandidat `005_cutoff_time_nullable.sql` ([PR #26](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/26) @ `1886b2c`, Draft) hanya melepas `NOT NULL` dari `cutoff_time` (F3-1, §13.4). Kolom `effective_*` + CHECK opsi B tetap PROPOSED dan memerlukan migrasi terpisah. Migrasi 001 tidak diubah | API-01 metadata cutoff; API-11/12/14/15 menampilkan precision/basis; DTO tidak menampilkan jam buatan untuk `cutoff_time` NULL | UI-09/UI-10 metadata cutoff; Context Strip; tanggal-saja tanpa jam | PVT-18; boundary DATE vs DATETIME; `CUTOFF_MISMATCH`; enam tes kandidat 005 (§13.4) | SRS-38 (migrasi 005), SRS-25, SRS-27, SRS-58 |
+| D-02 status | `status` (kolom 001) + CHECK per mode; kolom baru usulan `verification_reference`, `verified_by`, `verified_at` | API-13 error `CUTOFF_UNVERIFIED`/`MODE_MISMATCH` | Label UNVERIFIED/SIMULATED; alasan spesifik (§6.5) | AC-13; tolak ACTUAL UNVERIFIED; UJI wajib SIMULATED | SRS-38 (migrasi lanjutan terpisah dari 005; nomor belum ditetapkan), SRS-58 |
 | D-03 evidence | `evidence`: XOR `stock_snapshot_id`/`count_session_id` | API-17 request body berubah; API-18 menampilkan target | UI-11 pilihan target snapshot/count | Kasus XOR (0, 1, 2 target), lintas scope | Story UC-11, SRS-58 |
 | D-04 grain | Tidak berubah dari DOC-07 | Error `AMBIGUOUS_PAIR` | Alasan penolakan run | Multi-UOM per material; UOM_MISMATCH | Engine rekonsiliasi |
 | D-05 identitas | Unique `reconciliation_runs(snapshot, session, rule_version)`; kolom `result_fingerprint` | API-13: 200 `reused` vs 201; 409 konflik key | UI-12/13 tidak menampilkan run duplikat | PVT-20; konkurensi dua key | SRS-52 (pola idempotency), SRS-58 |
@@ -155,20 +170,22 @@ Pemilik issue SRS-38 hanya menyiapkan usulan; penetapan menjadi ACCEPTED memerlu
 
 | ID | Temuan | Tindak lanjut |
 | --- | --- | --- |
-| F-03 | `001_initial_schema.sql` mendefinisikan `cutoff_contexts.cutoff_time TIME NOT NULL` dan `status` `OPEN` tanpa CHECK. Ini memaksa jam untuk cutoff tanggal-saja dan tidak memiliki status verifikasi DOC-07/SRC-09. | Usulan perubahan minimal untuk diputuskan Adam tercatat di §13.4; migrasi tidak diubah di SRS-38 dan scope SRS-44 tidak diperluas |
+| F-03 | `001_initial_schema.sql` mendefinisikan `cutoff_contexts.cutoff_time TIME NOT NULL` dan `status` `OPEN` tanpa CHECK. Ini memaksa jam untuk cutoff tanggal-saja dan tidak memiliki status verifikasi DOC-07/SRC-09. | Usulan perubahan minimal tercatat di §13.4. Untuk bagian `cutoff_time`, kandidat F3-1 tersedia sebagai migrasi 005 pada [PR #26](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/26) @ `1886b2c` (Draft, disiapkan Adam), belum diputuskan PM dan belum direview nonpenulis. Bagian `status` tanpa CHECK tidak ditangani 005 dan tetap termasuk D-02. Dokumen ini tidak mengubah migrasi, dan scope SRS-44 (Done) tidak diperluas |
 | F-04 | DOC-09 API-17 contoh request memakai `stock_line_id`, yang bertentangan dengan SRC-09 | Diperbarui setelah D-03 diputuskan |
 
 ## 12. Status acceptance criteria SRS-38
 
 | Kriteria (Jira) | Status |
 | --- | --- |
-| Keputusan berwenang tercatat | **Sebagian**. Arahan baseline UJI (Adam, 15 Nov 2026) tercatat di §13.1; keputusan ACTUAL (OD-05, OD-08), D-03, D-05, D-06, dan tabel UOM belum disahkan |
-| Dampak schema/API/UI/tes tercatat | Tersedia (§10) |
-| Kontrak yang bertentangan tidak diberlakukan bersamaan | Aturan penahanan tercatat (§9) |
+| Keputusan berwenang tercatat | **Sebagian (tidak berubah sejak 15 Nov 2026)**. Arahan baseline UJI (Adam, 15 Nov 2026) tercatat di §13.1. Sampai 24 Nov 2026 belum ada keputusan PM atau pemilik domain yang baru (komentar Jira SRS-38, 24 Nov 2026). Kandidat F3-1 (PR #26) dan register PR #28 adalah kandidat dan rekomendasi, bukan keputusan. Keputusan ACTUAL (OD-05, OD-08), D-01 opsi B, D-03, D-05, D-06, dan tabel UOM belum disahkan |
+| Dampak schema/API/UI/tes tercatat | **Tersedia sebagai usulan, dengan celah tercatat** (§10). Baris D-01 dan D-02 sudah diperbarui terhadap kandidat 005. Tes D-06 tambahan dari PR #28 (pemisahan scope, metadata run terpilih) belum dimasukkan ke §10 (catatan §8) |
+| Kontrak yang bertentangan tidak diberlakukan bersamaan | **Aturan penahanan tercatat** (§9). Risiko tercatat: bila kandidat 005 di-merge sebelum hubungan D-01 dengan F3-1 disepakati (catatan §3), `cutoff_time` NULL dan opsi B dapat menjadi dua kontrak cutoff yang berlaku bersamaan. Risiko ini belum terjadi karena PR #26 masih Draft dan belum merged |
 
 Karena kriteria pertama baru terpenuhi sebagian, pekerjaan ini tetap berupa **usulan** dan **belum siap merge maupun Done**. Usulan tidak dinaikkan menjadi ACCEPTED tanpa bukti keputusan dari pihak pada §2.
 
-Pengujian: tidak ada kode yang berubah; PVT-18 dan PVT-20 tetap NOT RUN. Skenario §6 belum dijalankan karena engine rekonsiliasi belum ada. Definition of Done memerlukan keputusan berwenang, review oleh reviewer lain, dan PR merged.
+Review: review terakhir PR #14 (Adam, 24 Nov 2026 pukul 02.08 WIB) berstatus COMMENT, bukan APPROVED, sehingga status review GitHub masih CHANGES_REQUESTED. Adam menyatakan komentar tersebut bukan approval menyeluruh.
+
+Pengujian: dokumen ini tidak mengubah kode; PVT-18 dan PVT-20 tetap NOT RUN. Skenario §6 belum dijalankan karena engine rekonsiliasi belum ada. Enam tes kandidat 005 dilaporkan PASS oleh penulis PR #26, tetapi tidak dijalankan oleh pemilik dokumen ini (verifikasi independen NOT RUN, §13.4). Definition of Done memerlukan keputusan berwenang, review oleh reviewer lain, dan PR merged.
 
 ## 13. Status butir setelah arahan baseline UJI (Adam, 15 Nov 2026)
 
@@ -195,7 +212,8 @@ Butir berikut tetap **PROPOSED** dan tidak diimplementasikan, termasuk untuk UJI
 | Tabel UOM kanonik dan alias | A.3, A.5 | Persetujuan Adam sebelum masuk rancangan schema; tanpa itu tabel tidak dibuat |
 | Bentuk kolom cutoff opsi B dan unique key | §3, A.1 | Nama kolom, CHECK precision, unique (bergantung OD-07) |
 | Model timezone opsi B | A.2 | Termasuk izin UJI mencantumkan `Asia/Jakarta` secara eksplisit |
-| Perubahan minimal F-03 | §13.4 | Opsi, penomoran migrasi, dan issue/branch tempat perubahan dibuat |
+| Perubahan minimal F-03 | §13.4 | Keputusan PM antara F3-1 dan F3-3 (F3-2 tidak memiliki kandidat). Kandidat F3-1 sudah tersedia pada PR #26 (`005`, branch `feature/SRS-38-cutoff-time-nullable`), tetapi nomor 005 masih reservasi, review nonpenulis belum ada, dan prosedur ledger setelah script pemulihan belum ditulis |
+| Perbedaan cara baca dengan PR #28 | §3, §4, §7, §8 | Hubungan D-01 dengan F3-1; pemisahan CHECK status (D-02); asumsi immutable (D-05); indeks, tes, dan pemilik keputusan beberapa run per cutoff (D-06) |
 
 ### 13.3 Kelompok 3 — Membutuhkan bukti mitra
 
@@ -212,7 +230,7 @@ Butir berikut tidak dapat diputuskan dari dokumen repo saja dan **tetap ditahan*
 
 ### 13.4 Usulan perubahan minimal F-03 (untuk diputuskan Adam)
 
-**Status: PROPOSED — menunggu keputusan Adam.** Bagian ini tidak mengubah migrasi apa pun dan tidak menambah pekerjaan ke SRS-44 ([PR #15](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/15)). Migrasi 001 tidak disunting (sejalan dengan A.4).
+**Status: PROPOSED — kandidat tersedia, menunggu keputusan PM.** [PR #15](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/15) (SRS-44, migrasi 001–003) sudah merged ke `develop` sebagai `d1acfb4` pada 22 November 2026, dan F3-1 tidak menjadi bagian SRS-44. Kandidat F3-1 disiapkan Adam pada [PR #26](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/26) @ `1886b2c` (Draft); pemilik domain migrasi 005 adalah Dwi. Dokumen ini tidak mengubah migrasi apa pun, dan migrasi 001 tidak disunting (sejalan dengan A.4).
 
 **Masalah.** `001_initial_schema.sql` mendefinisikan `cutoff_contexts.cutoff_time TIME NOT NULL`. Akibatnya cutoff tanggal-saja wajib diberi jam, bertentangan dengan arahan baseline UJI §13.1 dan SRC-09 §7.
 
@@ -226,13 +244,14 @@ Butir berikut tidak dapat diputuskan dari dokumen repo saja dan **tetap ditahan*
 
 **Catatan untuk opsi F3-1/F3-2.**
 
-- **Tanpa backfill.** Baris yang sudah ada tidak diubah dan nilai `00:00` tidak dikonversi otomatis menjadi NULL, karena tidak dapat dibedakan apakah jam tersebut berasal dari sumber atau diisi paksa.
-- **Upgrade-aman dan idempoten.** `DROP NOT NULL` dapat dijalankan ulang tanpa galat. Untuk F3-2, penambahan kolom dan CHECK mengikuti pola pemeriksaan migrasi 003.
-- **Rollback.** Mengembalikan `NOT NULL` akan gagal bila sudah ada baris dengan `cutoff_time` NULL; langkah rollback perlu ditetapkan bersama keputusan.
-- **Label SIMULATED tidak termasuk F-03 jam.** Kolom `status` pada 001 (default `OPEN`, tanpa CHECK) adalah bagian lain dari temuan F-03. Penegakan `UJI ⇒ SIMULATED` lewat CHECK termasuk D-02; Adam memutuskan apakah digabung atau dipisah. Sampai diputuskan, label SIMULATED diterapkan pada fixture UJI.
-- **Penempatan.** Nomor migrasi dan issue/branch tempat perubahan dibuat diputuskan Adam setelah PR #15 merged (A.5). Usulan ini tidak menempatkannya di SRS-44.
+- **Tanpa backfill.** Baris yang sudah ada tidak diubah dan nilai `00:00` tidak dikonversi otomatis menjadi NULL, karena tidak dapat dibedakan apakah jam tersebut berasal dari sumber atau diisi paksa. Kandidat 005 tidak memuat `UPDATE`.
+- **Upgrade-aman dan idempoten.** `DROP NOT NULL` dapat dijalankan ulang tanpa galat. Kandidat 005 terlebih dahulu memeriksa bentuk `cutoff_contexts` (`cutoff_date` DATE NOT NULL, `cutoff_time` TIME) dan menolak schema yang tidak dikenal (`CUTOFF005_SCHEMA_UNKNOWN`). Untuk F3-2, penambahan kolom dan CHECK mengikuti pola pemeriksaan migrasi 003.
+- **Pemulihan.** Script `database/migrations/recovery/005_restore_cutoff_time_required.sql` berada di luar runner migrasi maju. Script ini menolak mengembalikan `NOT NULL` bila masih ada `cutoff_time` NULL (`CUTOFF005_RECOVERY_REQUIRES_SOURCE`) dan tidak mengubah data. Langkah menurut PR #26/#28: hentikan penulis data, ambil backup, inventarisasi baris NULL; bila tidak ada sumber waktu yang sah, gunakan roll-forward dan jangan mengisi `00:00` atau menghapus baris. **Terbuka:** setelah script pemulihan dijalankan, ledger migrasi UJI (`_uji_schema_versions`) masih mencatat 005 sebagai sudah diterapkan; prosedur penyelarasan ledger belum ditulis.
+- **Makna NULL tersirat.** Pada F3-1, arti "NULL = tanggal-saja" hanya tercatat di dokumen; database tidak menyimpan precision eksplisit. Perubahan juga berlaku untuk baris ACTUAL karena kolomnya dipakai bersama; penolakan ACTUAL bergantung pada baseline akses, bukan constraint.
+- **Label SIMULATED tidak termasuk F-03 jam.** Kolom `status` pada 001 (default `OPEN`, tanpa CHECK) adalah bagian lain dari temuan F-03. Penegakan `UJI ⇒ SIMULATED` lewat CHECK termasuk D-02. PR #28 merekomendasikan pemisahan, dan kandidat 005 tidak menyentuh status; keputusan belum ada (lihat catatan §4). Sampai diputuskan, label SIMULATED diterapkan pada fixture UJI.
+- **Penempatan.** Urutan yang disiapkan PR #28: `004_audit_lineage.sql` (SRS-49, PR #22), `005_cutoff_time_nullable.sql` (SRS-38, PR #26), `006_import_staging_sources.sql` (SRS-50, PR #27; tidak memerlukan 005). Nomor 004 yang sudah diuji tidak dinomori ulang. Nomor-nomor ini masih reservasi kandidat, bukan keputusan final. Base PR #26 adalah `integration/adam-20261121` (PR #23), bukan `develop`, sehingga merge ke `develop` bergantung pada #22/#23.
 
-**Tes yang perlu disiapkan bila disetujui (belum dijalankan).** Insert cutoff UJI dengan `cutoff_time` NULL diterima; baris lama tidak berubah; migrasi dijalankan dua kali tanpa galat; untuk F3-2, kombinasi precision dan `cutoff_time` yang tidak konsisten ditolak.
+**Tes.** Kandidat 005 memuat enam tes pada `tests/integration/database/cutoff-nullable.test.ts`: insert NULL diterima tanpa jam buatan; upgrade schema berisi data menjaga jam lama termasuk `00:00`; reapply tidak mengubah data; schema tidak dikenal ditolak atomik; pemulihan menolak bila masih ada NULL; pemulihan berjalan bila semua baris memiliki waktu sumber. Penulis PR #26 melaporkan 6/6 PASS pada PostgreSQL 16.6 UJI (deskripsi PR #26 dan komentar Jira SRS-38, 24 November 2026). Pemilik dokumen ini belum menjalankan tes tersebut. PR #26 tidak memiliki CI check karena base-nya bukan `develop`, dan tes otomatis ter-skip bila koneksi UJI tidak tersedia. **Verifikasi independen: NOT RUN.** Tes F3-2 (kombinasi precision dan `cutoff_time` yang tidak konsisten ditolak) belum disiapkan karena F3-2 tidak memiliki kandidat.
 
 ## 14. Riwayat revisi
 
@@ -242,6 +261,7 @@ Butir berikut tidak dapat diputuskan dari dokumen repo saja dan **tetap ditahan*
 | 0.2 | 2026-11-12 | Tindak lanjut review PR #14: status belum siap merge, aturan belum dihitung bukan nol beserta skenario uji (§6), tanggal laporan dan `cutoff_id` bukan bukti basis efektif (§3) | Belum ada; seluruh usulan tetap PROPOSED |
 | 0.3 | 2026-11-13 | Lampiran A: usulan keputusan teknis OD-05 (dasar waktu cutoff, timezone, UOM material), dampak, dan data mitra yang perlu divalidasi; catatan persetujuan tabel UOM dan penomoran migrasi | Belum ada; seluruh usulan tetap PROPOSED |
 | 0.4 | 2026-11-15 | §13: pemisahan butir yang dapat dipakai untuk UJI, belum disahkan, dan butuh bukti mitra; usulan perubahan minimal F-03 (§13.4); penyesuaian §11 dan §12 | Arahan baseline UJI (Adam, 15 Nov 2026) untuk butir §13.1; butir lain tetap PROPOSED; §13.4 menunggu keputusan Adam |
+| 0.5 | 2026-11-24 | Penyelarasan dengan PR #26 (`1886b2c`) dan register PR #28 (`c68893a`): header (tanggal, rujukan `develop` @ `28b8501`); §3 unique key dengan PostgreSQL 16.6 UJI; nama kolom D-02 disamakan dengan `status` pada migrasi 001; catatan cara baca TERBUKA untuk D-01, D-02, D-05, D-06; §1 sumber PR #26, PR #28, dan `MIGRASI_DATABASE_SRS-44.md`; §10 baris D-01 serta nama kolom dan issue terdampak D-02; §11 F-03 merujuk kandidat 005; §12 status acceptance criteria dibandingkan ulang tanpa perubahan status kelulusan; §13.2; §13.4 (status PR #15 merged, kandidat 005, pemulihan, urutan 004/005/006, tes NOT RUN secara independen); A.5 | Belum ada; seluruh usulan tetap PROPOSED. Tidak ada keputusan baru dari PM atau pemilik domain |
 
 ## Lampiran A. Usulan keputusan teknis OD-05: dasar waktu cutoff, timezone, dan UOM
 
@@ -300,7 +320,7 @@ Sumber tambahan: DOC-08 §4 (metadata batch, `source_timezone`) dan tabel transf
 ### A.5 Catatan persetujuan dan ketergantungan
 
 - **Tabel UOM kanonik dan tabel alias adalah usulan baru.** Keduanya sejalan dengan DOC-08, tetapi belum ada di DOC-07 maupun migrasi mana pun, sehingga **memerlukan persetujuan Adam** (PM & Technical Lead) sebelum masuk rancangan schema. Tanpa persetujuan, tabel ini tidak dibuat dan tidak dianggap bagian ruang lingkup.
-- **Penomoran migrasi (004 atau seterusnya) belum ditetapkan.** Nomor baru ditentukan setelah [PR #15](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/15) (SRS-44, saat ini berisi migrasi 001–003) merged, agar tidak terjadi bentrok urutan.
+- **Penomoran migrasi masih reservasi kandidat.** [PR #15](https://github.com/adamyudhistiramuhtar-byte/SIRIS/pull/15) (SRS-44, migrasi 001–003) sudah merged ke `develop` sebagai `d1acfb4` pada 22 November 2026. Urutan yang disiapkan PR #28 adalah 004 audit (SRS-49), 005 cutoff (SRS-38, kandidat F3-1 pada PR #26), dan 006 staging (SRS-50). Migrasi opsi B atau tabel UOM, bila kelak disetujui, memerlukan nomor baru setelah 006. Ledger/checksum tiap mesin perlu dikumpulkan sebelum deployment bersama.
 
 ### A.6 Data mitra yang perlu divalidasi
 
