@@ -1,0 +1,210 @@
+{
+  "_keterangan": "Fixture sintetis berlabel UJI untuk oracle enam metrik supplier (SRS-24 / SRS-90). Bukan data mitra. Dataset demonstrasi mengikuti design.md §6.6: 5 inbound, 6 commitment events dengan 2 CHANGE, 6 receipts, 4 final, 1 open, 1 final terlambat, 2 final mismatch.",
+  "fixture_version": "uji-0.1",
+  "contract_status": "CANDIDATE",
+  "data_status": "UJI",
+  "oracle_version": "oracle-0.1",
+  "mode": "UJI",
+  "warehouse_code": "WH-UJI-01",
+  "warehouse_id": "00000000-0000-4000-8000-000000000001",
+  "source_documents": [
+    "design.md §6.6 Kontrak metrik dan fixture",
+    "DOC-03 §UC-08",
+    "DOC-06 §metrik supplier",
+    "DOC-10 UI-08",
+    "DOC-13 skenario uji metrik"
+  ],
+  "open_decisions": [
+    "OD-06: eligibility final, bukti completion/release, interval tanggal, koreksi event, dan tie-break latest run belum diputuskan.",
+    "CF-06: batas expected_quantity (>=0 atau >0) belum disepakati; fixture memakai nilai >0."
+  ],
+  "inbound": [
+    {
+      "inbound_ref": "UJI-IN-001",
+      "warehouse_id": "00000000-0000-4000-8000-000000000001",
+      "mode": "UJI",
+      "supplier_code": "UJI-SUP-A",
+      "material_code": "UJI-MAT-A",
+      "uom": "KG",
+      "release_date": "2026-11-01",
+      "requested_date": "2026-11-10",
+      "expected_quantity": "100.000000",
+      "status": "FINAL",
+      "final_arrival_date": "2026-11-11",
+      "final_completion_at": "2026-11-11T15:00:00+07:00",
+      "source_reference": "UJI-SRC-INBOUND-001"
+    },
+    {
+      "inbound_ref": "UJI-IN-002",
+      "warehouse_id": "00000000-0000-4000-8000-000000000001",
+      "mode": "UJI",
+      "supplier_code": "UJI-SUP-A",
+      "material_code": "UJI-MAT-A",
+      "uom": "KG",
+      "release_date": "2026-11-02",
+      "requested_date": "2026-11-12",
+      "expected_quantity": "200.000000",
+      "status": "FINAL",
+      "final_arrival_date": "2026-11-12",
+      "final_completion_at": "2026-11-12T16:00:00+07:00",
+      "source_reference": "UJI-SRC-INBOUND-002"
+    },
+    {
+      "inbound_ref": "UJI-IN-003",
+      "warehouse_id": "00000000-0000-4000-8000-000000000001",
+      "mode": "UJI",
+      "supplier_code": "UJI-SUP-B",
+      "material_code": "UJI-MAT-B",
+      "uom": "L",
+      "release_date": "2026-11-03",
+      "requested_date": "2026-11-13",
+      "expected_quantity": "50.000000",
+      "status": "FINAL",
+      "final_arrival_date": "2026-11-13",
+      "final_completion_at": "2026-11-13T14:00:00+07:00",
+      "source_reference": "UJI-SRC-INBOUND-003"
+    },
+    {
+      "inbound_ref": "UJI-IN-004",
+      "warehouse_id": "00000000-0000-4000-8000-000000000001",
+      "mode": "UJI",
+      "supplier_code": "UJI-SUP-B",
+      "material_code": "UJI-MAT-C",
+      "uom": "KG",
+      "release_date": "2026-11-04",
+      "requested_date": "2026-11-15",
+      "expected_quantity": "300.000000",
+      "status": "FINAL",
+      "final_arrival_date": "2026-11-15",
+      "final_completion_at": "2026-11-15T17:00:00+07:00",
+      "source_reference": "UJI-SRC-INBOUND-004"
+    },
+    {
+      "inbound_ref": "UJI-IN-005",
+      "warehouse_id": "00000000-0000-4000-8000-000000000001",
+      "mode": "UJI",
+      "supplier_code": "UJI-SUP-C",
+      "material_code": "UJI-MAT-D",
+      "uom": "KG",
+      "release_date": "2026-11-05",
+      "requested_date": "2026-11-20",
+      "expected_quantity": "400.000000",
+      "status": "OPEN",
+      "final_arrival_date": null,
+      "final_completion_at": null,
+      "source_reference": "UJI-SRC-INBOUND-005"
+    }
+  ],
+  "commitments": [
+    {
+      "inbound_ref": "UJI-IN-001",
+      "event_ref": "UJI-COM-001",
+      "event_type": "INITIAL",
+      "promised_date": "2026-11-11",
+      "event_at": "2026-11-10T08:00:00+07:00",
+      "source_reference": "UJI-SRC-COMMITMENT-001"
+    },
+    {
+      "inbound_ref": "UJI-IN-001",
+      "event_ref": "UJI-COM-002",
+      "event_type": "CHANGE",
+      "promised_date": "2026-11-12",
+      "event_at": "2026-11-10T15:00:00+07:00",
+      "source_reference": "UJI-SRC-COMMITMENT-002"
+    },
+    {
+      "inbound_ref": "UJI-IN-001",
+      "event_ref": "UJI-COM-003",
+      "event_type": "CHANGE",
+      "promised_date": "2026-11-13",
+      "event_at": "2026-11-11T09:30:00+07:00",
+      "source_reference": "UJI-SRC-COMMITMENT-003"
+    },
+    {
+      "inbound_ref": "UJI-IN-002",
+      "event_ref": "UJI-COM-004",
+      "event_type": "INITIAL",
+      "promised_date": "2026-11-12",
+      "event_at": "2026-11-10T09:00:00+07:00",
+      "source_reference": "UJI-SRC-COMMITMENT-004"
+    },
+    {
+      "inbound_ref": "UJI-IN-003",
+      "event_ref": "UJI-COM-005",
+      "event_type": "INITIAL",
+      "promised_date": "2026-11-13",
+      "event_at": "2026-11-10T10:00:00+07:00",
+      "source_reference": "UJI-SRC-COMMITMENT-005"
+    },
+    {
+      "inbound_ref": "UJI-IN-004",
+      "event_ref": "UJI-COM-006",
+      "event_type": "INITIAL",
+      "promised_date": "2026-11-15",
+      "event_at": "2026-11-10T11:00:00+07:00",
+      "source_reference": "UJI-SRC-COMMITMENT-006"
+    }
+  ],
+  "receipts": [
+    {
+      "inbound_ref": "UJI-IN-001",
+      "event_ref": "UJI-RCV-001",
+      "received_quantity": "100.000000",
+      "uom": "KG",
+      "received_at": "2026-11-11T14:00:00+07:00",
+      "is_closing": true,
+      "closing_reference": "UJI-CLOSE-001",
+      "source_reference": "UJI-SRC-RECEIVING-001"
+    },
+    {
+      "inbound_ref": "UJI-IN-002",
+      "event_ref": "UJI-RCV-002",
+      "received_quantity": "100.000000",
+      "uom": "KG",
+      "received_at": "2026-11-12T09:00:00+07:00",
+      "is_closing": false,
+      "closing_reference": null,
+      "source_reference": "UJI-SRC-RECEIVING-002"
+    },
+    {
+      "inbound_ref": "UJI-IN-002",
+      "event_ref": "UJI-RCV-003",
+      "received_quantity": "80.000000",
+      "uom": "KG",
+      "received_at": "2026-11-12T15:00:00+07:00",
+      "is_closing": true,
+      "closing_reference": "UJI-CLOSE-002",
+      "source_reference": "UJI-SRC-RECEIVING-003"
+    },
+    {
+      "inbound_ref": "UJI-IN-003",
+      "event_ref": "UJI-RCV-004",
+      "received_quantity": "50.000000",
+      "uom": "L",
+      "received_at": "2026-11-13T13:00:00+07:00",
+      "is_closing": true,
+      "closing_reference": "UJI-CLOSE-003",
+      "source_reference": "UJI-SRC-RECEIVING-004"
+    },
+    {
+      "inbound_ref": "UJI-IN-004",
+      "event_ref": "UJI-RCV-005",
+      "received_quantity": "200.000000",
+      "uom": "KG",
+      "received_at": "2026-11-15T10:00:00+07:00",
+      "is_closing": false,
+      "closing_reference": null,
+      "source_reference": "UJI-SRC-RECEIVING-005"
+    },
+    {
+      "inbound_ref": "UJI-IN-004",
+      "event_ref": "UJI-RCV-006",
+      "received_quantity": "50.000000",
+      "uom": "KG",
+      "received_at": "2026-11-15T16:00:00+07:00",
+      "is_closing": true,
+      "closing_reference": "UJI-CLOSE-004",
+      "source_reference": "UJI-SRC-RECEIVING-006"
+    }
+  ]
+}
