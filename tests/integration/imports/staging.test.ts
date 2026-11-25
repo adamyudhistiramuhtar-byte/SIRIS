@@ -8,6 +8,7 @@ import { FixtureSourceAdapter } from '../../../apps/api/src/modules/imports/fixt
 import { PrivateSourceStorage } from '../../../apps/api/src/modules/imports/private-source-storage.js';
 import { readOwnedStaging } from '../../../apps/api/src/modules/imports/staging.repository.js';
 import { importKinds, type ImportKind, type StageActor } from '../../../apps/api/src/modules/imports/staging-contract.js';
+import { StockPackageFixtureAdapter } from '../../../apps/api/src/modules/imports/stock-package.js';
 
 const adapters = importKinds.map((kind) => new FixtureSourceAdapter(kind));
 const actor = (index: number): StageActor => ({actor_id: ujiFixture.actors[index].id,
@@ -39,11 +40,62 @@ describe.skipIf(!process.env.DATABASE_URL || !process.env.DATABASE_MIGRATION_URL
   async function stage(kind: ImportKind = 'EXPECTED') {
     return service(actor(['EXPECTED', 'COMMITMENT'].includes(kind) ? 0 : 1)).stage(metadata(kind), parts(kind, await fixture(kind)));
   }
+  async function readStage(context:StageActor,batchId:string) {
+    const client=await db.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const rows=await readOwnedStaging(client,context,batchId);
+      await client.query('COMMIT');return rows;
+    }catch(error){await client.query('ROLLBACK');throw error;}
+    finally{client.release();}
+  }
+  it('menerima saldo dengan satu support opsional tanpa mewajibkan support lain', async () => {
+    const adapter=new StockPackageFixtureAdapter();
+    const input=await fixture('STOCK');
+    const extra=Buffer.from(JSON.stringify({kind:'STOCK',contract_version:'proposed-0.1',rows:[{row_number:1,component:'support_master',raw:{fixture:'UJI'},normalized:{fixture:'UJI'}}]}));
+    const svc=new StagingService(db.pool,{authorizeStage:async()=>actor(1)},new PrivateSourceStorage(db.storagePath),[adapter],{...limits,max_files:4},logger);
+    const result=await svc.stage(metadata('STOCK'),[...parts('STOCK',input),{component:'support_master',content:(async function*(){yield extra;})()}]);
+    expect(result.row_count).toBe(3);
+    expect((await db.pool.query('SELECT component FROM import_source_files ORDER BY component')).rows.map((r)=>r.component)).toEqual(['balance','support_master']);
+  });
+  it('adapter paket menerima balance saja tetapi menolak support invalid tanpa menyimpan sebagian', async () => {
+    const svc=new StagingService(db.pool,{authorizeStage:async()=>actor(1)},new PrivateSourceStorage(db.storagePath),[new StockPackageFixtureAdapter()],{...limits,max_files:4},logger);
+    await svc.stage(metadata('STOCK'),parts('STOCK',await fixture('STOCK')));
+    const before=(await db.pool.query('SELECT count(*) FROM import_batches')).rows[0].count;
+    await expect(svc.stage(metadata('STOCK'),[...parts('STOCK',await fixture('STOCK')),{component:'support_master',content:(async function*(){yield Buffer.from('not-json');})()}])).rejects.toMatchObject({code:'INVALID_FILE'});
+    expect((await db.pool.query('SELECT count(*) FROM import_batches')).rows[0].count).toBe(before);
+    expect((await db.pool.query('SELECT count(*) FROM import_source_files')).rows[0].count).toBe('1');
+    expect((await readdir(db.storagePath)).length).toBe(1);
+  });
+  it('menolak paket tanpa balance, komponen asing dan komponen ganda', async () => {
+    const svc=new StagingService(db.pool,{authorizeStage:async()=>actor(1)},new PrivateSourceStorage(db.storagePath),[new StockPackageFixtureAdapter()],{...limits,max_files:4},logger);
+    for(const names of [['support_master'],['balance','unknown'],['balance','balance']]) {
+      await expect(svc.stage(metadata('STOCK'),names.map((component)=>({component,content:(async function*(){yield Buffer.from('{}');})()})))).rejects.toMatchObject({code:'INVALID_FILE'});
+    }
+    expect((await db.pool.query('SELECT count(*) FROM import_batches')).rows[0].count).toBe('0');
+  });
+  it('mempertahankan alasan metadata yang gagal pada audit', async () => {
+    const stock=JSON.parse((await fixture('STOCK')).toString());
+    expect(stock.negative_cases.find((c:{case_id:string})=>c.case_id==='UJI-STK-NEG-03').expected_issue).toBe('INVALID_METADATA');
+    await expect(service(actor(1)).stage({...metadata('STOCK'),cutoff_id:undefined},parts('STOCK',await fixture('STOCK')))).rejects.toMatchObject({code:'INVALID_METADATA'});
+    expect((await db.pool.query('SELECT context_safe FROM audit_events')).rows[0].context_safe.reason_code).toBe('INVALID_METADATA');
+  });
+  it('menolak cutoff UJI legacy yang belum SIMULATED sebelum menulis file', async () => {
+    const owner=new pg.Client({connectionString:ujiConnection(process.env.DATABASE_MIGRATION_URL,'siris_migrator')});
+    await owner.connect();
+    try {
+      await owner.query(`SET search_path TO ${db.schema},public`);
+      await owner.query('ALTER TABLE cutoff_contexts DROP CONSTRAINT IF EXISTS ck_srs38_uji_simulated');
+      await owner.query("UPDATE cutoff_contexts SET status='OPEN' WHERE id=$1",[cutoffId]);
+    }finally{await owner.end();}
+    await expect(service(actor(1)).stage(metadata('STOCK'),parts('STOCK',await fixture('STOCK')))).rejects.toMatchObject({code:'CUTOFF_UNVERIFIED'});
+    expect(await readdir(db.storagePath)).toEqual([]);
+  });
   it.each(importKinds)('%s menyimpan raw fixture, normalisasi, hash, lineage dan audit tanpa mutasi domain', async (kind) => {
     const bytes = await fixture(kind);
     const result = await stage(kind);
     const context = actor(['EXPECTED', 'COMMITMENT'].includes(kind) ? 0 : 1);
-    const rows = await readOwnedStaging(db.pool, context, result.batch_id);
+    const rows = await readStage( context, result.batch_id);
     const input = JSON.parse(bytes.toString());
     expect(result).toMatchObject({kind, row_count: input.rows.length, status: 'STAGED', contract_version: adapters[0].version});
     expect(rows.map((r) => r.raw_payload)).toEqual(input.rows);
@@ -86,7 +138,7 @@ describe.skipIf(!process.env.DATABASE_URL || !process.env.DATABASE_MIGRATION_URL
   });
   it('membedakan fisik nol, belum dihitung, dan menolak null pada pasangan terhitung', async () => {
     const result = await stage('COUNT');
-    const rows = await readOwnedStaging(db.pool, actor(1), result.batch_id);
+    const rows = await readStage( actor(1), result.batch_id);
     expect(rows[0].normalized_payload).toMatchObject({is_counted: true, physical_quantity: '0.000000'});
     expect(rows[1].normalized_payload).toMatchObject({is_counted: false, physical_quantity: null});
     const invalid = JSON.parse((await fixture('COUNT')).toString()); invalid.rows[0].normalized.physical_quantity = null;
@@ -111,9 +163,9 @@ describe.skipIf(!process.env.DATABASE_URL || !process.env.DATABASE_MIGRATION_URL
   });
   it('ownership, role dan assignment diperiksa ulang ketika preview membaca batch', async () => {
     const result = await stage();
-    await expect(readOwnedStaging(db.pool, actor(1), result.batch_id)).rejects.toMatchObject({code: 'ACCESS_DENIED'});
+    await expect(readStage( actor(1), result.batch_id)).rejects.toMatchObject({code: 'ACCESS_DENIED'});
     await db.pool.query('DELETE FROM user_warehouses WHERE user_id=$1', [actor(0).actor_id]);
-    await expect(readOwnedStaging(db.pool, actor(0), result.batch_id)).rejects.toMatchObject({code: 'ACCESS_DENIED'});
+    await expect(readStage( actor(0), result.batch_id)).rejects.toMatchObject({code: 'ACCESS_DENIED'});
   });
   it('kegagalan audit sukses menggulung batch/rows/files; FAILURE memakai jalur terpisah dan pesan aman', async () => {
     let connections = 0;
@@ -151,7 +203,7 @@ describe.skipIf(!process.env.DATABASE_URL || !process.env.DATABASE_MIGRATION_URL
     expect((await db.pool.query('SELECT id FROM import_batches')).rows).toEqual([{id: error.batch_id}]);
     expect((await db.pool.query('SELECT outcome FROM audit_events')).rows).toEqual([{outcome: 'SUCCESS'}]);
     expect(await readdir(db.storagePath)).toHaveLength(1);
-    expect(await readOwnedStaging(db.pool, actor(0), error.batch_id)).toHaveLength(2);
+    expect(await readStage( actor(0), error.batch_id)).toHaveLength(2);
   });
   it('upload konkuren tidak menimpa file/baris; hash sama bukan deduplikasi atau idempotency', async () => {
     const results = await Promise.all([stage(), stage()]);
