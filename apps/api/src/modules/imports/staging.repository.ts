@@ -1,6 +1,7 @@
 import type { TransactionClient } from '../audit/audit.repository.js';
 import type { StageActor, StageMetadata, StageResult, NormalizedSourceRow } from './staging-contract.js';
 import { StageError } from './staging-contract.js';
+import type pg from 'pg';
 import type { StoredSource } from './private-source-storage.js';
 
 /** Pemeriksaan diulang di transaksi; konteks dari provider tidak cukup bila assignment dicabut. */
@@ -14,9 +15,10 @@ export async function lockStageScope(client: TransactionClient, actor: StageActo
       FOR SHARE OF u,uw,w`, [actor.actor_id, actor.role, metadata.warehouse_id]);
   if (result.rowCount !== 1) throw new StageError('ACCESS_DENIED');
   if (metadata.cutoff_id) {
-    const cutoff = await client.query('SELECT id FROM cutoff_contexts WHERE id=$1 AND warehouse_id=$2 AND mode=$3 FOR SHARE',
+    const cutoff = await client.query('SELECT id,status FROM cutoff_contexts WHERE id=$1 AND warehouse_id=$2 AND mode=$3 FOR SHARE',
       [metadata.cutoff_id, metadata.warehouse_id, metadata.mode]);
     if (cutoff.rowCount !== 1) throw new StageError('ACCESS_DENIED');
+    if (cutoff.rows[0].status !== 'SIMULATED') throw new StageError('CUTOFF_UNVERIFIED');
   }
 }
 export async function insertStaging(client: TransactionClient, actor: StageActor, metadata: StageMetadata,
@@ -36,7 +38,15 @@ export async function insertStaging(client: TransactionClient, actor: StageActor
 }
 
 /** Untuk SRS-51: hanya pemilik aktif pada scope UJI yang masih diizinkan. Tidak mengeluarkan storage key. */
-export async function readOwnedStaging(client: TransactionClient, actor: StageActor, batchId: string) {
+export async function readOwnedStaging(client: Pick<pg.PoolClient,'query'|'release'>, actor: StageActor, batchId: string) {
+  if(typeof client.release!=='function') throw new Error('STAGING_TRANSACTION_CLIENT_REQUIRED');
+  try {
+    await client.query('SAVEPOINT siris_staging_transaction_check');
+    await client.query('RELEASE SAVEPOINT siris_staging_transaction_check');
+  } catch (error) {
+    if ((error as {code?: string}).code === '25P01') throw new Error('STAGING_TRANSACTION_CLIENT_REQUIRED');
+    throw error;
+  }
   const scope = await client.query(`SELECT kind,warehouse_id,mode FROM import_batches WHERE id=$1 AND created_by=$2`, [batchId, actor.actor_id]);
   if (scope.rowCount !== 1 || scope.rows[0].mode !== 'UJI') throw new StageError('ACCESS_DENIED');
   await lockStageScope(client, actor, scope.rows[0] as StageMetadata);
