@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { createPreviewService, PREVIEW_TTL_MS, PREVIEW_VALIDATION_VERSION } from '../validation/preview-service.js';
-import type { PreviewActor, PreviewAuthorizer, StagingRow } from '../validation/preview-types.js';
+import type { BuildPreviewInput, PreviewActor, PreviewAuthorizer, StagingRow } from '../validation/preview-types.js';
 
 const fixturePath = path.resolve(process.cwd(), 'apps/api/src/tests/fixtures/srs51/preview-valid-uji.fixture.json');
 const fixture = JSON.parse(readFileSync(fixturePath, 'utf8')) as {
@@ -93,6 +93,6 @@ describe('SRS-51 preview tervalidasi (terisolasi, fixture UJI)', () => {
 
   it('mode ACTUAL ditolak', async () => {
     const svc = makeService();
-    await expect(svc.buildPreview({ ...fixture.batch, actor, mode: 'ACTUAL' as any })).rejects.toMatchObject({ code: 'MODE_NOT_ENABLED' });
+    await expect(svc.buildPreview({ ...fixture.batch, actor, mode: 'ACTUAL' as BuildPreviewInput['mode'] })).rejects.toMatchObject({ code: 'MODE_NOT_ENABLED' });
   });
 });

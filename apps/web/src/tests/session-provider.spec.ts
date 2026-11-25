@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createSessionStore } from '../shared/session/session-context';
 import { createSessionProvider } from '../shared/session/session-provider';
-import { FakeSessionAuthServer, makeFakeSessionContext } from '../shared/session/fake-session-auth-server';
+import { FakeSessionAuthServer } from '../shared/session/fake-session-auth-server';
 import type { SessionContext } from '../shared/session/session-context';
 
 const WH1 = { id: 'WH-01', code: 'WH-01', name: 'Gudang Bahan Baku' };
@@ -85,14 +85,14 @@ describe('SRS-47 session provider (store terinjeksi, fake auth server)', () => {
   it('login dengan sesi yang sudah kedaluwarsa ditolak', async () => {
     const now = vi.fn(() => 10_000);
     const store = createSessionStore(makeContext());
-    const auth: any = new FakeSessionAuthServer(now, 5_000);
+    const auth = new FakeSessionAuthServer(now, 5_000);
     auth.seed('yudha', 'secret', makeContext());
     // Paksa login mengembalikan expiresAt di masa lalu untuk menguji guard provider.
-    auth.login = vi.fn(async () => ({
+    vi.spyOn(auth, 'login').mockResolvedValue({
       context: makeContext(),
       csrfToken: 'csrf-expired',
       expiresAt: 5_000,
-    }));
+    });
     const provider = createSessionProvider({ store, auth, now });
 
     const result = await provider.login({ username: 'yudha', password: 'secret' });
