@@ -167,7 +167,7 @@ describe.skipIf(!process.env.DATABASE_URL || !process.env.DATABASE_MIGRATION_URL
     expect(await readdir(db.storagePath)).toEqual([]);
     expect((await db.pool.query('SELECT count(*)::int AS n FROM import_batches')).rows[0].n).toBe(0);
   });
-  it('preview mensyaratkan transaksi aktif dan mempertahankan lock assignment sampai selesai', async () => {
+  it.each(['COMMIT', 'ROLLBACK'])('preview mempertahankan lock assignment sampai %s', async (endTransaction) => {
     const staged = await stage();
     await expect(readOwnedStaging(db.pool as unknown as pg.PoolClient, actor(0), staged.batch_id))
       .rejects.toThrow('STAGING_TRANSACTION_CLIENT_REQUIRED');
@@ -183,7 +183,7 @@ describe.skipIf(!process.env.DATABASE_URL || !process.env.DATABASE_MIGRATION_URL
       await expect(competitor.query('UPDATE user_warehouses SET user_id=user_id WHERE user_id=$1 AND warehouse_id=$2',
         [actor(0).actor_id, ujiFixture.warehouses[0].id])).rejects.toMatchObject({code:'55P03'});
       await competitor.query('ROLLBACK');
-      await client.query('COMMIT');
+      await client.query(endTransaction);
       await competitor.query('BEGIN');
       await competitor.query("SET LOCAL lock_timeout = '1s'");
       expect((await competitor.query('UPDATE user_warehouses SET user_id=user_id WHERE user_id=$1 AND warehouse_id=$2',
