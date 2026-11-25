@@ -446,13 +446,88 @@ describe('SRS-24 DTO kandidat', () => {
 });
 
 
-describe('Regresi review PM terhadap sumber DESAIN-42-1.1',()=>{
-  it('kuantitas expected negatif tidak masuk denominator',()=>{
-    const source=makeSource({inbound:[makeInbound({expected_quantity:'-100.000000'})],receipts:[makeReceipt()]});
-    expect(calculateQuantityMismatchRate(source).denominator).toBe(0);
+describe('Regresi review PM terhadap sumber DESAIN-42-1.1', () => {
+  it('kuantitas expected negatif tidak masuk denominator dan tereksklusi dengan alasan yang benar', () => {
+    const source = makeSource({
+      inbound: [makeInbound({ inbound_ref: 'T-IN-NEG', expected_quantity: '-100.000000' })],
+      receipts: [makeReceipt({ inbound_ref: 'T-IN-NEG' })],
+    });
+
+    const mismatch = calculateQuantityMismatchRate(source);
+    expect(mismatch.denominator).toBe(0);
+    expect(mismatch.excluded_count).toBe(1);
+    expect(mismatch.unavailable_reason).toBe('ZERO_DENOMINATOR');
+    expect(excludedRefs(mismatch, 'INVALID_EXPECTED_QUANTITY')).toEqual(['T-IN-NEG']);
+
+    const fill = calculateSFill(source);
+    expect(fill).toHaveLength(1);
+    expect(fill[0].denominator).toBe(0);
+    expect(fill[0].excluded_count).toBe(1);
+    expect(fill[0].unavailable_reason).toBe('ZERO_DENOMINATOR');
+    expect(excludedRefs(fill[0], 'INVALID_EXPECTED_QUANTITY')).toEqual(['T-IN-NEG']);
   });
-  it('janji pada instant final tidak dipakai sebagai janji sebelum final',()=>{
-    const source=makeSource({inbound:[makeInbound({final_arrival_date:'2026-11-10'})],commitments:[makeCommitment({promised_date:'2026-11-09'}),makeCommitment({event_ref:'T-COM-002',event_type:'CHANGE',event_at:'2026-11-10T10:00:00+07:00',promised_date:'2026-11-12'})]});
+
+  it('janji pada instant final tidak dipakai sebagai janji sebelum final', () => {
+    const source = makeSource({
+      inbound: [makeInbound({ final_arrival_date: '2026-11-10' })],
+      commitments: [
+        makeCommitment({ promised_date: '2026-11-09' }),
+        makeCommitment({
+          event_ref: 'T-COM-002',
+          event_type: 'CHANGE',
+          event_at: '2026-11-10T10:00:00+07:00',
+          promised_date: '2026-11-12',
+        }),
+      ],
+    });
+    expect(calculateOtdC(source).value).toBe(0);
+  });
+
+  it('CHANGE pada instant sama dengan offset timezone berbeda tetap dikecualikan dari latestCommitmentBefore', () => {
+    const source = makeSource({
+      inbound: [makeInbound({ final_arrival_date: '2026-11-10', final_completion_at: '2026-11-10T10:00:00+07:00' })],
+      commitments: [
+        makeCommitment({ promised_date: '2026-11-09' }),
+        makeCommitment({
+          event_ref: 'T-COM-002',
+          event_type: 'CHANGE',
+          event_at: '2026-11-10T03:00:00Z',
+          promised_date: '2026-11-12',
+        }),
+      ],
+    });
+    expect(calculateOtdC(source).value).toBe(0);
+  });
+
+  it('CHANGE 1ms sebelum completion dipertimbangkan sebagai commitment sebelum completion', () => {
+    const source = makeSource({
+      inbound: [makeInbound({ final_arrival_date: '2026-11-10', final_completion_at: '2026-11-10T10:00:00+07:00' })],
+      commitments: [
+        makeCommitment({ promised_date: '2026-11-09' }),
+        makeCommitment({
+          event_ref: 'T-COM-002',
+          event_type: 'CHANGE',
+          event_at: '2026-11-10T09:59:59.999+07:00',
+          promised_date: '2026-11-12',
+        }),
+      ],
+    });
+    expect(calculateOtdC(source).value).toBe(100);
+  });
+
+  it('CHANGE 1ms setelah completion tidak dipakai sebagai commitment sebelum completion', () => {
+    const source = makeSource({
+      inbound: [makeInbound({ final_arrival_date: '2026-11-10', final_completion_at: '2026-11-10T10:00:00+07:00' })],
+      commitments: [
+        makeCommitment({ promised_date: '2026-11-09' }),
+        makeCommitment({
+          event_ref: 'T-COM-002',
+          event_type: 'CHANGE',
+          event_at: '2026-11-10T10:00:00.001+07:00',
+          promised_date: '2026-11-12',
+        }),
+      ],
+    });
     expect(calculateOtdC(source).value).toBe(0);
   });
 });
