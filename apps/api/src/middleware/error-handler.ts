@@ -1,7 +1,34 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { ApiErrorResponse } from '@siris/contracts';
+import type { ApiErrorDetail, ApiErrorResponse } from '@siris/contracts';
 import { AppError } from '../errors/app-error.js';
-import { env } from '../config/env.js';
+
+function buildErrorResponse(
+  code: string,
+  message: string,
+  correlationId: string,
+  details: ApiErrorDetail[] = [],
+): ApiErrorResponse {
+  return {
+    error: {
+      code,
+      message,
+      details,
+      correlation_id: correlationId,
+    },
+  };
+}
+
+/**
+ * Log aman untuk error tak terduga. Event selalu memakai identitas stabil
+ * `INTERNAL_SERVER_ERROR` dan correlation ID yang lolos validasi UUID; nama,
+ * code, pesan mentah, SQL, storage key, dan stack error tidak dicatat.
+ */
+function logUnexpectedError(correlationId: string): void {
+  const safeCorrelationId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(correlationId)
+    ? correlationId
+    : 'CORRELATION_UNAVAILABLE';
+  console.error(`[${safeCorrelationId}] Unhandled Error: INTERNAL_SERVER_ERROR`);
+}
 
 export function errorHandler(
   err: Error,
@@ -11,44 +38,48 @@ export function errorHandler(
 ): void {
   const correlationId = req.correlationId || '00000000-0000-0000-0000-000000000000';
 
-  if (err instanceof AppError) {
-    const payload: ApiErrorResponse = {
-      error: {
-        code: err.code,
-        message: err.message,
-        details: err.details,
-        correlation_id: correlationId,
-      },
-    };
-    res.status(err.statusCode).json(payload);
+  // Express memungkinkan nilai error yang tidak berupa Error instance (misalnya
+  // string). Normalisasi sebelum diproses agar deteksi type dan log aman.
+  const error = err instanceof Error ? err : new Error('Unknown error');
+
+  if (error instanceof AppError) {
+    res
+      .status(error.statusCode)
+      .json(buildErrorResponse(error.code, error.message, correlationId, error.details));
     return;
   }
 
   // Handle syntax error dari JSON parser Express
-  if ('type' in err && (err as { type: string }).type === 'entity.parse.failed') {
-    const payload: ApiErrorResponse = {
-      error: {
-        code: 'INVALID_JSON',
-        message: 'Format payload JSON tidak valid.',
-        correlation_id: correlationId,
-      },
-    };
-    res.status(400).json(payload);
+  if ('type' in error && (error as { type: string }).type === 'entity.parse.failed') {
+    res
+      .status(400)
+      .json(buildErrorResponse('INVALID_JSON', 'Format payload JSON tidak valid.', correlationId));
     return;
   }
 
-  // Error tidak terduga (Internal Server Error)
-  if (env.LOG_LEVEL === 'debug' || env.NODE_ENV !== 'test') {
-    console.error(`[${correlationId}] Unhandled Error:`, err);
+  // Handle payload melebihi batas parser Express
+  if ('type' in error && (error as { type: string }).type === 'entity.too.large') {
+    res
+      .status(413)
+      .json(
+        buildErrorResponse(
+          'PAYLOAD_TOO_LARGE',
+          'Payload melebihi batas yang diizinkan.',
+          correlationId,
+        ),
+      );
+    return;
   }
 
-  const payload: ApiErrorResponse = {
-    error: {
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Terjadi kesalahan internal pada server.',
-      correlation_id: correlationId,
-    },
-  };
+  logUnexpectedError(correlationId);
 
-  res.status(500).json(payload);
+  res
+    .status(500)
+    .json(
+      buildErrorResponse(
+        'INTERNAL_SERVER_ERROR',
+        'Terjadi kesalahan internal pada server.',
+        correlationId,
+      ),
+    );
 }
