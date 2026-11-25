@@ -10,6 +10,10 @@
  * SRS-52 nomor 10198 butir 1 dan 3): STATE_CONFLICT, WARNING_ACKNOWLEDGEMENT_OPEN,
  * SOURCE_REQUIRED, TRANSACTION_OUTCOME_UNKNOWN.
  *
+ * MODE_NOT_ENABLED (422) juga PLACEHOLDER: belum ada di katalog DOC-08. Nama dan status
+ * HTTP meniru penolakan ACTUAL pada PR #54 (preview SRS-51) dan alasan sesi web, tetapi
+ * kode final penolakan ACTUAL masih menunggu keputusan Adam (komentar Jira SRS-52 nomor 10221).
+ *
  * Error ini sengaja tidak pernah membawa `cause` atau pesan driver. Message hanya
  * berisi kode konstan sehingga aman bila tidak sengaja dicetak.
  */
@@ -23,6 +27,7 @@ export type ImportCommitErrorCode =
   | 'STATE_CONFLICT'
   | 'WARNING_ACKNOWLEDGEMENT_OPEN'
   | 'SOURCE_REQUIRED'
+  | 'MODE_NOT_ENABLED'
   | 'TRANSACTION_FAILED'
   | 'TRANSACTION_OUTCOME_UNKNOWN';
 
@@ -37,6 +42,7 @@ export const IMPORT_COMMIT_HTTP_STATUS: Readonly<Record<ImportCommitErrorCode, n
   STATE_CONFLICT: 409,
   WARNING_ACKNOWLEDGEMENT_OPEN: 422,
   SOURCE_REQUIRED: 422,
+  MODE_NOT_ENABLED: 422,
   TRANSACTION_FAILED: 500,
   TRANSACTION_OUTCOME_UNKNOWN: 500,
 });

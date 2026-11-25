@@ -23,6 +23,8 @@
 | Komentar Jira SRS-52 nomor 10159 (Adam) | 25 Nov 2026 | 012 untuk idempotency commit/cancel; isi fingerprint; tes wajib |
 | Komentar Jira SRS-52 nomor 10198 (Dwi) | 25 Nov 2026 | Tujuh pertanyaan keputusan untuk Adam |
 | Komentar Jira SRS-38 nomor 10197 (Dwi) | 25 Nov 2026 | Temuan guard transaksi `readOwnedStaging` |
+| PR #54 (Luthfi), preview SRS-51 | `ab91423`, belum merged | Bentuk `PreviewResult`, komposisi fingerprint, expiry, ID warning, penolakan ACTUAL (revisi 0.2) |
+| Komentar Jira SRS-52 nomor 10221 (Dwi) | 25 Nov 2026 | Keputusan yang diminta dari Adam: C58-03/04/05, reference revision dan actor di fingerprint, kode error ACTUAL |
 
 ## 2. Kondisi saat ini
 
@@ -75,7 +77,15 @@ Rincian opsi A (usulan, belum final):
 - `preview_fingerprint` dari body request;
 - `acknowledged_warnings` yang diurutkan (duplikat ditolak `BAD_REQUEST`).
 
-Scope disertakan sesuai DOC-07 ("payload canonical + scope"). Reference revision dan isi preview terikat melalui `preview_fingerprint` milik SRS-51 (komentar 10159). **Sumber reference revision: tidak ditemukan; MENUNGGU ADAM (butir 7).** Service hanya membandingkan nilai dari `ReferenceRevisionReader` dengan nilai pada preview.
+Scope disertakan sesuai DOC-07 ("payload canonical + scope").
+
+**Koreksi revisi 0.2.** Versi 0.1 menyatakan bahwa reference revision terikat melalui `preview_fingerprint` milik SRS-51. Klaim itu dicabut karena tidak sesuai dengan implementasi SRS-51 yang tersedia. Fakta dari PR #54 @ `ab91423` (`apps/api/src/validation/preview-service.ts`, fungsi `computePreviewFingerprint`):
+
+- fingerprint #54 berisi `batchId`, `warehouseId`, `mode`, `importType`, `sourceHash`, `contractVersion`, `validationVersion`, `metadata`, dan baris staging;
+- fingerprint #54 **tidak** memuat reference revision dan **tidak** memuat actor;
+- #54 tidak memiliki field reference revision sama sekali.
+
+Akibatnya, kesegaran referensi saat ini hanya dijaga oleh perbandingan `ReferenceRevisionReader.current()` dengan `reference_revision` yang disimpan bersama preview (lihat §6, adapter `PreviewReader`). **PERTANYAAN TERBUKA (MENUNGGU ADAM, komentar Jira SRS-52 nomor 10221):** dari mana reference revision diambil, apakah reference revision masuk fingerprint, dan apakah actor masuk fingerprint. Sumber reference revision: tidak ditemukan.
 
 **Siklus record (usulan).** Record ditulis hanya untuk hasil sukses, di transaksi yang sama dengan domain, audit SUCCESS, dan perubahan state batch. Kegagalan di-rollback sehingga tidak meninggalkan record, dan retry dengan key yang sama tetap aman. Karena record tidak pernah terlihat sebelum COMMIT, state IN_PROGRESS pada DOC-07 tidak diperlukan; ini perbedaan dengan DOC-07 yang perlu dikonfirmasi Adam.
 
@@ -94,7 +104,7 @@ Record yang `expires_at`-nya sudah lewat tetap dihormati sampai dihapus oleh pro
 **Urutan commit** (`commit.service.ts`), mengikuti #20 API-04 dengan satu penegasan: replay dikembalikan setelah otorisasi diulang, sesuai frasa #20 "replay yang disepakati setelah otorisasi".
 
 1. Validasi request sebelum transaksi: batch UUID, correlation UUID, key 1–128 karakter (batas VARCHAR(128) pada 001), body tepat `{preview_fingerprint, acknowledged_warnings}`.
-2. Dalam satu transaksi: kunci batch (`FOR UPDATE`) → baca record idempotency → otorisasi ulang → keputusan replay/konflik.
+2. Dalam satu transaksi: kunci batch (`FOR UPDATE`) → baca record idempotency → otorisasi ulang → tolak mode selain UJI dengan `MODE_NOT_ENABLED` (sebelum replay dan sebelum preview dibaca) → keputusan replay/konflik. Penolakan ini eksplisit dan tidak bergantung pada authorizer; bila authorizer menolak lebih dulu, hasilnya tetap `FORBIDDEN`. ACTUAL tetap SOURCE REQUIRED dan ditahan (CF-04/OD-08).
 3. Guard state: commit hanya dari VALIDATED; state lain atau tidak dikenal → `STATE_CONFLICT`.
 4. Preview: tidak ada atau milik batch lain → `PREVIEW_CHANGED`; ada error → `STATE_CONFLICT`; fingerprint berbeda → `PREVIEW_CHANGED`; jam server ≥ `expires_at` → `PREVIEW_EXPIRED`; reference revision berubah → `PREVIEW_CHANGED`.
 5. Warning: preview memiliki warning atau request membawa acknowledgement → `WARNING_ACKNOWLEDGEMENT_OPEN` (fail-closed sampai C58-04 diputuskan, sejalan dengan PR #11).
@@ -127,6 +137,7 @@ Record yang `expires_at`-nya sudah lewat tetap dihormati sampai dihapus oleh pro
 | `STATE_CONFLICT` | 409 | **Placeholder, MENUNGGU ADAM (butir 1)**; #20 menyebut 409 untuk konflik state tanpa nama kode |
 | `WARNING_ACKNOWLEDGEMENT_OPEN` | 422 | **Placeholder, MENUNGGU ADAM (butir 3)** |
 | `SOURCE_REQUIRED` | 422 | **Placeholder**; meminjam istilah staging #27 |
+| `MODE_NOT_ENABLED` | 422 | **Placeholder, belum ada di katalog DOC-08; MENUNGGU ADAM (komentar 10221)**. Meniru penolakan ACTUAL pada PR #54 dan alasan sesi web (`session-context.ts`) |
 | `TRANSACTION_OUTCOME_UNKNOWN` | 500 | **Placeholder**; meminjam istilah `AuditService` #22 |
 
 **Audit.** `reason_code` dibatasi ke nilai yang sudah ada pada `audit-event.ts` #22 (`TRANSACTION_FAILED`, `ACCESS_DENIED`, `USER_CANCELLED`). Akibatnya konflik idempotency tercatat sebagai FAILURE `TRANSACTION_FAILED`, sama dengan temuan review bundle. Kode audit baru **MENUNGGU ADAM** (butir 1) dan memerlukan perubahan file milik #22, yang tidak disentuh di sini.
@@ -140,11 +151,24 @@ Service bergantung pada port di `commit-ports.ts`, bukan pada kode yang belum me
 | `UnitOfWork` | Client `pg` BEGIN/COMMIT/ROLLBACK; COMMIT terputus → `UnitOfWorkOutcomeUnknownError` | — |
 | `BatchStore` | `import_batches` `SELECT … FOR UPDATE`, update state | 001/003 |
 | `CommitAuthorizer` | Ulang sesi/role/assignment di transaksi | SRS-47/48; `StageAuthorizer` #27 |
-| `PreviewReader` | Preview SRS-51 memakai client transaksi | SRS-51 (belum ada); guard transaksi `readOwnedStaging` (butir 2) |
+| `PreviewReader` | Fase A: adapter `createSrs51PreviewReader` (`srs51-preview-adapter.ts`) di atas port `Srs51PreviewSource`; sumber tersimpan dibuat Fase B | SRS-51 PR #54 (belum merged; tidak menyimpan preview, C58-03); guard transaksi `readOwnedStaging` (butir 2) |
 | `ReferenceRevisionReader` | Sumber versi referensi | **Tidak ditemukan** (butir 7) |
 | `DomainCommitWriter` | Per kind; kandidat pertama COUNT setelah migrasi 010 | 009/010/inbound schema |
 | `IdempotencyStore` | `idempotency_records` setelah 012; 23505 → `IdempotencyKeyTakenError` | 012 |
 | `CommitAuditWriter` | `appendAuditEvent` (dalam transaksi) dan `recordOutcome` (setelah rollback) dari #22 | #22 + patch `afa00a9` |
+
+**Adapter preview #54 (revisi 0.2).** `srs51-preview-adapter.ts` memetakan bentuk `PreviewResult` PR #54 @ `ab91423` ke `PreviewSnapshot` tanpa mengubah port SRS-52 dan tanpa mengimpor kode #54. Tipe #54 disalin ke modul ini dan wajib diperbarui bila kontrak #54 berubah.
+
+| Bentuk #54 | Bentuk port SRS-52 | Aturan |
+| --- | --- | --- |
+| `batchId` | `batch_id` | String tidak kosong |
+| `fingerprint` | `fingerprint` | String tidak kosong; nilai dibandingkan apa adanya |
+| `expiresAt` (string ISO) | `expires_at` (`Date`) | String yang tidak dapat diurai menjadi `Invalid Date` dan dianggap kedaluwarsa (fail-closed; #54 sendiri fail-open) |
+| `errors[]` | `error_count` | `errors.length`; bila `status` bukan VALID atau `canCommit` bukan true, minimal 1 |
+| `warnings[].id` | `warning_issue_ids` | Urutan dipertahankan |
+| — (tidak ada di #54) | `reference_revision` | Wajib disediakan sumber tersimpan (`StoredSrs51Preview.reference_revision`) |
+
+Bentuk yang tidak sesuai dilempar `SRS51_PREVIEW_SHAPE_INVALID` dan berakhir `TRANSACTION_FAILED` tanpa data parsial. Karena #54 tidak menyimpan preview, `Srs51PreviewSource` belum punya implementasi nyata (C58-03).
 
 ## 7. Keputusan yang masih terbuka
 
@@ -160,6 +184,11 @@ Service bergantung pada port di `commit-ports.ts`, bukan pada kode yang belum me
 | 8 | Audit untuk replay | **Belum ditanyakan**; tidak ditemukan keputusannya | Replay tidak menulis audit kedua |
 | 9 | State IN_PROGRESS DOC-07 vs record sukses saja | **Belum ditanyakan** | Hanya `SUCCEEDED` (§4) |
 | 10 | Nama kode placeholder (`STATE_CONFLICT`, dll.) | Termasuk butir 1 | Ditandai placeholder (§5) |
+| 11 | Penyimpanan preview dan pemetaan VALID/INVALID ke VALIDATED/PREVIEW_READY (C58-03) | MENUNGGU ADAM (komentar 10221) | Port `Srs51PreviewSource`; preview tidak dapat di-commit dihitung sebagai error |
+| 12 | Format ID warning dan pembatalan acknowledgement saat validasi ulang (C58-04) | MENUNGGU ADAM (komentar 10221) | Warning tetap ditolak; tes kontrak P2/P4 berupa `it.todo` |
+| 13 | Expiry tersimpan dan otoritatif di server, 409 atau 410, `PREVIEW_INVALIDATED` atau `PREVIEW_CHANGED` (C58-05) | MENUNGGU ADAM (komentar 10221) | Tetap `PREVIEW_EXPIRED` 410 dan `PREVIEW_CHANGED` 409 sesuai DOC-08; tes kontrak P5/P9 berupa `it.todo` |
+| 14 | Reference revision dan actor di fingerprint | MENUNGGU ADAM (komentar 10221); fakta #54 di §4 | Revision dibandingkan terpisah dari fingerprint |
+| 15 | Kode error penolakan ACTUAL | MENUNGGU ADAM (komentar 10221) | Placeholder `MODE_NOT_ENABLED` 422 |
 
 ## 8. Rencana Fase B dan prasyarat
 
@@ -178,12 +207,14 @@ Diisi dari hasil eksekusi aktual pada branch `feature/SRS-52-commit-idempotency`
 | Pemeriksaan | Hasil |
 | --- | --- |
 | Tes modul murni `import-commit-rules.test.ts` | 23 PASS |
-| Tes service dengan fake `import-commit-service.test.ts` | 55 PASS |
+| Tes service dengan fake `import-commit-service.test.ts` | 58 PASS (revisi 0.2: +3 tes penolakan ACTUAL) |
+| Tes adapter preview #54 `import-commit-srs51-adapter.test.ts` (revisi 0.2) | 21 PASS, 4 TODO (kontrak P2/P4/P5/P9, menunggu keputusan Adam; bukan PASS) |
 | Tes DB `import-commit-db.todo.test.ts` | 13 TODO (belum dibuat; bukan PASS) |
+| Uji mutasi sementara revisi 0.2 (tidak di-commit): guard ACTUAL dihapus | 2 tes gagal; file asli dipulihkan |
 | Uji mutasi sementara (tidak di-commit): `>=` menjadi `>`, konflik diabaikan, unknown COMMIT dimatikan | Masing-masing tertangkap: 2, 3, dan 2 tes gagal; file asli dipulihkan |
 | Lint, typecheck, build | PASS (lint tanpa warning) |
-| Seluruh test, `DATABASE_URL` dan `DATABASE_MIGRATION_URL` kosong seperti CI | 359 PASS, 13 TODO (Fase B), 13 skipped (tes migrasi SRS-44 yang memang di-skip tanpa DB), 0 FAIL |
-| Repository check mode workspace | 163 berkas, 0 temuan |
+| Seluruh test, `DATABASE_URL` dan `DATABASE_MIGRATION_URL` kosong seperti CI | Revisi 0.2: 383 PASS, 17 TODO (13 Fase B + 4 kontrak #54), 13 skipped (tes migrasi SRS-44 yang memang di-skip tanpa DB), 0 FAIL. Revisi 0.1: 359 PASS, 13 TODO, 13 skipped |
+| Repository check mode workspace | Revisi 0.2: 165 berkas, 0 temuan (revisi 0.1: 163 berkas, 0 temuan) |
 | Catatan lingkungan | Dengan hanya `DATABASE_URL` dikosongkan, `migrations.test.ts` membaca `.env` lokal lewat `dotenv/config` lalu gagal `ECONNREFUSED` karena DB lokal mati. Ini perilaku lingkungan yang sudah ada sebelumnya dan tidak terkait perubahan ini |
 
 Batas bukti: fake meniru kunci per batch dan rollback, tetapi **tidak** membuktikan perilaku PostgreSQL (isolasi, deadlock, FK, CHECK, trigger). Konkurensi, unknown COMMIT, dan audit atomik pada database nyata masih NOT RUN. Belum ada route, sesi nyata, atau integrasi SRS-51.
@@ -210,3 +241,4 @@ SRS-52 **belum selesai**: Definition of Done memerlukan implementasi DB, integra
 | Versi | Tanggal | Perubahan | Persetujuan |
 | --- | --- | --- | --- |
 | 0.1 | 2026-11-25 | Rancangan awal Fase A: kondisi 001 vs DOC-07, usulan 012 opsi A/B, komposisi request_hash, tabel keputusan, urutan service, port, keputusan terbuka, rencana Fase B | Belum ada; seluruh isi PROPOSED |
+| 0.2 | 2026-11-25 | Cabut klaim "reference revision terikat melalui `preview_fingerprint`" dan catat fakta fingerprint PR #54 @ `ab91423` (§4); tambah adapter `PreviewReader` untuk bentuk #54 (§6); tambah penolakan ACTUAL eksplisit dengan placeholder `MODE_NOT_ENABLED` (§5); tambah tes kontrak P2/P4/P5/P9 sebagai `it.todo`; butir terbuka 11–15 (§7); perbarui §9 | Belum ada; seluruh isi PROPOSED |

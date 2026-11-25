@@ -4,7 +4,7 @@
  *
  * Urutan commit mengikuti kontrak kandidat #20 (KONTRAK_LINTAS_MODUL_SRS-58.md, API-04)
  * dengan satu penegasan: replay dikembalikan setelah otorisasi diulang.
- *   lock batch → baca idempotency → otorisasi ulang → keputusan replay/konflik →
+ *   lock batch → baca idempotency → otorisasi ulang → tolak ACTUAL → keputusan replay/konflik →
  *   state → fingerprint → expiry → referensi → warning → domain → audit SUCCESS →
  *   COMMITTED → record idempotency → COMMIT.
  *
@@ -177,6 +177,9 @@ export class CommitService<Tx> extends ImportMutationService<Tx, CommitDependenc
         const scope = { actor_id: actor.actor_id, operation: 'import.commit' as const, idempotency_key: command.idempotency_key };
         const existing = await this.deps.idempotency.find(tx, scope);
         if (!(await this.deps.authorizer.authorize(tx, actor, batch, 'import.commit'))) throw new ImportCommitError('FORBIDDEN');
+        // ACTUAL ditahan (SOURCE REQUIRED, CF-04/OD-08). Ditolak eksplisit sebelum replay dan
+        // sebelum membaca preview, tanpa bergantung pada authorizer. Kode masih placeholder.
+        if (batch.mode !== 'UJI') throw new ImportCommitError('MODE_NOT_ENABLED');
 
         const requestHash = commitRequestHash({
           actor_id: actor.actor_id,

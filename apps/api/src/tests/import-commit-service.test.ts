@@ -197,6 +197,44 @@ describe('SRS-52 commit: state, preview, expiry, referensi, warning', () => {
   });
 });
 
+describe('SRS-52 commit: penolakan ACTUAL eksplisit (kode placeholder MODE_NOT_ENABLED)', () => {
+  beforeEach(() => {
+    db = new FakeImportDatabase();
+    db.addBatch(ujiBatch({ mode: 'ACTUAL' }));
+    db.preview = ujiPreview();
+  });
+
+  it('batch ACTUAL ditolak MODE_NOT_ENABLED 422 sebelum preview dibaca, walaupun authorizer mengizinkan', async () => {
+    const promise = commitService().commit(command());
+    await expect(promise).rejects.toMatchObject({ code: 'MODE_NOT_ENABLED', httpStatus: 422 });
+    expect(db.calls).toContain('authorize');
+    expect(db.calls).not.toContain('preview.read');
+    expect(db.calls).not.toContain('reference.current');
+    expect(db.writerCalls).toBe(0);
+    expect(db.committed.domainRows).toHaveLength(0);
+    expect(db.committed.idempotency.size).toBe(0);
+    expect(db.committed.batches.get(UJI_BATCH_ID)?.state).toBe('VALIDATED');
+    expect(db.auditAfterRollback.map((event) => [event.outcome, event.context_safe.reason_code, event.mode])).toEqual([
+      ['FAILURE', 'TRANSACTION_FAILED', 'ACTUAL'],
+    ]);
+    expectSafeLogs();
+  });
+
+  it('authorizer yang menolak batch ACTUAL tetap menghasilkan FORBIDDEN lebih dulu', async () => {
+    db.authorizeResult = false;
+    expect(await errorCode(commitService().commit(command()))).toBe('FORBIDDEN');
+    expect(db.calls).not.toContain('preview.read');
+  });
+
+  it('mode yang tidak dikenal juga ditolak MODE_NOT_ENABLED (fail-closed)', async () => {
+    db = new FakeImportDatabase();
+    db.addBatch(ujiBatch({ mode: 'SIMULATED' as never }));
+    db.preview = ujiPreview();
+    expect(await errorCode(commitService().commit(command()))).toBe('MODE_NOT_ENABLED');
+    expect(db.calls).not.toContain('preview.read');
+  });
+});
+
 describe('SRS-52 commit: validasi request sebelum transaksi', () => {
   it.each([
     ['key kosong', { idempotency_key: '' }],
