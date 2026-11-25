@@ -114,4 +114,99 @@ describe('SRS-47 session provider (store terinjeksi, fake auth server)', () => {
     expect(reset).toHaveBeenCalled();
     expect(reset.mock.calls[0][0].changed).toContain('account');
   });
+
+  it('logout menghapus csrfToken sehingga token lama tidak bisa dibaca lagi', async () => {
+    const now = () => 1_000;
+    const store = createSessionStore(makeContext());
+    const auth = new FakeSessionAuthServer(now, 5_000);
+    auth.seed('yudha', 'secret', makeContext());
+    const provider = createSessionProvider({ store, auth, now });
+    await provider.login({ username: 'yudha', password: 'secret' });
+    expect(provider.csrfToken).toMatch(/^csrf-fake-/);
+
+    await provider.logout();
+
+    expect(provider.csrfToken).toBeNull();
+    expect(store.state.accountId).toBe('');
+  });
+
+  it('refresh expired membersihkan csrfToken dan state sesi', async () => {
+    let clock = 1_000;
+    const now = () => clock;
+    const store = createSessionStore(makeContext({ accountId: '', displayName: '', warehouses: [], activeWarehouseId: null }));
+    const auth = new FakeSessionAuthServer(now, 100);
+    auth.seed('yudha', 'secret', makeContext());
+    const provider = createSessionProvider({ store, auth, now });
+    await provider.login({ username: 'yudha', password: 'secret' });
+    expect(provider.csrfToken).not.toBeNull();
+
+    clock = 2_000;
+    const result = await provider.refresh();
+
+    expect(result).toEqual({ ok: false, reason: 'SESSION_EXPIRED' });
+    expect(provider.csrfToken).toBeNull();
+    expect(store.state.accountId).toBe('');
+  });
+
+  it('login A -> logout -> login B tidak membocorkan token/konteks akun A', async () => {
+    const now = () => 1_000;
+    const store = createSessionStore(makeContext({ accountId: '', displayName: '', warehouses: [], activeWarehouseId: null }));
+    const auth = new FakeSessionAuthServer(now, 5_000);
+    auth.seed('user-a', 'pw-a', makeContext({ accountId: 'account-a', displayName: 'A' }));
+    auth.seed('user-b', 'pw-b', makeContext({ accountId: 'account-b', displayName: 'B' }));
+    const provider = createSessionProvider({ store, auth, now });
+
+    await provider.login({ username: 'user-a', password: 'pw-a' });
+    const tokenA = provider.csrfToken;
+    await provider.logout();
+    expect(provider.csrfToken).toBeNull();
+
+    await provider.login({ username: 'user-b', password: 'pw-b' });
+    expect(store.state.accountId).toBe('account-b');
+    expect(provider.csrfToken).not.toBeNull();
+    expect(provider.csrfToken).not.toBe(tokenA);
+  });
+
+  it('logout tetap membersihkan state lokal meski auth.logout melempar exception', async () => {
+    const now = () => 1_000;
+    const store = createSessionStore(makeContext());
+    const auth = new FakeSessionAuthServer(now, 5_000);
+    auth.seed('yudha', 'secret', makeContext());
+    const provider = createSessionProvider({ store, auth, now });
+    await provider.login({ username: 'yudha', password: 'secret' });
+    vi.spyOn(auth, 'logout').mockRejectedValueOnce(new Error('network'));
+
+    await expect(provider.logout()).rejects.toThrow('network');
+    expect(provider.csrfToken).toBeNull();
+    expect(store.state.accountId).toBe('');
+  });
+
+  it('login failure (exception) tidak meninggalkan state terautentikasi parsial', async () => {
+    const store = createSessionStore(makeContext({ accountId: '', displayName: '', warehouses: [], activeWarehouseId: null }));
+    const auth = new FakeSessionAuthServer(() => 1_000, 5_000);
+    vi.spyOn(auth, 'login').mockRejectedValueOnce(new Error('boom'));
+    const provider = createSessionProvider({ store, auth });
+
+    const result = await provider.login({ username: 'yudha', password: 'secret' });
+
+    expect(result).toEqual({ ok: false, reason: 'AUTH_FAILED' });
+    expect(store.state.accountId).toBe('');
+    expect(provider.csrfToken).toBeNull();
+  });
+
+  it('refresh exception membersihkan sesi/token stale', async () => {
+    const now = () => 1_000;
+    const store = createSessionStore(makeContext());
+    const auth = new FakeSessionAuthServer(now, 5_000);
+    auth.seed('yudha', 'secret', makeContext());
+    const provider = createSessionProvider({ store, auth, now });
+    await provider.login({ username: 'yudha', password: 'secret' });
+    vi.spyOn(auth, 'refresh').mockRejectedValueOnce(new Error('timeout'));
+
+    const result = await provider.refresh();
+
+    expect(result).toEqual({ ok: false, reason: 'SESSION_EXPIRED' });
+    expect(provider.csrfToken).toBeNull();
+    expect(store.state.accountId).toBe('');
+  });
 });

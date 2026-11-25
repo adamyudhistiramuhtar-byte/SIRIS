@@ -60,44 +60,72 @@ const UJI: DataMode = 'UJI';
 export function createSessionProvider({ store, auth, now = (): number => Date.now() }: SessionProviderOptions): SessionProvider {
   let csrfToken: string | null = null;
 
+  function clearSession(): void {
+    csrfToken = null;
+    store.clear();
+  }
+
   async function login(input: SessionLoginInput): Promise<SessionProviderResult> {
     if (store.state.mode !== UJI) return { ok: false, reason: 'MODE_NOT_ENABLED' };
 
-    const result = await auth.login(input);
+    let result: SessionLoginResult | null;
+    try {
+      result = await auth.login(input);
+    } catch {
+      clearSession();
+      return { ok: false, reason: 'AUTH_FAILED' };
+    }
     if (!result) return { ok: false, reason: 'AUTH_FAILED' };
 
     const expiresAt = result.expiresAt ?? null;
     if (expiresAt !== null && now() >= expiresAt) {
-      await auth.logout({ sessionId: result.context.accountId });
-      store.clear();
+      try {
+        await auth.logout({ sessionId: result.context.accountId });
+      } finally {
+        clearSession();
+      }
       return { ok: false, reason: 'SESSION_EXPIRED' };
     }
 
-    csrfToken = result.csrfToken ?? null;
+    const nextCsrfToken = result.csrfToken ?? null;
     const applied = store.setAccount({ ...result.context, mode: UJI });
-    return applied.ok
-      ? { ok: true, changed: applied.changed }
-      : { ok: false, reason: applied.reason };
+    if (!applied.ok) {
+      clearSession();
+      return { ok: false, reason: applied.reason };
+    }
+    csrfToken = nextCsrfToken;
+    return { ok: true, changed: applied.changed };
   }
 
   async function logout(): Promise<void> {
-    await auth.logout();
-    store.clear();
+    try {
+      await auth.logout();
+    } finally {
+      clearSession();
+    }
   }
 
   async function refresh(): Promise<SessionProviderResult> {
     if (store.state.mode !== UJI) return { ok: false, reason: 'MODE_NOT_ENABLED' };
 
-    const context = await auth.refresh?.();
+    let context: SessionContext | null | undefined;
+    try {
+      context = await auth.refresh?.();
+    } catch {
+      clearSession();
+      return { ok: false, reason: 'SESSION_EXPIRED' };
+    }
     if (!context) {
-      store.clear();
+      clearSession();
       return { ok: false, reason: 'SESSION_EXPIRED' };
     }
 
     const applied = store.setAccount({ ...context, mode: UJI });
-    return applied.ok
-      ? { ok: true, changed: applied.changed }
-      : { ok: false, reason: applied.reason };
+    if (!applied.ok) {
+      clearSession();
+      return { ok: false, reason: applied.reason };
+    }
+    return { ok: true, changed: applied.changed };
   }
 
   return {

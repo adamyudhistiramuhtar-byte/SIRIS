@@ -114,9 +114,9 @@ export function createPreviewService(deps: PreviewServiceDeps) {
       if (row.validation_status === 'PENDING') {
         issues.push({
           id: issueId(input.batchId, 'ROW_PENDING', row.row_number),
-          severity: 'WARNING',
+          severity: 'ERROR',
           code: 'ROW_PENDING',
-          message: `Baris ${row.row_number} masih pending validasi.`,
+          message: `Baris ${row.row_number} masih menunggu validasi dan belum boleh di-commit.`,
           rowNumber: row.row_number,
         });
       }
@@ -138,6 +138,7 @@ export function createPreviewService(deps: PreviewServiceDeps) {
     const finalIssues = [...dedup.values()].sort((a, b) => (a.rowNumber ?? 0) - (b.rowNumber ?? 0) || a.code.localeCompare(b.code));
     const errors = finalIssues.filter((i) => i.severity === 'ERROR');
     const warnings = finalIssues.filter((i) => i.severity === 'WARNING');
+    const hasPendingValidation = finalIssues.some((i) => i.code === 'ROW_PENDING');
 
     const fingerprint = computePreviewFingerprint({
       batchId: input.batchId,
@@ -152,9 +153,10 @@ export function createPreviewService(deps: PreviewServiceDeps) {
     });
 
     const expiresAtMs = now() + ttlMs;
+    const canCommit = errors.length === 0 && !hasPendingValidation;
     return {
       batchId: input.batchId,
-      status: errors.length > 0 ? 'INVALID' : 'VALID',
+      status: canCommit ? 'VALID' : 'INVALID',
       fingerprint,
       validationVersion,
       expiresAt: new Date(expiresAtMs).toISOString(),
@@ -163,7 +165,7 @@ export function createPreviewService(deps: PreviewServiceDeps) {
       warnings,
       errors,
       rowCount: rows.length,
-      canCommit: errors.length === 0,
+      canCommit,
     };
   }
 

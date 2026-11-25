@@ -12,7 +12,7 @@ Implementasi terisolasi domain service untuk preview tervalidasi:
 - `apps/api/src/validation/preview-types.ts` — tipe `ReadOwnedStaging`, `PreviewAuthorizer`, `BuildPreviewInput`, `PreviewResult`, issue/warning.
 - `apps/api/src/validation/preview-service.ts` — `createPreviewService`, fingerprint SHA-256 kanonik, expiry 30 menit, invalidasi.
 - `apps/api/src/tests/fixtures/srs51/preview-valid-uji.fixture.json` — fixture UJI berversi (`srs51-uji-v1`, label UJI).
-- `apps/api/src/tests/preview-service.test.ts` — 6 tes PASS.
+- `apps/api/src/tests/preview-service.test.ts` — 12 tes PASS.
 
 ## Kontrak Internal
 
@@ -46,13 +46,17 @@ Warning/error memiliki ID deterministik `warn_<sha1-16>` dari `batchId|code|rowN
 
 - Tidak ada endpoint HTTP `/imports/{batch}/validate|preview|commit` (menunggu kontrak API final #20/#28 dan wiring backend).
 - `readOwnedStaging` nyata dari PR #27 belum diimpor sebagai dependency runtime; saat ini interface terinjeksi.
-- Aturan validasi domain masih minimal (row order, PENDING warning, INVALID row, negative quantity). Aturan UC-16 penuh per adaptor (5 jenis impor) belum diimplementasikan.
+- Aturan validasi domain masih minimal (row order, PENDING blocking fail-closed, INVALID row, negative quantity). Aturan UC-16 penuh per adaptor (5 jenis impor) belum diimplementasikan.
+
+### Commit dan Status (fail-closed, diperbarui per review PM 25 Nov 2026)
+
+- Baris dengan `validation_status === 'PENDING'` menghasilkan issue blocking (`ROW_PENDING`, severity ERROR) dan menolak `status` menjadi `VALID` serta menolak `canCommit` selama ada baris pending/ERROR. Tidak ada mekanisme lain (misalnya warning acknowledgment) yang boleh melewatkan komit untuk batch yang belum divalidasi penuh.
 - Tidak ada persistensi preview; expiry/invalidation dicek in-memory oleh caller.
 - ACTUAL ditolak.
 
 ## Hasil Tes
 
-- `npx vitest run apps/api/src/tests/preview-service.test.ts` — **6 PASS / 0 FAIL** (25 Nov 2026, lokal).
+- `npx vitest run apps/api/src/tests/preview-service.test.ts` — **12 PASS / 0 FAIL** (25 Nov 2026, lokal, sesudah koreksi review PM).
 - Integrasi staging/runtime: **NOT RUN / BLOCKED** (SRS-50 runtime, SRS-47/48 wiring, kontrak #20/#28).
 
 ## Handoff

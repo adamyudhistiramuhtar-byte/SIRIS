@@ -64,7 +64,7 @@ Memilih mekanisme autentikasi/sesi yang akan diimplementasikan untuk runtime SIR
 
 ## Status Bukti
 
-- **Implemented in this branch (isolated)**: `session-provider.ts`, `fake-session-auth-server.ts`, `session-context.ts` clear lifecycle, unit tests PASS (16/16 for session-context+provider).
+- **Implemented in this branch (isolated)**: `session-provider.ts`, `fake-session-auth-server.ts`, `session-context.ts` clear lifecycle, unit tests PASS (16/16 for session-context+provider). **Koreksi review PM (25 Nov 2026)**: `csrfToken`/state lokal dibersihkan fail-closed saat logout, refresh expired/exception, login expired/exception, atau kegagalan apply; logout tetap membersihkan state lokal meski `auth.logout()` melempar exception (kontrak fail-closed, tidak meninggalkan token lama dapat dibaca).
 - **NOT IMPLEMENTED / BLOCKED**: endpoint backend nyata, cookie transport, DB session table, password hashing production, CSRF middleware Express, audit event persistence, integration dengan SRS-43 error contract.
 - **No ACCEPTED decision**: dokumen ini draft; PM harus menetapkan opsi final sebelum klaim SRS-47 Done.
 

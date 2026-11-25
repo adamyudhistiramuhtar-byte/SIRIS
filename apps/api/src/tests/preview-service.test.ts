@@ -37,22 +37,23 @@ function makeService(overrides: Partial<Parameters<typeof createPreviewService>[
 }
 
 describe('SRS-51 preview tervalidasi (terisolasi, fixture UJI)', () => {
-  it('membangun preview VALID dengan fingerprint, expiry 30 menit, dan warning ID stabil', async () => {
+  it('PENDING row memblokir commit (fail-closed) namun fingerprint/expiry/issue ID tetap stabil', async () => {
     const svc = makeService();
     const result = await svc.buildPreview({ ...fixture.batch, actor });
     expect(fixture.label).toBe('UJI');
-    expect(result.status).toBe('VALID');
-    expect(result.canCommit).toBe(true);
+    expect(result.status).toBe('INVALID');
+    expect(result.canCommit).toBe(false);
     expect(result.validationVersion).toBe(PREVIEW_VALIDATION_VERSION);
     expect(result.expiresInMs).toBe(PREVIEW_TTL_MS);
     expect(result.expiresAt).toBe('2026-11-25T00:30:00.000Z');
-    expect(result.warnings).toHaveLength(1);
-    expect(result.warnings[0].code).toBe('ROW_PENDING');
-    expect(result.warnings[0].id).toMatch(/^warn_[a-f0-9]{16}$/);
+    expect(result.errors.some((e) => e.code === 'ROW_PENDING')).toBe(true);
+    expect(result.warnings.some((w) => w.code === 'ROW_PENDING')).toBe(false);
+    const pending = result.issues.find((i) => i.code === 'ROW_PENDING');
+    expect(pending?.id).toMatch(/^warn_[a-f0-9]{16}$/);
 
     const again = await svc.buildPreview({ ...fixture.batch, actor });
     expect(again.fingerprint).toBe(result.fingerprint);
-    expect(again.warnings[0].id).toBe(result.warnings[0].id);
+    expect(again.issues.find((i) => i.code === 'ROW_PENDING')?.id).toBe(pending?.id);
   });
 
   it('menolak preview tanpa aktor/sesi (deny-by-default)', async () => {
@@ -93,6 +94,86 @@ describe('SRS-51 preview tervalidasi (terisolasi, fixture UJI)', () => {
 
   it('mode ACTUAL ditolak', async () => {
     const svc = makeService();
+    await expect(svc.buildPreview({ ...fixture.batch, actor, mode: 'ACTUAL' as BuildPreviewInput['mode'] })).rejects.toMatchObject({ code: 'MODE_NOT_ENABLED' });
+  });
+
+  it('single PENDING staging row tidak boleh VALID/canCommit', async () => {
+    const rows: StagingRow[] = [{
+      id: 'row-001', component: 'balance', row_number: 1,
+      raw_payload: { sku: 'SKU-001', quantity: '10' },
+      normalized_payload: { sku: 'SKU-001', quantity: 10 },
+      validation_status: 'PENDING',
+    }];
+    const svc = makeService({}, rows);
+    const result = await svc.buildPreview({ ...fixture.batch, actor });
+    expect(result.status).toBe('INVALID');
+    expect(result.canCommit).toBe(false);
+    expect(result.errors.some((e) => e.code === 'ROW_PENDING')).toBe(true);
+  });
+
+  it('multiple components dengan PENDING tetap memblokir commit', async () => {
+    const rows: StagingRow[] = [
+      { id: 'r1', component: 'balance', row_number: 1, raw_payload: {}, normalized_payload: { sku: 'A', quantity: 1 }, validation_status: 'VALID' },
+      { id: 'r2', component: 'movement', row_number: 2, raw_payload: {}, normalized_payload: { sku: 'B', quantity: 2 }, validation_status: 'PENDING' },
+      { id: 'r3', component: 'reference', row_number: 3, raw_payload: {}, normalized_payload: { sku: 'C', quantity: 3 }, validation_status: 'PENDING' },
+    ];
+    const svc = makeService({}, rows);
+    const result = await svc.buildPreview({ ...fixture.batch, actor });
+    expect(result.status).toBe('INVALID');
+    expect(result.canCommit).toBe(false);
+    expect(result.errors.filter((e) => e.code === 'ROW_PENDING')).toHaveLength(2);
+  });
+
+  it('PENDING tidak dapat dibypass lewat mekanisme lain (termasuk warning/acknowledgment)', async () => {
+    const rows: StagingRow[] = [
+      { id: 'r1', component: 'balance', row_number: 1, raw_payload: {}, normalized_payload: { sku: 'A', quantity: 1 }, validation_status: 'PENDING' },
+      { id: 'r2', component: 'balance', row_number: 2, raw_payload: {}, normalized_payload: { sku: 'B', quantity: 2 }, validation_status: 'VALID' },
+    ];
+    const svc = makeService({}, rows);
+    const result = await svc.buildPreview({ ...fixture.batch, actor });
+    // Tidak ada jalur (warning/acknowledgment) yang boleh mengubah gate commit; PENDING tetap blocking.
+    expect(result.warnings.some((w) => w.code === 'ROW_PENDING')).toBe(false);
+    expect(result.errors.some((e) => e.code === 'ROW_PENDING')).toBe(true);
+    expect(result.canCommit).toBe(false);
+    expect(result.status).toBe('INVALID');
+    expect(() => svc.assertPreviewFresh(result, result.fingerprint, Date.parse('2026-11-25T00:10:00.000Z'))).not.toThrow();
+    expect(result.canCommit).toBe(false);
+  });
+
+  it('PENDING mixed dengan ERROR tetap INVALID/canCommit false', async () => {
+    const rows: StagingRow[] = [
+      { id: 'r1', component: 'balance', row_number: 1, raw_payload: {}, normalized_payload: { sku: 'A', quantity: -1 }, validation_status: 'VALID' },
+      { id: 'r2', component: 'balance', row_number: 2, raw_payload: {}, normalized_payload: { sku: 'B', quantity: 2 }, validation_status: 'PENDING' },
+    ];
+    const svc = makeService({}, rows);
+    const result = await svc.buildPreview({ ...fixture.batch, actor });
+    expect(result.status).toBe('INVALID');
+    expect(result.canCommit).toBe(false);
+    expect(result.errors.some((e) => e.code === 'NEGATIVE_QUANTITY')).toBe(true);
+    expect(result.errors.some((e) => e.code === 'ROW_PENDING')).toBe(true);
+  });
+
+  it('preview fully validated (tanpa PENDING/ERROR) tetap VALID dan dapat commit', async () => {
+    const rows: StagingRow[] = [
+      { id: 'r1', component: 'balance', row_number: 1, raw_payload: {}, normalized_payload: { sku: 'A', quantity: 1 }, validation_status: 'VALID' },
+      { id: 'r2', component: 'balance', row_number: 2, raw_payload: {}, normalized_payload: { sku: 'B', quantity: 2 }, validation_status: 'VALID' },
+    ];
+    const svc = makeService({}, rows);
+    const result = await svc.buildPreview({ ...fixture.batch, actor });
+    expect(result.status).toBe('VALID');
+    expect(result.canCommit).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('safeguard SRS-51 tetap: fingerprint, expiry, dan penolakan mode ACTUAL tidak berubah', async () => {
+    const rows: StagingRow[] = [
+      { id: 'r1', component: 'balance', row_number: 1, raw_payload: {}, normalized_payload: { sku: 'A', quantity: 1 }, validation_status: 'VALID' },
+    ];
+    const svc = makeService({}, rows);
+    const result = await svc.buildPreview({ ...fixture.batch, actor });
+    expect(result.fingerprint).toMatch(/^[a-f0-9]{64}$/);
+    expect(result.expiresAt).toBe('2026-11-25T00:30:00.000Z');
+    expect(() => svc.assertPreviewFresh(result, result.fingerprint, Date.parse('2026-11-25T00:30:00.000Z'))).toThrowError(/kedaluwarsa/);
     await expect(svc.buildPreview({ ...fixture.batch, actor, mode: 'ACTUAL' as BuildPreviewInput['mode'] })).rejects.toMatchObject({ code: 'MODE_NOT_ENABLED' });
   });
 });
