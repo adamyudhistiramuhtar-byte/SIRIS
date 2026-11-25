@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({
   env: {
-    DATABASE_URL: 'postgresql://siris_app:contoh-password@127.0.0.1:55432/siris_uji',
+    DATABASE_URL: 'postgresql://siris_app@127.0.0.1:55432/siris_uji',
   },
   Pool: vi.fn(),
 }));
@@ -37,7 +37,7 @@ async function loadPoolModule(): Promise<typeof import('../shared/db/pool.js')> 
 }
 
 beforeEach(() => {
-  h.env.DATABASE_URL = 'postgresql://siris_app:contoh-password@127.0.0.1:55432/siris_uji';
+  h.env.DATABASE_URL = 'postgresql://siris_app@127.0.0.1:55432/siris_uji';
   h.Pool.mockReset();
 });
 
@@ -78,7 +78,7 @@ describe('Unit test lapisan pool PostgreSQL SRS-43 (mock pg)', () => {
   it('kegagalan koneksi menghasilkan kode aman tanpa pesan atau connection string mentah', async () => {
     const { instance } = makePoolInstance();
     instance.connect.mockRejectedValue(
-      Object.assign(new Error('PRIVATE_DSN_SENTINEL postgresql://user:pass@host/db'), {
+      Object.assign(new Error('PRIVATE_DSN_SENTINEL postgresql://127.0.0.1:5432/siris_uji password=contoh-password'), {
         code: 'ECONNREFUSED',
       }),
     );
