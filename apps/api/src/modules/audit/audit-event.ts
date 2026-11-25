@@ -8,7 +8,8 @@ const contextSchema = z.object({
   error_count: z.number().int().nonnegative().safe().optional(),
   warning_count: z.number().int().nonnegative().safe().optional(),
   kind: z.enum(['EXPECTED', 'COMMITMENT', 'RECEIVING', 'STOCK', 'COUNT']).optional(),
-  reason_code: z.enum(['TRANSACTION_FAILED', 'ACCESS_DENIED', 'USER_CANCELLED', 'DATABASE_UNAVAILABLE']).optional(),
+  reason_code: z.enum(['TRANSACTION_FAILED', 'ACCESS_DENIED', 'USER_CANCELLED', 'DATABASE_UNAVAILABLE',
+    'INVALID_METADATA', 'INVALID_FILE', 'LIMIT_EXCEEDED', 'SOURCE_REQUIRED', 'CUTOFF_UNVERIFIED']).optional(),
 }).strict();
 
 const inputSchema = z.object({
