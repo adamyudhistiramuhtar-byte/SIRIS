@@ -8,9 +8,10 @@
 | Penyusun | Vassell Enha Atthayya (Anggota 3) |
 | Reviewer teknis nonpenulis | Muhammad Luthfi Rafif |
 | Persetujuan PM | Adam Yudhistira Muhtar, setelah review dan evidence |
-| Tanggal | 2026-11-24 |
-| Status dokumen | DRAFT, menunggu review. Seluruh isi adalah usulan persiapan, bukan hasil UAT |
+| Tanggal | 2026-11-24 (0.1.0), direvisi 2026-11-25 (0.2.0) |
+| Status dokumen | DRAFT, menunggu review ulang. Seluruh isi adalah usulan persiapan, bukan hasil UAT |
 | Sumber | DOC-14 v0.2.0, DOC-13, DOC-15, `MATRIK_PERMUTASI_SRS-36.md` (baseline RBAC UJI v0.1), `KONTRAK_SUMBER_SRS-37.md`, fixture `database/fixtures/uji/*.proposed-0.1.json` |
+| Keputusan PM yang dipakai pada 0.2.0 | Baseline UJI UC-11 dan UC-12 tetap view-only (jawaban butir D). Keputusan UJI dan cutoff: komentar 10153 pada SRS-38. Arahan UAT: komentar 10160 pada SRS-74. Sumber asli dan baseline 55 TC: lampiran SRS-35 dan SRS-58 |
 
 ## 1. Batas dokumen
 
@@ -18,14 +19,26 @@
 - Nama peserta, jadwal, dan penandatangan tidak tersedia. Dokumen ini tidak mengarang nama, tanggal, atau tanda tangan, dan tidak mengirim undangan.
 - Semua data adalah data UJI berawalan `UJI-`. Mode ACTUAL tetap dinonaktifkan.
 - Kontrak sumber dan fixture berstatus `proposed-0.1`, review belum ada. Skrip di bawah ikut berstatus usulan.
-- Pekerjaan ini tidak mengubah DOC-14. Perubahan ke DOC-14 mengikuti prosedur change request pada DOC-15.
+- Pekerjaan ini tidak mengubah DOC-14, termasuk secara diam-diam. Pemisahan dua tahap pada bagian 1.1 hanya berlaku untuk skrip persiapan ini. Perubahan ke DOC-14 mengikuti prosedur change request pada DOC-15.
+- Revisi 0.2.0 tidak menghasilkan hasil UAT baru. Tidak ada langkah yang ditandai PASS.
+
+### 1.1 Batas dua tahap UAT-W langkah 4 dan 5
+
+Baseline UJI menetapkan UC-11 (evidence) dan UC-12 (rekonsiliasi) tetap view-only. Karena itu langkah 4 dan 5 pada UAT-W dipecah menjadi dua tahap yang tidak boleh dicampur:
+
+| Tahap | Isi | Syarat mulai | Hasil yang boleh dicatat |
+| --- | --- | --- | --- |
+| Tahap 1: penolakan mutasi pada build saat ini | Memeriksa bahwa aksi mutasi pada UC-11 dan UC-12 (jalankan rekonsiliasi, unggah evidence, unduh isi evidence) ditolak atau tidak tersedia, dan bahwa tampilan hanya-lihat tetap bekerja | Build yang memuat halaman UC-11 dan UC-12 view-only. Pengecekan sisi server menunggu SRS-48 | Penolakan yang teramati. Bukan PASS untuk fungsi positif |
+| Tahap 2: skenario positif | Rekonsiliasi dijalankan, evidence diunggah dan diunduh, variance -10 untuk fisik 0 diverifikasi | Fitur, domain, dan otorisasi yang sah tersedia, dan keputusan PM membuka baseline view-only. Gate 47, 48, 51, 52 terpenuhi pada build terintegrasi dengan stakeholder | Tetap NOT RUN. Tidak boleh dinyatakan PASS pada build view-only |
+
+UC-11 dan UC-12 tidak dihapus dari skrip. Tidak ada klaim PASS positif pada build view-only.
 
 ## 2. Ketidaksesuaian dan celah yang ditemukan
 
 | No | Temuan | Dampak pada skrip | Tindakan |
 | --- | --- | --- | --- |
-| G-1 | DOC-14 UAT-W langkah 4 (jalankan rekonsiliasi) dan langkah 5 (arsipkan bukti) bertentangan dengan keputusan PM butir D pada SRS-36: eksekusi rekonsiliasi (UC-12) serta upload dan download evidence (UC-11) belum disetujui dan tetap nonaktif | Kedua langkah ditulis sebagai BLOCKED BY DECISION, bukan dijalankan | PM memutuskan apakah DOC-14 direvisi lewat change request atau butir D dibuka |
-| G-2 | Expected "variance -10 untuk true 0" pada UAT-W bergantung pada eksekusi rekonsiliasi (UC-12) | Tidak dapat diverifikasi selama G-1 terbuka. Perilaku null versus nol tetap dapat diperiksa pada preview impor COUNT | Dicatat pada skrip UAT-W |
+| G-1 | DOC-14 UAT-W langkah 4 (jalankan rekonsiliasi) dan langkah 5 (arsipkan bukti) bertentangan dengan baseline UJI view-only pada UC-11 dan UC-12 (keputusan PM butir D) | Dipecah menjadi Tahap 1 (pemeriksaan penolakan mutasi pada build saat ini, langkah 4A dan 5A) dan Tahap 2 (skenario positif, langkah 4B dan 5B, BLOCKED BY DECISION) | DOC-14 tidak diubah. PM memutuskan apakah DOC-14 direvisi lewat change request atau butir D dibuka. Tahap 2 menunggu fitur, domain, dan otorisasi yang sah |
+| G-2 | Expected "variance -10 untuk true 0" pada UAT-W bergantung pada eksekusi rekonsiliasi (UC-12) | Bagian Tahap 2 (langkah 4B) tidak dapat diverifikasi selama G-1 terbuka. Perilaku null versus nol tetap dapat diperiksa pada preview impor COUNT | Dicatat pada skrip UAT-W |
 | G-3 | Prasyarat DOC-14 menyebut "pengujian integrasi selesai sesuai kriteria", sedangkan SRS-47, SRS-48, SRS-51, dan SRS-52 belum selesai | UAT tidak dapat dimulai pada lingkungan nyata | Dicatat sebagai gate pada bagian 6 |
 | G-4 | Tidak ada skrip atau perintah reset data UJI yang terdaftar di `package.json` atau `scripts/` pada snapshot ini | Prosedur reset pada bagian 5 baru berupa syarat, bukan langkah yang dapat dijalankan | Menunggu SRS-50 dan SRS-54 (harness dan staging) |
 | G-5 | Nilai nol pada EXPECTED (CF-06) dan nilai saldo negatif (OD-05) masih OPEN pada kontrak | Dua kasus ini tidak dimasukkan ke skrip | Menunggu keputusan PM |
@@ -67,8 +80,10 @@ Kriteria penerimaan (DOC-14): tanggal kebutuhan tetap, event janji utuh, belum f
 | 1 | Impor receiving parsial lalu penutup yang sah | Parsial dan final dibedakan. Penutup tanpa referensi yang sah ditolak (INVALID_CLOSING) | Dapat dijalankan |
 | 2 | Impor STOCK dengan QTY AKHIR 10 | Preview menampilkan saldo dan cutoff. Cutoff yang null ditampilkan sebagai tidak tersedia | Dapat dijalankan |
 | 3 | Impor COUNT: satu baris dihitung dengan fisik 0, baris lain belum dihitung (null) | Nol dan belum dihitung ditampilkan berbeda. Null tidak diperlakukan sebagai nol | Dapat dijalankan |
-| 4 | Jalankan rekonsiliasi | Variance -10 untuk fisik 0 dan null untuk belum dihitung (DOC-14) | BLOCKED BY DECISION (G-1, G-2) |
-| 5 | Arsipkan bukti, buka histori, metrik, dan audit proses | Berkas privat. Run lama tetap ada. UC-11 hanya lihat | Upload dan download bukti BLOCKED BY DECISION (G-1). Lihat histori, metrik, dan audit dapat dijalankan |
+| 4A | Tahap 1: coba jalankan rekonsiliasi pada build saat ini | Aksi mutasi UC-12 tidak tersedia atau ditolak. Hasil rekonsiliasi hanya dapat dilihat. Penolakan di sisi server dicek setelah SRS-48 | Dapat disiapkan. Eksekusi NOT RUN |
+| 4B | Tahap 2: jalankan rekonsiliasi | Variance -10 untuk fisik 0 dan null untuk belum dihitung (DOC-14) | BLOCKED BY DECISION (G-1, G-2). NOT RUN |
+| 5A | Tahap 1: coba unggah dan unduh isi evidence, lalu buka histori, metrik, dan audit proses | Unggah dan unduh isi evidence UC-11 tidak tersedia atau ditolak. Histori, metrik, dan audit proses dapat dilihat. Kunci penyimpanan tidak terlihat | Dapat disiapkan. Eksekusi NOT RUN |
+| 5B | Tahap 2: arsipkan bukti (berkas privat, run lama tetap ada) | Unggah dan unduh evidence berfungsi pada berkas privat. Run lama tetap ada | BLOCKED BY DECISION (G-1). NOT RUN |
 
 ### 3.3 UAT-R (Production)
 
@@ -173,3 +188,4 @@ Sampai gate di atas terpenuhi, UAT tidak boleh dijalankan pada lingkungan nyata.
 | Versi | Tanggal | Perubahan |
 | --- | --- | --- |
 | 0.1.0 | 2026-11-24 | Penyusunan awal skrip, formulir peserta, dan syarat lingkungan. |
+| 0.2.0 | 2026-11-25 | Menanggapi review PM pada 8577c47: UAT-W langkah 4 dan 5 dipecah menjadi Tahap 1 (penolakan mutasi pada build view-only) dan Tahap 2 (skenario positif, BLOCKED BY DECISION). Batas dua tahap dibuat eksplisit pada bagian 1.1. DOC-14 tidak diubah. Tidak ada hasil UAT baru. |
