@@ -13,6 +13,15 @@ const baseEvent: AuditInput = {
 };
 
 describe('pengaman dan redaksi audit tanpa database', () => {
+  it('mempertahankan cause konflik domain untuk SRS-52 tanpa menyalinnya ke JSON', async () => {
+    const cause = Object.assign(new Error('PRIVATE_CONFLICT_SENTINEL'), {code:'IDEMPOTENCY_CONFLICT'});
+    const client = {query:vi.fn().mockResolvedValue({rowCount:1,rows:[]}),release:vi.fn()};
+    const service = new AuditService({connect:async()=>client} as unknown as pg.Pool,{error:vi.fn()},new UjiClock());
+    const error = await service.transaction({...baseEvent,outcome:'SUCCESS'},async()=>{throw cause;}).catch((error)=>error);
+    expect(error.cause).toBe(cause);
+    expect(error.code).toBe('TRANSACTION_FAILED');
+    expect(JSON.stringify(error)).not.toContain('PRIVATE_CONFLICT_SENTINEL');
+  });
   it('menolak raw/credential/storage key dan action bebas sebelum koneksi', () => {
     const input = {...baseEvent, context_safe: {raw:'PRIVATE_SENTINEL'}} as unknown as AuditInput;
     expect(() => createAuditRecord(input)).toThrow('INVALID_AUDIT_EVENT');
@@ -64,6 +73,19 @@ describe.skipIf(!process.env.DATABASE_URL || !process.env.DATABASE_MIGRATION_URL
     expect((await database.pool.query('SELECT count(*)::int AS count FROM warehouses')).rows[0].count).toBe(2);
     const access = (await database.pool.query("SELECT current_user AS role, has_schema_privilege(current_user,current_schema(),'CREATE') AS ddl, has_table_privilege(current_user,'audit_events','UPDATE') AS edit")).rows[0];
     expect(access).toEqual({role:'siris_app',ddl:false,edit:false});
+  });
+
+  it('trigger menolak UPDATE DELETE dan TRUNCATE oleh pemilik tabel, bukan hanya privilege runtime', async () => {
+    await audit.recordOutcome({...baseEvent,outcome:'DENIED'});
+    const owner=new pg.Client({connectionString:ujiConnection(process.env.DATABASE_MIGRATION_URL,'siris_migrator')});
+    await owner.connect();
+    try {
+      await owner.query(`SET search_path TO ${database.schema},public`);
+      for(const sql of ["UPDATE audit_events SET outcome='FAILURE'",'DELETE FROM audit_events','TRUNCATE audit_events']) {
+        await expect(owner.query(sql)).rejects.toMatchObject({code:'42501',message:'Audit bersifat append-only'});
+      }
+      expect((await owner.query('SELECT count(*)::int AS n FROM audit_events')).rows[0].n).toBe(1);
+    } finally {await owner.end();}
   });
 
   it('domain dan audit SUCCESS dengan source row/scope yang sama committed atomik', async () => {

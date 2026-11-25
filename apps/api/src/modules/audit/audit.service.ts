@@ -11,8 +11,9 @@ export class AuditedTransactionError extends Error {
     readonly code: 'TRANSACTION_FAILED' | 'TRANSACTION_OUTCOME_UNKNOWN',
     readonly correlation_id: string,
     readonly audit_recorded: boolean,
+    options?: ErrorOptions,
   ) {
-    super(code === 'TRANSACTION_FAILED' ? 'Transaksi gagal.' : 'Hasil transaksi belum diketahui.');
+    super(code === 'TRANSACTION_FAILED' ? 'Transaksi gagal.' : 'Hasil transaksi belum diketahui.', options);
     this.name = 'AuditedTransactionError';
   }
 }
@@ -62,12 +63,12 @@ export class AuditService {
       committing = true;
       await client.query('COMMIT');
       return result;
-    } catch {
+    } catch (cause) {
       if (committing) {
         // Koneksi putus saat COMMIT bukan bukti rollback; jangan merekam FAILURE palsu.
         discard = true;
         this.logger.error({ code: 'AUDIT_TRANSACTION_UNKNOWN', correlation_id: event.correlation_id });
-        throw new AuditedTransactionError('TRANSACTION_OUTCOME_UNKNOWN', event.correlation_id, false);
+        throw new AuditedTransactionError('TRANSACTION_OUTCOME_UNKNOWN', event.correlation_id, false, {cause});
       }
       if (client) {
         try { await client.query('ROLLBACK'); } catch { discard = true; }
@@ -80,7 +81,7 @@ export class AuditService {
         ...input, outcome: 'FAILURE', batch_id: null, source_row_id: null,
         context_safe: { reason_code: 'TRANSACTION_FAILED' },
       });
-      throw new AuditedTransactionError('TRANSACTION_FAILED', event.correlation_id, recorded);
+      throw new AuditedTransactionError('TRANSACTION_FAILED', event.correlation_id, recorded, {cause});
     } finally {
       client?.release(discard);
     }
