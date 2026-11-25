@@ -65,6 +65,7 @@ Ketentuan yang diterapkan:
 - `details` selalu berupa array; kosong bila tidak ada detail.
 - `correlation_id` sama dengan header `X-Correlation-ID` pada response.
 - Error tak terduga selalu menghasilkan `500 INTERNAL_SERVER_ERROR` dengan pesan generik.
+- Error tak terduga tidak pernah mencetak `error.name`, `error.code`, pesan mentah, atau stack; lognya hanya memakai identitas stabil `INTERNAL_SERVER_ERROR` dan `correlation_id` yang lolos validasi UUID.
 - Pesan driver, SQL, stack trace, nama tabel, dan storage key tidak dikirim ke klien.
 - Payload JSON rusak menghasilkan `400 INVALID_JSON`.
 - Payload melebihi batas parser menghasilkan `413 PAYLOAD_TOO_LARGE`.
@@ -76,8 +77,9 @@ Kode error pada `AppError` yang tersedia: `BAD_REQUEST`, `UNAUTHORIZED`, `FORBID
 
 - Log akses memakai `req.path` sehingga query string tidak dicatat.
 - Query string dapat memuat token, kata kunci pencarian, atau storage key, sehingga tidak boleh masuk log.
-- Error tak terduga dicatat sebagai nama error dan `correlation_id` saja.
-- Bila `LOG_LEVEL=debug`, hanya stack frame yang dicatat; baris pesan error tetap dihilangkan agar SQL/nilai sensitif tidak bocor.
+- Error tak terduga dicatat sebagai event konstan `Unhandled Error: INTERNAL_SERVER_ERROR` dengan `correlation_id` yang lolos validasi UUID.
+- `LOG_LEVEL` tidak mengubah batas kerahasiaan ini: nama, code, pesan mentah, SQL, storage key, dan stack tidak dicatat pada level mana pun.
+- Header `X-Correlation-ID` yang bukan UUID tidak disalin ke log; nilainya diganti `CORRELATION_UNAVAILABLE`.
 - Error klien PostgreSQL pada koneksi idle dicatat sebagai kode aman (misalnya `ECONNREFUSED`), bukan objek error mentah.
 
 ## 6. Verifikasi koneksi PostgreSQL
@@ -106,7 +108,7 @@ Kedua role `NOSUPERUSER`. `DATABASE_MIGRATION_URL` **tidak dibaca oleh konfigura
 npm run db:check
 ```
 
-Keluaran yang diharapkan: `[SIRIS API] Koneksi PostgreSQL berhasil (<ms>ms).` dengan exit code `0`. Bila `DATABASE_URL` kosong atau koneksi gagal, script keluar dengan kode `1` dan status yang benar adalah **BLOCKED**, bukan PASS.
+Keluaran sukses: `[SIRIS API] Koneksi PostgreSQL berhasil (<ms>ms).` dengan exit code `0`. Bila `DATABASE_URL` kosong atau koneksi gagal, script mencatat `[SIRIS API] DATABASE_CHECK_FAILED: Koneksi PostgreSQL gagal (<kode-aman>).` dan keluar dengan kode `1`; status yang benar adalah **BLOCKED**, bukan PASS. Bila pemeriksaan tidak dapat dijalankan, script mencatat `[SIRIS API] DATABASE_CHECK_FAILED: Pemeriksaan database tidak dapat dijalankan.` dan keluar dengan kode `1` tanpa membocorkan nama/pesan error mentah.
 
 ### 6.4 Migrasi dan seed dengan role migrasi
 
