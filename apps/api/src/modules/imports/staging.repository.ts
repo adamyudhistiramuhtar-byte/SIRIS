@@ -40,6 +40,13 @@ export async function insertStaging(client: TransactionClient, actor: StageActor
 /** Untuk SRS-51: hanya pemilik aktif pada scope UJI yang masih diizinkan. Tidak mengeluarkan storage key. */
 export async function readOwnedStaging(client: Pick<pg.PoolClient,'query'|'release'>, actor: StageActor, batchId: string) {
   if(typeof client.release!=='function') throw new Error('STAGING_TRANSACTION_CLIENT_REQUIRED');
+  try {
+    await client.query('SAVEPOINT siris_staging_transaction_check');
+    await client.query('RELEASE SAVEPOINT siris_staging_transaction_check');
+  } catch (error) {
+    if ((error as {code?: string}).code === '25P01') throw new Error('STAGING_TRANSACTION_CLIENT_REQUIRED');
+    throw error;
+  }
   const scope = await client.query(`SELECT kind,warehouse_id,mode FROM import_batches WHERE id=$1 AND created_by=$2`, [batchId, actor.actor_id]);
   if (scope.rowCount !== 1 || scope.rows[0].mode !== 'UJI') throw new StageError('ACCESS_DENIED');
   await lockStageScope(client, actor, scope.rows[0] as StageMetadata);
