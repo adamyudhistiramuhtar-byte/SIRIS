@@ -25,8 +25,8 @@ describe('Health Endpoint Tests', () => {
     expect(res.body.meta.correlation_id).toBeDefined();
   });
 
-  it('Harus menghormati header X-Correlation-ID yang dikirimkan klien', async () => {
-    const customCorrelationId = 'test-client-correlation-id-12345';
+  it('Harus menghormati header X-Correlation-ID UUID yang dikirimkan klien', async () => {
+    const customCorrelationId = '3f6c1f8e-6a1d-4b2f-9c7e-2d4a5b6c7d8e';
     const res = await request(app)
       .get('/health')
       .set('X-Correlation-ID', customCorrelationId);

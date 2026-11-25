@@ -17,11 +17,18 @@ export function createApp(): Application {
   app.use(correlationIdMiddleware);
   app.use(requestLogger);
 
-  // CORS configuration
+  // CORS configuration. Wildcard tidak boleh digabung dengan credentials:
+  // mode wildcard memakai origin '*' tanpa credentials sehingga origin pemanggil
+  // tidak pernah dipantulkan (reflected).
+  const allowedOrigins = env.ALLOWED_ORIGIN.split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+  const allowWildcard = allowedOrigins.includes('*');
+
   app.use(
     cors({
-      origin: env.ALLOWED_ORIGIN === '*' ? true : env.ALLOWED_ORIGIN.split(',').map((o) => o.trim()),
-      credentials: true,
+      origin: allowWildcard ? '*' : allowedOrigins,
+      credentials: !allowWildcard,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
       exposedHeaders: ['X-Correlation-ID'],

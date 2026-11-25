@@ -53,14 +53,19 @@ describe('Batas kerahasiaan log error SRS-43 (error-handler)', () => {
     }
   });
 
-  it('tidak menyalin correlation header non-UUID ke log', async () => {
+  it('tidak menyalin correlation header non-UUID ke log dan tetap memakai UUID server yang konsisten', async () => {
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
     const app = buildApp(() => {
       throw new Error('failure');
     });
-    const response = await request(app).get('/boom').set('X-Correlation-ID', 'PRIVATE_HEADER_SENTINEL');
+    const sentinel = 'PRIVATE_HEADER_SENTINEL';
+    const response = await request(app).get('/boom').set('X-Correlation-ID', sentinel);
 
     expect(response.status).toBe(500);
-    expect(JSON.stringify(log.mock.calls)).not.toContain('PRIVATE_HEADER_SENTINEL');
+    const correlationId = response.headers['x-correlation-id'];
+    expect(correlationId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    expect(response.body.error.correlation_id).toBe(correlationId);
+    expect(JSON.stringify(log.mock.calls)).not.toContain(sentinel);
+    expect(log.mock.calls[0].join(' ')).toContain(correlationId);
   });
 });
