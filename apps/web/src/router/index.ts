@@ -3,6 +3,7 @@ import AppShell from '../layouts/AppShell.vue';
 import HomePage from '../pages/HomePage.vue';
 import LoginPage from '../pages/LoginPage.vue';
 import PlaceholderPage from '../pages/PlaceholderPage.vue';
+import ImportReferencePage from '../pages/inbound/ImportReferencePage.vue';
 import ForbiddenPage from '../pages/ForbiddenPage.vue';
 import { sessionStore } from '../shared/session/session-context';
 import { FORBIDDEN_ROUTE_NAME, installAccessGuard } from './access-guard';
@@ -45,7 +46,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'inbound/import-reference',
         name: 'inbound-import-reference',
-        component: PlaceholderPage,
+        component: ImportReferencePage,
         meta: {
           title: 'Impor Referensi Inbound',
           description: 'Impor referensi PO/Inbound EXPECTED dari Erasoft',
