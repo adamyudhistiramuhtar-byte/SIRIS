@@ -78,6 +78,17 @@ describe('PVT-16 requested date dan histori janji (kandidat, CF-06 OPEN untuk at
     const change = view.history.find((h) => h.event_type === 'CHANGE');
     expect(change?.promised_date).toBe('2026-11-13');
   });
+
+  it('PVT-16 data DOC-13 (CHANGE 12 Nov, ditulis inline): requested_date tetap dan janji terakhir 12 Nov', () => {
+    const doc13 = commitments
+      .filter((c) => c.inbound_source_ref === 'UJI-IN-001')
+      .map((c) => (c.event_type === 'CHANGE' ? { ...c, promised_date: '2026-11-12' } : c));
+    const docView = buildCommitmentView(inbound001, doc13);
+    expect(docView.requested_date).toBe('2026-11-10');
+    expect(docView.history.map((h) => h.promised_date)).toEqual(['2026-11-11', '2026-11-12']);
+    expect(docView.currentPromisedDate).toBe('2026-11-12');
+    expect(docView.requested_date).not.toBe(docView.currentPromisedDate);
+  });
 });
 
 describe('PVT-06 dan PVT-07 penerimaan parsial dan final', () => {

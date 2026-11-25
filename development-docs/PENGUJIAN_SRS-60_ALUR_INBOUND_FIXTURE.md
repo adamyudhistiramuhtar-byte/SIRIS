@@ -23,7 +23,7 @@
 | Berkas | Isi |
 | --- | --- |
 | `tests/integration/inbound/inbound-oracle.ts` | Fungsi murni: kuantitas berskala 6 desimal (bigint), validasi penutup, evaluasi penerimaan, tampilan histori janji |
-| `tests/integration/inbound/inbound-flow-fixtures.spec.ts` | Suite table-driven: 20 definisi (16 dieksekusi, 4 todo) |
+| `tests/integration/inbound/inbound-flow-fixtures.spec.ts` | Suite table-driven: 21 definisi (17 dieksekusi, 4 todo) |
 
 Dijalankan oleh proyek `api` pada `vitest.config.ts` (pola `tests/integration/**`).
 
@@ -33,7 +33,7 @@ Dijalankan oleh proyek `api` pada `vitest.config.ts` (pola `tests/integration/**
 | --- | --- | --- | --- | --- |
 | PVT-06 | Penerimaan parsial | 4 KG tanpa penutup: status parsial, total 4, bukan final, tidak mismatch, tanpa delay | PASS | Pembacaan exception dan histori lewat API NOT RUN |
 | PVT-07 | Penerimaan final | Parsial 4 KG ditambah penutup sah 6 KG: final, total 10, tanpa mismatch | PASS (data PVT-07 ditulis inline) | Validitas isi bukti dan penentuan delay menunggu OD-06 (todo) |
-| PVT-16 | Requested date dan histori janji | `requested_date` tetap 10 Nov, INITIAL lalu CHANGE tersimpan berurutan | PASS | Persistensi pada basis data NOT RUN |
+| PVT-16 | Requested date dan histori janji | `requested_date` tetap 10 Nov, INITIAL lalu CHANGE tersimpan berurutan; kasus fixture (CHANGE 13 Nov) dan kasus data DOC-13 (CHANGE 12 Nov, inline) diuji terpisah | PASS | Persistensi pada basis data NOT RUN |
 | PVT-23 | Penutup invalid | Penutup tanpa referensi menghasilkan INVALID_CLOSING dan tidak dihitung | PASS | Daftar overdue terbuka NOT RUN (acuan overdue belum ditetapkan) |
 | Tambahan | UOM berbeda, CHANGE tanpa INITIAL | Ditolak, tidak dikonversi otomatis | PASS | Kode galat mengikuti `expected_issue` pada fixture |
 
@@ -44,7 +44,7 @@ Dijalankan oleh proyek `api` pada `vitest.config.ts` (pola `tests/integration/**
 | F-1 | PVT-07 memakai parsial 4 KG ditambah penutup 6 KG (total 10). Fixture `receiving.proposed-0.1.json` memakai penutup 5 KG (total 9). Dengan fixture, hasilnya final dengan mismatch terhadap 10 KG | Fixture tidak dapat dipakai langsung sebagai data PVT-07 | Pilih salah satu: ubah fixture menjadi 6 KG, atau ubah data PVT-07. Perlu keputusan pemilik kontrak (Dwi) dan PM |
 | F-2 | PVT-16 menyebut CHANGE bertanggal 12 Nov. Fixture `commitment.proposed-0.1.json` memakai 13 Nov | Expected PVT-16 tidak cocok harfiah dengan fixture. Perilaku yang diuji (requested date tidak tertimpa) tetap sama | Samakan salah satu sisi saat kontrak ditinjau |
 
-Suite memuat kedua keadaan: kasus fixture (total 9, mismatch) dan kasus PVT-07 (total 10, tanpa mismatch) diuji terpisah, sehingga perubahan fixture nanti tidak menyembunyikan temuan.
+Suite memuat kedua keadaan: kasus fixture (total 9, mismatch) dan kasus PVT-07 (total 10, tanpa mismatch) diuji terpisah. Hal yang sama berlaku untuk PVT-16: fixture (CHANGE 13 Nov) dipertahankan dan kasus data DOC-13 (CHANGE 12 Nov) ditulis inline sebagai kasus terpisah, sehingga perubahan fixture nanti tidak menyembunyikan temuan.
 
 ## 5. Yang belum dapat diuji (todo dan NOT RUN)
 
@@ -65,3 +65,4 @@ npx vitest run tests/integration/inbound
 | Versi | Tanggal | Perubahan |
 | --- | --- | --- |
 | 0.1.0 | 2026-11-24 | Penyusunan awal. |
+| 0.1.1 | 2026-11-25 | Impor oracle memakai ekstensi `.js` (PR #42). Menambah kasus PVT-16 data DOC-13 (CHANGE 12 Nov) sebagai kasus terpisah; fixture tetap 13 Nov. |
