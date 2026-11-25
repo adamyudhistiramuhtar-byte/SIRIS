@@ -78,7 +78,13 @@ describe.skipIf(!process.env.DATABASE_URL || !process.env.DATABASE_MIGRATION_URL
     const stock=JSON.parse((await fixture('STOCK')).toString());
     expect(stock.negative_cases.find((c:{case_id:string})=>c.case_id==='UJI-STK-NEG-03').expected_issue).toBe('INVALID_METADATA');
     await expect(service(actor(1)).stage({...metadata('STOCK'),cutoff_id:undefined},parts('STOCK',await fixture('STOCK')))).rejects.toMatchObject({code:'INVALID_METADATA'});
-    expect((await db.pool.query('SELECT context_safe FROM audit_events')).rows[0].context_safe.reason_code).toBe('INVALID_METADATA');
+    const events = (await db.pool.query('SELECT outcome, context_safe FROM audit_events')).rows;
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({outcome:'FAILURE', context_safe:{reason_code:'INVALID_METADATA'}});
+    for (const table of ['import_batches', 'import_source_files', 'staging_rows']) {
+      expect((await db.pool.query(`SELECT count(*)::int AS count FROM ${table}`)).rows[0].count).toBe(0);
+    }
+    expect(await readdir(db.storagePath)).toEqual([]);
   });
   it('menolak cutoff UJI legacy yang belum SIMULATED sebelum menulis file', async () => {
     const owner=new pg.Client({connectionString:ujiConnection(process.env.DATABASE_MIGRATION_URL,'siris_migrator')});
