@@ -175,12 +175,11 @@ describe('SRS-26 kasus negatif fixture stock yang berada di lapisan SRS-50', () 
         normalized: { material_code: 'UJI-MAT-01', uom: 'KG', system_quantity: '1.234,5' } }] }));
     expect(() => balanceAdapter.parse(bytes, 'balance')).toThrow(expect.objectContaining({ code: 'INVALID_FILE' }));
   });
-  it('UJI-STK-NEG-03: metadata tanpa cutoff_id ditolak; kode aktual SRS-50 INVALID_METADATA, fixture menulis INVALID_FILE (temuan F-1)', () => {
+  it('UJI-STK-NEG-03: metadata tanpa cutoff_id ditolak sebagai INVALID_METADATA', () => {
     const neg = stockFixture.negative_cases.find((c) => c.case_id === 'UJI-STK-NEG-03')!;
     const metadata = { ...stockFixture.metadata, ...neg.metadata_override };
     delete (metadata as Record<string, unknown>).cutoff_id;
     expect(stageMetadata.safeParse(metadata).success).toBe(false);
-    expect(neg.expected_issue).toBe('INVALID_FILE');
-    // Perbedaan kode adalah temuan dokumentasi, bukan keputusan; tidak ada kode yang diubah di sini.
+    expect(neg.expected_issue).toBe('INVALID_METADATA');
   });
 });
