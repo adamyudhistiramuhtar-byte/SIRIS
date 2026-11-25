@@ -1,6 +1,6 @@
 # Register sumber dan pemulihan baseline — SRS-35
 
-Status: **DRAFT — NEEDS REVIEW; SOURCE REQUIRED**
+Status: **DRAFT — NEEDS REVIEW**; sebagian sumber dan keputusan masih SOURCE REQUIRED
 
 Tanggal pemeriksaan: 10 November 2026
 
@@ -9,6 +9,16 @@ Issue: [SRS-35](https://adamyudhistiramuhtar.atlassian.net/browse/SRS-35)
 Snapshot yang diperiksa: `develop` pada commit `ea6dd9cfa4943f1afd546bed2c9cdc965f09ccdd`.
 
 Register ini mencatat apa yang tersedia pada snapshot tersebut. Keberadaan dokumen draft bukan bukti bahwa dokumen asli telah diterima, isi telah disetujui, atau kebutuhan telah terpenuhi. Hash adalah SHA-256 atas isi berkas pada snapshot, bukan tanda tangan atau bukti persetujuan.
+
+## Pembaruan sumber 25 November 2026
+
+Tabel berikut dan status yang menyebut "snapshot" di bawah mempertahankan hasil pemeriksaan 10 November. Sejak itu katalog serta ekstrak rancangan internal telah dipulihkan melalui lampiran terbatas Jira pada SRS-35 nomor 10000 dan SRS-58 nomor 10001. Sumber yang diindeks adalah **DESAIN-42-1.1**, tanggal 8 November 2026. Hash sumber yang tercatat dalam katalog adalah `d44b4679352ae0bddd1be3a8f9016a60cbebf19c8e0d29a0ca715e91cc6b71b3`. Dokumen ini adalah rancangan final internal dan belum membuktikan persetujuan mitra atau hasil uji.
+
+Katalog tersebut mengidentifikasi 29 FR, 14 NFR, dan 55 kasus asli yang terdiri atas TC-F01–TC-F29, TC-E01–TC-E12, dan TC-N01–TC-N14. Matriks pelaksanaan dan rujukan halaman tersimpan pada [SRS-68](https://adamyudhistiramuhtar.atlassian.net/browse/SRS-68), lampiran 10006. Keterlacakan semantik dan hasil tiap kasus tetap memerlukan review. Ekstrak internal dan data mitra disimpan di Jira sesuai hak akses.
+
+Katalog mencatat 25 operasi pada sumber, sedangkan snapshot OpenAPI kandidat PR #20 memiliki 21 path dan 22 operasi. Pemetaan satu per satu masih **NEEDS REVIEW** pada SRS-58. Selisih angka ini belum mengubah baseline maupun membuktikan ada operasi yang boleh dihapus.
+
+Pemulihan katalog dan ekstrak memperbarui status ketersediaan identitas FR/NFR dan spesifikasi kasus yang sebelumnya tercatat SOURCE REQUIRED. Sumber PRD, alur dan UML final, bukti mitra, persetujuan bisnis, serta ketidaksesuaian domain tetap mengikuti status masing-masing di register. Reviewer perlu mencocokkan versi, pemetaan dan penyimpanan sumber sebelum SRS-35 ditutup.
 
 ## Sumber yang tersedia
 
