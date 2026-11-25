@@ -120,7 +120,7 @@ function handleLogout() {
                 class="flex items-center gap-2.5 px-3 py-2 rounded text-sm font-medium transition-colors"
                 :class="
                   route.path === item.path
-                    ? 'bg-siris-primary-light text-siris-primary font-semibold border-l-4 border-siris-primary'
+                    ? 'bg-siris-primary-light text-[var(--navigation-selected-fg)] font-semibold border-l-4 border-siris-primary'
                     : 'text-siris-ink hover:bg-slate-50 hover:text-siris-primary'
                 "
                 @click="isMobileMenuOpen = false"

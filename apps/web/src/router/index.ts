@@ -3,6 +3,7 @@ import AppShell from '../layouts/AppShell.vue';
 import HomePage from '../pages/HomePage.vue';
 import LoginPage from '../pages/LoginPage.vue';
 import PlaceholderPage from '../pages/PlaceholderPage.vue';
+import ImportStockPage from '../pages/inventory/ImportStockPage.vue';
 import ForbiddenPage from '../pages/ForbiddenPage.vue';
 import { sessionStore } from '../shared/session/session-context';
 import { FORBIDDEN_ROUTE_NAME, installAccessGuard } from './access-guard';
@@ -142,7 +143,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'inventory/import-stock',
         name: 'inventory-import-stock',
-        component: PlaceholderPage,
+        component: ImportStockPage,
         meta: {
           title: 'Impor Data Stok',
           description: 'Impor snapshot saldo akhir stok (QTY AKHIR) gudang',
