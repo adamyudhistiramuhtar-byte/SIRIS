@@ -12,6 +12,11 @@ export const PREVIEW_VALIDATION_VERSION = 'srs51-preview-v1';
 export const PREVIEW_TTL_MS = 30 * 60 * 1000;
 
 function stableJson(value: unknown): string {
+  if (value instanceof Date) {
+    const ms = value.getTime();
+    const serialized = Number.isFinite(ms) ? value.toISOString() : 'INVALID_DATE';
+    return JSON.stringify(serialized);
+  }
   if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
   if (value && typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b));
@@ -52,9 +57,10 @@ export function computePreviewFingerprint(input: {
   return createHash('sha256').update(canonical).digest('hex');
 }
 
-function issueId(batchId: string, code: string, rowNumber: number | null | undefined, field?: string | null): string {
-  const raw = `${batchId}|${code}|${rowNumber ?? 'batch'}|${field ?? ''}`;
-  return `warn_${createHash('sha1').update(raw).digest('hex').slice(0, 16)}`;
+function issueId(batchId: string, code: string, severity: 'ERROR' | 'WARNING', rowNumber: number | null | undefined, field?: string | null): string {
+  const prefix = severity === 'WARNING' ? 'warn_' : 'err_';
+  const raw = `${batchId}|${severity}|${code}|${rowNumber ?? 'batch'}|${field ?? ''}`;
+  return `${prefix}${createHash('sha1').update(raw).digest('hex').slice(0, 16)}`;
 }
 
 function validationError(code: string, message: string, statusCode = 403): Error & { code: string; statusCode: number } {
@@ -89,12 +95,14 @@ export function createPreviewService(deps: PreviewServiceDeps) {
 
     const rows = await deps.readOwnedStaging({ batchId: input.batchId, actorId: input.actor.accountId });
     const issues: ValidationIssue[] = [];
+    const componentRowCounter = new Map<string, number>();
 
-    rows.forEach((row, idx) => {
-      const expectedRow = idx + 1;
+    rows.forEach((row) => {
+      const expectedRow = (componentRowCounter.get(row.component) ?? 0) + 1;
+      componentRowCounter.set(row.component, expectedRow);
       if (row.row_number !== expectedRow) {
         issues.push({
-          id: issueId(input.batchId, 'ROW_ORDER_INVALID', row.row_number, 'row_number'),
+          id: issueId(input.batchId, 'ROW_ORDER_INVALID', 'ERROR', row.row_number, 'row_number'),
           severity: 'ERROR',
           code: 'ROW_ORDER_INVALID',
           message: `Urutan baris tidak valid pada row_number ${row.row_number}.`,
@@ -104,7 +112,7 @@ export function createPreviewService(deps: PreviewServiceDeps) {
       }
       if (row.validation_status === 'INVALID') {
         issues.push({
-          id: issueId(input.batchId, 'ROW_INVALID', row.row_number),
+          id: issueId(input.batchId, 'ROW_INVALID', 'ERROR', row.row_number),
           severity: 'ERROR',
           code: 'ROW_INVALID',
           message: `Baris ${row.row_number} tidak valid.`,
@@ -113,7 +121,7 @@ export function createPreviewService(deps: PreviewServiceDeps) {
       }
       if (row.validation_status === 'PENDING') {
         issues.push({
-          id: issueId(input.batchId, 'ROW_PENDING', row.row_number),
+          id: issueId(input.batchId, 'ROW_PENDING', 'ERROR', row.row_number),
           severity: 'ERROR',
           code: 'ROW_PENDING',
           message: `Baris ${row.row_number} masih menunggu validasi dan belum boleh di-commit.`,
@@ -123,7 +131,7 @@ export function createPreviewService(deps: PreviewServiceDeps) {
       const qty = row.normalized_payload.quantity;
       if (typeof qty === 'number' && qty < 0) {
         issues.push({
-          id: issueId(input.batchId, 'NEGATIVE_QUANTITY', row.row_number, 'quantity'),
+          id: issueId(input.batchId, 'NEGATIVE_QUANTITY', 'ERROR', row.row_number, 'quantity'),
           severity: 'ERROR',
           code: 'NEGATIVE_QUANTITY',
           message: `Kuantitas negatif pada baris ${row.row_number}.`,
@@ -153,7 +161,9 @@ export function createPreviewService(deps: PreviewServiceDeps) {
     });
 
     const expiresAtMs = now() + ttlMs;
-    const canCommit = errors.length === 0 && !hasPendingValidation;
+    // Fail-closed: selama belum ada mekanisme acknowledgment warning yang disepakati,
+    // warning yang ada (jika nanti ada) tidak boleh melewati syarat commit.
+    const canCommit = errors.length === 0 && !hasPendingValidation && warnings.length === 0;
     return {
       batchId: input.batchId,
       status: canCommit ? 'VALID' : 'INVALID',
@@ -173,7 +183,11 @@ export function createPreviewService(deps: PreviewServiceDeps) {
     if (preview.fingerprint !== currentFingerprint) {
       throw validationError('PREVIEW_INVALIDATED', 'Preview tidak lagi valid karena data/scope berubah.', 409);
     }
-    if (at >= Date.parse(preview.expiresAt)) {
+    const expiresAtMs = Date.parse(preview.expiresAt);
+    if (!Number.isFinite(expiresAtMs)) {
+      throw validationError('PREVIEW_EXPIRED', 'Preview memiliki tanggal kedaluwarsa yang tidak valid.', 409);
+    }
+    if (at >= expiresAtMs) {
       throw validationError('PREVIEW_EXPIRED', 'Preview kedaluwarsa. Validasi ulang diperlukan.', 409);
     }
   }

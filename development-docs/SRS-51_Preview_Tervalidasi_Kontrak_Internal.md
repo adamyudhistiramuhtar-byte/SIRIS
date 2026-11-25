@@ -36,11 +36,15 @@ Fingerprint SHA-256 dari JSON kanonik yang mencakup: batchId, warehouseId, mode,
 
 - TTL default: **30 menit** (`PREVIEW_TTL_MS = 1_800_000`).
 - `expiresAt` dihitung server-side dari `now()` terinjeksi.
-- `assertPreviewFresh` menolak jika `now >= expiresAt` atau fingerprint berbeda.
+- `assertPreviewFresh` menolak jika fingerprint berbeda atau `now >= expiresAt`. Pada `expiresAt` yang tidak valid (mis. string bukan tanggal atau hilang sehingga `Date.parse` menghasilkan `NaN`), service menolak dengan `PREVIEW_EXPIRED` (fail-closed).
 
 ### Warning IDs
 
-Warning/error memiliki ID deterministik `warn_<sha1-16>` dari `batchId|code|rowNumber|field`. ID stabil untuk input yang sama.
+Error dan warning memiliki ID deterministik. Error memakai prefix `err_<sha1-16>`; warning memakai prefix `warn_<sha1-16>`. Hash berasal dari `batchId|severity|code|rowNumber|field`. ID stabil untuk input yang sama.
+
+### Row order
+
+- `row_number` diinterpretasikan **per komponen** (`component` + `row_number`, sesuai kontrak `staging_rows` unique key SRS-44), sehingga setiap komponen dimulai dari `1`. Pemeriksaan urutan pada preview memakai counter per komponen, bukan indeks global.
 
 ## Batasan / Belum Selesai
 
@@ -51,12 +55,19 @@ Warning/error memiliki ID deterministik `warn_<sha1-16>` dari `batchId|code|rowN
 ### Commit dan Status (fail-closed, diperbarui per review PM 25 Nov 2026)
 
 - Baris dengan `validation_status === 'PENDING'` menghasilkan issue blocking (`ROW_PENDING`, severity ERROR) dan menolak `status` menjadi `VALID` serta menolak `canCommit` selama ada baris pending/ERROR. Tidak ada mekanisme lain (misalnya warning acknowledgment) yang boleh melewatkan komit untuk batch yang belum divalidasi penuh.
+- `canCommit` fail-closed: preview tidak mengizinkan commit selama masih ada error, pending, atau warning yang belum di-acknowledgment.
 - Tidak ada persistensi preview; expiry/invalidation dicek in-memory oleh caller.
 - ACTUAL ditolak.
 
+### Dependensi Kontrak SRS-52 (dokumentasi, 25 November 2026)
+
+- Preview saat ini tidak disimpan (in-memory/transien); SRS-52 commit belum memiliki sumber untuk membaca preview.
+- SRS-52 `CommitRequest` memakai field `preview_fingerprint` dan `acknowledged_warnings`; port SRS-52 dinyatakan memakai snake_case, sementara PR #54 memakai camelCase. Perubahan penamaan field publik perlu koordinasi terjadwal dengan pemilik SRS-52.
+- Tidak implementasikan persistensi preview atau endpoint commit pada task ini; kontrak tersebut menunggu keputusan koordinasi SRS-52.
+
 ## Hasil Tes
 
-- `npx vitest run apps/api/src/tests/preview-service.test.ts` — **12 PASS / 0 FAIL** (25 Nov 2026, lokal, sesudah koreksi review PM).
+- `npx vitest run apps/api/src/tests/preview-service.test.ts` — **20 PASS / 0 FAIL** (25 November 2026, lokal, sesudah koreksi review independen HEAD `ab91423`).
 - Integrasi staging/runtime: **NOT RUN / BLOCKED** (SRS-50 runtime, SRS-47/48 wiring, kontrak #20/#28).
 
 ## Handoff
