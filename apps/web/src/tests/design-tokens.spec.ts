@@ -7,11 +7,16 @@ import { join } from 'node:path';
 import { buildCss, extractRegistryText, flatten, validateAliases } from '../../../../scripts/lib/design-tokens.mjs';
 
 const root = fileURLToPath(new URL('../../../../', import.meta.url));
-const designMd = readFileSync(join(root, 'design.md'), 'utf8');
-const generatedCss = readFileSync(join(root, 'apps/web/src/styles/generated/tokens.css'), 'utf8');
-const generatedJson = readFileSync(
-  join(root, 'apps/web/src/styles/generated/design-tokens.json'),
-  'utf8',
+// Checkout Windows dengan core.autocrlf=true dapat mengubah LF menjadi CRLF pada berkas
+// yang dibaca di sini. Hanya pemisah baris yang dinormalisasi; perbedaan isi tetap terdeteksi.
+const toLf = (text: string): string => text.replace(/\r\n/g, '\n');
+
+const designMd = toLf(readFileSync(join(root, 'design.md'), 'utf8'));
+const generatedCss = toLf(
+  readFileSync(join(root, 'apps/web/src/styles/generated/tokens.css'), 'utf8'),
+);
+const generatedJson = toLf(
+  readFileSync(join(root, 'apps/web/src/styles/generated/design-tokens.json'), 'utf8'),
 );
 
 describe('Token desain dari design.md §4.9', () => {
@@ -23,6 +28,17 @@ describe('Token desain dari design.md §4.9', () => {
     expect(JSON.parse(generatedJson)).toEqual(registry);
     const { css } = buildCss(tokens);
     expect(generatedCss.trim()).toBe(css.trim());
+  });
+
+  it('toleran terhadap CRLF pada hasil generate, tetapi tetap mendeteksi perbedaan isi', () => {
+    const { css } = buildCss(tokens);
+    const crlfCss = css.replace(/\n/g, '\r\n');
+    expect(crlfCss).toContain('\r\n');
+    expect(toLf(crlfCss).trim()).toBe(css.trim());
+    expect(toLf(crlfCss)).toContain(':root,\n[data-theme="light"]');
+    const changed = crlfCss.replace('70ch', '71ch');
+    expect(changed).not.toBe(crlfCss);
+    expect(toLf(changed).trim()).not.toBe(css.trim());
   });
 
   it('seluruh alias valid dan tidak siklik', () => {

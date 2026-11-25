@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import {
   FileSpreadsheet,
   Boxes,
@@ -7,8 +8,10 @@ import {
   Layers,
   ArrowRight,
 } from 'lucide-vue-next';
+import { canViewPage } from '../shared/access/access-matrix';
+import { sessionStore } from '../shared/session/session-context';
 
-const quickTasks = [
+const allQuickTasks = [
   {
     title: 'Impor Referensi Inbound',
     description: 'Unggah file referensi PO/Inbound EXPECTED dari Erasoft.',
@@ -38,6 +41,13 @@ const quickTasks = [
     badge: 'UC-12',
   },
 ];
+
+// Pintasan hanya tampil untuk halaman yang diizinkan bagi role dan mode saat ini (SRS-36 §6.2).
+const quickTasks = computed(() =>
+  allQuickTasks.filter((task) =>
+    canViewPage(sessionStore.state.role, task.badge, sessionStore.state.mode),
+  ),
+);
 </script>
 
 <template>
@@ -55,8 +65,8 @@ const quickTasks = [
       </div>
     </div>
 
-    <!-- Quick Tasks Section -->
-    <div>
+    <!-- Quick Tasks Section: disembunyikan bila tidak ada pintasan yang diizinkan bagi role ini -->
+    <div v-if="quickTasks.length > 0">
       <h2 class="text-sm font-bold uppercase tracking-wider text-siris-muted mb-3">
         Alur Kerja Utama (Sprint 1)
       </h2>
