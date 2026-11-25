@@ -167,6 +167,35 @@ describe.skipIf(!process.env.DATABASE_URL || !process.env.DATABASE_MIGRATION_URL
     expect(await readdir(db.storagePath)).toEqual([]);
     expect((await db.pool.query('SELECT count(*)::int AS n FROM import_batches')).rows[0].n).toBe(0);
   });
+  it('preview mensyaratkan transaksi aktif dan mempertahankan lock assignment sampai selesai', async () => {
+    const staged = await stage();
+    await expect(readOwnedStaging(db.pool as unknown as pg.PoolClient, actor(0), staged.batch_id))
+      .rejects.toThrow('STAGING_TRANSACTION_CLIENT_REQUIRED');
+    const client = await db.pool.connect();
+    const competitor = await db.pool.connect();
+    try {
+      await expect(readOwnedStaging(client, actor(0), staged.batch_id))
+        .rejects.toThrow('STAGING_TRANSACTION_CLIENT_REQUIRED');
+      await client.query('BEGIN');
+      expect((await readOwnedStaging(client, actor(0), staged.batch_id)).length).toBeGreaterThan(0);
+      await competitor.query('BEGIN');
+      await competitor.query("SET LOCAL lock_timeout = '100ms'");
+      await expect(competitor.query('UPDATE user_warehouses SET user_id=user_id WHERE user_id=$1 AND warehouse_id=$2',
+        [actor(0).actor_id, ujiFixture.warehouses[0].id])).rejects.toMatchObject({code:'55P03'});
+      await competitor.query('ROLLBACK');
+      await client.query('COMMIT');
+      await competitor.query('BEGIN');
+      await competitor.query("SET LOCAL lock_timeout = '1s'");
+      expect((await competitor.query('UPDATE user_warehouses SET user_id=user_id WHERE user_id=$1 AND warehouse_id=$2',
+        [actor(0).actor_id, ujiFixture.warehouses[0].id])).rowCount).toBe(1);
+      await competitor.query('ROLLBACK');
+    } finally {
+      await client.query('ROLLBACK');
+      await competitor.query('ROLLBACK');
+      client.release();
+      competitor.release();
+    }
+  });
   it('ownership, role dan assignment diperiksa ulang ketika preview membaca batch', async () => {
     const result = await stage();
     await expect(readStage( actor(1), result.batch_id)).rejects.toMatchObject({code: 'ACCESS_DENIED'});
