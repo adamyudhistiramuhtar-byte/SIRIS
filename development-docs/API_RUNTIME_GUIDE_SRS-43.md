@@ -38,7 +38,7 @@ Nilai kosong atau hanya whitespace diperlakukan sebagai "tidak diisi" sehingga d
 | `NODE_ENV` | `development` | Enum `development`, `test`, `production`. |
 | `PORT` | `3001` | Harus bilangan bulat 1–65535. |
 | `DATABASE_URL` | string kosong | String kosong berarti database belum dikonfigurasi, bukan error startup. |
-| `ALLOWED_ORIGIN` | `http://localhost:5173` | Daftar origin dipisahkan koma. Jangan gunakan wildcard untuk deployment credentialed. |
+| `ALLOWED_ORIGIN` | `http://localhost:5173` | Daftar origin dipisahkan koma. Origin ditolak kecuali yang terdaftar eksplisit. Wildcard `*` bila dikonfigurasi hanya mengembalikan `Access-Control-Allow-Origin: *` **tanpa** credentials; origin pemanggil tidak dipantulkan. Hindari wildcard untuk deployment credentialed. |
 | `LOG_LEVEL` | `info` | Enum `debug`, `info`, `warn`, `error`. |
 | `APP_TIMEZONE` | `Asia/Jakarta` | Zona jadwal proyek, bukan bukti zona data operasional mitra. |
 | `API_PREFIX` | `/api/v1` | Wajib diawali `/`; garis miring di akhir dinormalkan. |
@@ -64,6 +64,8 @@ Ketentuan yang diterapkan:
 
 - `details` selalu berupa array; kosong bila tidak ada detail.
 - `correlation_id` sama dengan header `X-Correlation-ID` pada response.
+- Header `X-Correlation-ID` yang dikirim klien hanya diterima bila berformat UUID yang valid; nilai kosong, non-UUID, cacat, terlalu panjang, atau mengandung karakter kontrol diabaikan dan diganti UUID baru yang dihasilkan server.
+- Satu permintaan memakai satu `correlation_id` yang konsisten pada konteks request, header response, body error, dan log.
 - Error tak terduga selalu menghasilkan `500 INTERNAL_SERVER_ERROR` dengan pesan generik.
 - Error tak terduga tidak pernah mencetak `error.name`, `error.code`, pesan mentah, atau stack; lognya hanya memakai identitas stabil `INTERNAL_SERVER_ERROR` dan `correlation_id` yang lolos validasi UUID.
 - Pesan driver, SQL, stack trace, nama tabel, dan storage key tidak dikirim ke klien.
@@ -79,7 +81,7 @@ Kode error pada `AppError` yang tersedia: `BAD_REQUEST`, `UNAUTHORIZED`, `FORBID
 - Query string dapat memuat token, kata kunci pencarian, atau storage key, sehingga tidak boleh masuk log.
 - Error tak terduga dicatat sebagai event konstan `Unhandled Error: INTERNAL_SERVER_ERROR` dengan `correlation_id` yang lolos validasi UUID.
 - `LOG_LEVEL` tidak mengubah batas kerahasiaan ini: nama, code, pesan mentah, SQL, storage key, dan stack tidak dicatat pada level mana pun.
-- Header `X-Correlation-ID` yang bukan UUID tidak disalin ke log; nilainya diganti `CORRELATION_UNAVAILABLE`.
+- Header `X-Correlation-ID` yang bukan UUID tidak dipercaya, tidak dipantulkan ke response, dan tidak disalin ke log; middleware mengganti dengan UUID server dan log error memakai `CORRELATION_UNAVAILABLE` hanya bila konteks correlation belum tersedia.
 - Error klien PostgreSQL pada koneksi idle dicatat sebagai kode aman (misalnya `ECONNREFUSED`), bukan objek error mentah.
 
 ## 6. Verifikasi koneksi PostgreSQL
@@ -145,7 +147,7 @@ Seluruh baris di bawah diuji pada HEAD `50d075b` (commit `Selaraskan panduan kon
 | Migrasi `001` + seed `001` | PASS | HEAD `50d075b`; 14 Nov 2026 20:02:19–20:02:22 WIB; keduanya exit code `0`; 8 tabel; seed UJI: `users` 3, `warehouses` 2, `user_warehouses` 3. |
 | Clean install (database kosong) | PASS (bukti awal) | Dilakukan saat penyiapan database UJI sebelum audit ini: 8 tabel terbentuk dari database kosong. Tidak diulang pada audit 14 Nov 2026 20:02 karena bersifat destruktif; log bertimestamp untuk langkah awal tidak tersimpan. |
 | Upgrade data lama (`001` lama → `003`) | **NOT RUN** | File `002`/`003` hanya ada pada PR #15 (draft); scope SRS-44. |
-| Integration test database | **BLOCKED** | `tests/integration/database/connection.test.ts` mencetak `DATABASE_URL_NOT_CONFIGURED` dan tetap lolos tanpa koneksi, sehingga bukan bukti koneksi. |
+| Integration test database | **GATED / NOT RUN tanpa env** | `tests/integration/database/connection.test.ts` menjalankan pemeriksaan koneksi PostgreSQL nyata hanya bila `DATABASE_URL` tersedia; bila tidak, kasus nyata di-skip dan hanya perilaku `DATABASE_URL_NOT_CONFIGURED` yang diverifikasi. Bukan bukti koneksi saat env tidak tersedia. |
 | `npm run check:repo` lokal | **NOT RUN** | Python 3 tidak tersedia pada Windows lokal (exit code `9009`); divalidasi oleh job CI Ubuntu. |
 
 Pengukuran `db:check` sebelumnya (80 ms dan 114 ms) tidak memiliki log bertimestamp yang tersimpan, sehingga tidak dipakai sebagai bukti pada laporan ini. Angka yang berlaku adalah pengukuran 427 ms di atas; latensi dapat berbeda antarpengukuran dan bukan ambang kelulusan.
@@ -179,7 +181,7 @@ Diuji ulang pada 14 November 2026, 20:03–20:05 WIB (+07:00), branch `feature/S
 | `npm test` | PASS | Exit code `0`; 11 file, 103 test. |
 | `npm run check:repo` | **NOT RUN** | Python 3 tidak tersedia (exit code `9009`); divalidasi CI Ubuntu. |
 | `npm run db:check` | PASS | 427 ms, exit code `0`, role `siris_app`; rincian waktu di §6.5. |
-| Integration test database | **BLOCKED** | Mencetak `DATABASE_URL_NOT_CONFIGURED`; bukan bukti koneksi. |
+| Integration test database | **GATED / NOT RUN tanpa env** | Sama seperti §6.5: pemeriksaan nyata PostgreSQL dijalankan hanya bila `DATABASE_URL` tersedia; tanpa env, hasilnya bukan bukti koneksi. |
 
 ### 7.3 CI Ubuntu pada HEAD `50d075b`
 
@@ -195,9 +197,54 @@ Test yang ditambahkan:
 - `apps/api/src/tests/error.test.ts` — error tak terduga tidak membocorkan SQL/pesan mentah/stack, payload terlalu besar menghasilkan 413.
 - `apps/api/src/tests/request-logger.test.ts` — log akses tidak memuat query string.
 
-## 8. Batas dan tindak lanjut
+## 8. Batas dan tindak lanjut historis
 
 - Kontrak wire DOC-09 masih PROPOSED; bentuk envelope `{data, meta}` pada health endpoint belum disepakati sebagai kontrak seluruh endpoint.
 - Autentikasi, sesi, CSRF, dan pemeriksaan role/gudang belum diterapkan; lihat SRS-47 dan SRS-48.
 - `npm run db:check` PASS terhadap PostgreSQL 16.6 UJI lokal (lihat §6); CI pada commit final dan review ulang masih diperlukan.
 - Review independen, CI pada commit final, dan merge PR belum dilakukan.
+
+## 9. Verifikasi reviewer setelah stacked PR #21
+
+Pemeriksaan 22 November 2026 pada HEAD `c2105a6083bbb7ba2b81a49aab18fd6524c4f` memakai Node.js 22.22.2, PostgreSQL 16.6 UJI lokal, dan role runtime `siris_app`. `842b406a75690da031bf37a555cdcdc72f317838` adalah ancestor HEAD tersebut; isi tree keduanya sama. Perbaikan shutdown tidak perlu di-cherry-pick lagi.
+
+| Pemeriksaan | Hasil dan batas |
+| --- | --- |
+| `npm ci` | PASS pada worktree reviewer terpisah |
+| `npm test` | PASS 109/109, termasuk 6 regresi shutdown dan koneksi PostgreSQL nyata |
+| `python3 scripts/check_repository.py --tracked` | PASS, 127 berkas, 0 temuan |
+| Repository workspace pengguna | PASS, 122 berkas, 0 temuan; konteks berbeda dari tracked HEAD PR |
+| Tiga temuan yang dilaporkan sebelumnya | Tidak tereproduksi pada kedua pemeriksaan di atas; log dan lokasi temuan asal belum tersedia. Tidak disimpulkan sebagai temuan yang telah diperbaiki tanpa bukti asal. |
+| Review nonpenulis atas shutdown | Belum ditemukan: daftar review PR #21 kosong, merge pemilik PR bukan bukti review formal. Adam menulis shutdown sehingga tidak dapat mengesahkannya sendiri. Dwi diminta memeriksa HEAD PR #18. |
+
+Tes shutdown mencakup kegagalan HTTP/pool/deadline dengan exit gagal, pesan log aman, sinyal berulang, resource dan timer. Riwayat §6–8 dipertahankan sebagai evidence historis; klaim failure-path NOT RUN di versi lama telah digantikan oleh hasil di atas. Tes bukan bukti autentikasi/otorisasi SRS-47/48 atau endpoint bisnis.
+
+Dokumen ini dipindahkan ke `development-docs/` mengikuti AGENTS.md. Tidak ada perubahan source runtime. HEAD dokumentasi baru tetap perlu CI dan review; bukti eksekusi runtime mengikat SHA `c2105a6`, bukan otomatis semua perubahan runtime sesudahnya.
+
+## 10. Remediasi review independen 25–26 November 2026 (temuan #2–#4)
+
+Pemeriksaan Dwi pada HEAD `2b86059` menutup Finding #1 dan menyisakan Finding #2–#4. Perbaikan berikut dibatasi pada temuan tersebut; implementasi Finding #1 (log error konstan dan `DATABASE_CHECK_FAILED`) tidak diubah.
+
+| Temuan | Perbaikan | Regresi |
+| --- | --- | --- |
+| #2 Lokasi panduan | Panduan dipindahkan dari `docs/implementation/API_RUNTIME_GUIDE.md` ke `development-docs/API_RUNTIME_GUIDE_SRS-43.md` (rename yang sama dengan PR #25 `f7a0ab8`), termasuk baris §9. Rujukan `README.md` dan `.github/publish-candidates.json` diperbarui; tidak ada duplikasi panduan. | Pencarian repositori untuk path lama tidak menemukan rujukan tersisa. |
+| #3 Bukti koneksi database | `tests/integration/database/connection.test.ts` di-gate: kasus PostgreSQL nyata hanya berjalan bila `DATABASE_URL` tersedia dan di-skip eksplisit bila tidak. Unit test deterministik `apps/api/src/tests/db-pool.test.ts` mencakup tanpa konfigurasi, sukses + cleanup client, kegagalan koneksi/query dengan kode aman, error client idle, dan `closeDbPool`. | 5 kasus integrasi di-skip tanpa `DATABASE_URL`; PostgreSQL 16 nyata **NOT RUN/BLOCKED** di environment ini. |
+| #4A Correlation ID | Header non-UUID, cacat, kosong, terlalu panjang, atau mengandung karakter kontrol tidak dipercaya; middleware menghasilkan UUID server. UUID valid dipertahankan; response header, body error, dan log memakai ID yang sama. | `correlation-id.test.ts` (9 kasus) dan `error-log-boundary.test.ts` (konsistensi UUID pada error/log). |
+| #4B CORS | `ALLOWED_ORIGIN='*'` tidak lagi memantulkan origin dan tidak mengaktifkan credentials (`Access-Control-Allow-Origin: *`, tanpa `Access-Control-Allow-Credentials`). Allowlist eksplisit tetap memakai credentials. | `cors.test.ts` (7 kasus: allowlist, origin asing, multi-origin, preflight, wildcard, tanpa Origin). |
+| SIGTERM pool | Investigasi: `server.ts` sudah memanggil `closeDbPool` pada SIGTERM/SIGINT; `shutdown.test.ts` menutupi kegagalan pool, sinyal berulang, dan timeout. Bukti tambahan unit: `closeDbPool` idempoten dan mempropagasi kegagalan `pool.end`. | Uji SIGTERM dengan PostgreSQL nyata tetap **NOT RUN** (tidak ada instance). |
+
+### 10.1 Validasi lokal pada working tree remediasi
+
+| Pemeriksaan | Hasil |
+| --- | --- |
+| `npx vitest run` | PASS — 17 file, 140 test lulus, 5 di-skip (integrasi DB tanpa `DATABASE_URL`). |
+| `npm run lint` | PASS. |
+| `npm run typecheck` | PASS. |
+| `npm run build` | PASS. |
+| `npm run tokens:check` | PASS. |
+| `npm run db:check` | **BLOCKED** — `DATABASE_CHECK_FAILED (DATABASE_URL_NOT_CONFIGURED)`, exit code `1`; bukan PASS. |
+| `python scripts/check_repository.py --tracked` | **FAIL** — 3 temuan pre-existing `SPRINT_01–03.md`; file tersebut tidak disentuh. |
+| `git diff --check` | PASS. |
+| PostgreSQL 16 integrasi | **NOT RUN/BLOCKED** — `DATABASE_URL`/instance tidak tersedia. |
+
+CI dan review independen pada commit remediasi masih diperlukan; tabel ini bukan bukti CI maupun bukti koneksi PostgreSQL nyata.
