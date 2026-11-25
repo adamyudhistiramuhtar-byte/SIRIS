@@ -1,0 +1,36 @@
+{
+  "fixtureVersion": "srs51-uji-v1",
+  "label": "UJI",
+  "description": "Fixture UJI untuk preview tervalidasi SRS-51; bukan data operasional ACTUAL.",
+  "batch": {
+    "batchId": "11111111-1111-4111-8111-111111111111",
+    "warehouseId": "WH-UJI-01",
+    "mode": "UJI",
+    "importType": "STOCK",
+    "batchOwnerId": "user-uji-01",
+    "sourceHash": "sha256:source-uji-001",
+    "contractVersion": "contract-uji-1.0.0",
+    "metadata": {
+      "cutoff_id": "CUT-UJI-001",
+      "file_name": "stock_uji.csv"
+    }
+  },
+  "rows": [
+    {
+      "id": "row-001",
+      "component": "balance",
+      "row_number": 1,
+      "raw_payload": { "sku": "SKU-001", "quantity": "10" },
+      "normalized_payload": { "sku": "SKU-001", "quantity": 10 },
+      "validation_status": "VALID"
+    },
+    {
+      "id": "row-002",
+      "component": "balance",
+      "row_number": 2,
+      "raw_payload": { "sku": "SKU-002", "quantity": "5" },
+      "normalized_payload": { "sku": "SKU-002", "quantity": 5 },
+      "validation_status": "PENDING"
+    }
+  ]
+}
