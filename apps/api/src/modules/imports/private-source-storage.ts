@@ -6,7 +6,8 @@ import { StageError } from './staging-contract.js';
 export interface StoredSource { key: string; sha256: string; bytes: number; }
 /** Root khusus privat, tidak boleh didaftarkan sebagai express.static. */
 export class PrivateSourceStorage {
-  constructor(private readonly root: string) {
+  constructor(private readonly root: string,
+    private readonly onCleanupFailure:()=>void=()=>{console.error('[SIRIS STORAGE] SOURCE_CLEANUP_FAILED');}) {
     if (!isAbsolute(root)) throw new Error('INVALID_STORAGE_CONFIGURATION');
   }
   private path(key: string): string {
@@ -32,7 +33,11 @@ export class PrivateSourceStorage {
       await handle.sync();
       return { key, sha256: hash.digest('hex'), bytes };
     } catch (error) {
-      await unlink(this.path(key)); throw error;
+      try { await unlink(this.path(key)); } catch {
+        // Cleanup adalah usaha terpisah; jangan menutupi sebab penolakan aslinya.
+        try { this.onCleanupFailure(); } catch { /* Diagnostik juga tidak mengganti error asli. */ }
+      }
+      throw error;
     } finally { await handle.close(); }
   }
   async read(source: StoredSource): Promise<Buffer> { return readFile(this.path(source.key)); }

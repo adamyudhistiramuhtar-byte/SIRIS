@@ -18,6 +18,13 @@ export class StagingService {
     private readonly storage: PrivateSourceStorage, private readonly adapters: readonly SourceAdapter[],
     private readonly limits: StageLimits, private readonly logger: SafeAuditLogger, private readonly clock: Clock = systemClock) {
     if (!Object.values(limits).every((n) => Number.isSafeInteger(n) && n > 0) || Object.keys(limits).length !== 3) throw new Error('INVALID_LIMIT_CONFIGURATION');
+    const identities=new Set<string>();
+    for(const adapter of adapters) {
+      const identity=`${adapter.kind}:${adapter.version}`;
+      const components=[...adapter.components,...(adapter.optionalComponents??[])];
+      if(identities.has(identity)||adapter.components.length===0||new Set(components).size!==components.length) throw new Error('INVALID_ADAPTER_CONFIGURATION');
+      identities.add(identity);
+    }
     this.audit = new AuditService(pool, logger, clock);
   }
   async stage(metadataInput: unknown, parts: readonly UploadPart[], correlationInput?: unknown): Promise<StageResult> {
@@ -37,9 +44,11 @@ export class StagingService {
       catch { throw new StageError('ACCESS_DENIED'); }
       const adapter = this.adapters.find((a) => a.kind === metadata.kind && a.version === metadata.contract_version);
       if (!adapter) throw new StageError('SOURCE_REQUIRED');
+      const allowedComponents=[...adapter.components,...(adapter.optionalComponents??[])];
       if (parts.length === 0 || parts.length > this.limits.max_files ||
-        parts.length !== adapter.components.length || new Set(parts.map((p) => p.component)).size !== parts.length ||
-        parts.some((p) => !adapter.components.includes(p.component))) throw new StageError('INVALID_FILE');
+        !adapter.components.every((required)=>parts.some((part)=>part.component===required)) ||
+        new Set(parts.map((p) => p.component)).size !== parts.length ||
+        parts.some((p) => !allowedComponents.includes(p.component))) throw new StageError('INVALID_FILE');
       // Tolak konteks stale sebelum upload; transaksi final menguncinya lagi.
       client = await this.pool.connect();
       await client.query('BEGIN');
@@ -78,7 +87,7 @@ export class StagingService {
       const code = error instanceof StageError ? error.code : 'STAGING_FAILED';
       // Tidak menyimpan actor FK dari input yang belum dibuktikan ada pada DB.
       await this.audit.recordOutcome({ action: 'import.stage', outcome: code === 'ACCESS_DENIED' ? 'DENIED' : 'FAILURE',
-        correlation_id: correlation, context_safe: {reason_code: code === 'ACCESS_DENIED' ? 'ACCESS_DENIED' : 'TRANSACTION_FAILED'} });
+        correlation_id: correlation, context_safe: {reason_code: code === 'STAGING_FAILED' || code === 'OUTCOME_UNKNOWN' ? 'TRANSACTION_FAILED' : code} });
       // Storage di luar transaksi DB. Kegagalan cleanup tidak boleh membocorkan path/error driver.
       for (const file of files) { try { await this.storage.remove(file.source); } catch {
         this.logger.error({code: 'AUDIT_UNAVAILABLE', correlation_id: correlation});

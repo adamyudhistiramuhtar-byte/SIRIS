@@ -23,6 +23,24 @@ export async function applyUjiMigrations(client: pg.Client): Promise<void> {
     }
   }
 }
+
+/** Recovery khusus schema UJI terisolasi. Schema dan ledger berubah dalam transaksi yang sama. */
+export async function recoverUjiCutoff005(client:pg.Client):Promise<void> {
+  const identity=(await client.query('SELECT current_user AS role,current_database() AS db,current_schema() AS schema')).rows[0];
+  if(identity.role!=='siris_migrator'||identity.db!=='siris_uji'||!/^srs_test_[a-f0-9]{32}$/.test(identity.schema))throw new Error('BLOCKED: recovery hanya pada schema harness UJI.');
+  const migration=await readFile(resolve(root,'database/migrations/005_cutoff_time_nullable.sql'),'utf8');
+  const recovery=await readFile(resolve(root,'database/migrations/recovery/005_restore_cutoff_time_required.sql'),'utf8');
+  const checksum=createHash('sha256').update(migration).digest('hex');
+  await client.query('BEGIN');
+  try {
+    await client.query('LOCK TABLE cutoff_contexts IN ACCESS EXCLUSIVE MODE');
+    const row=(await client.query("SELECT sha256 FROM _uji_schema_versions WHERE name='005_cutoff_time_nullable.sql' FOR UPDATE")).rows[0];
+    if(!row||row.sha256!==checksum)throw new Error('BLOCKED: ledger005 tidak cocok.');
+    await client.query(recovery);
+    await client.query("DELETE FROM _uji_schema_versions WHERE name='005_cutoff_time_nullable.sql'");
+    await client.query('COMMIT');
+  }catch(error){await client.query('ROLLBACK');throw error;}
+}
 export const ujiFixture = JSON.parse(await readFile(resolve(root, 'database/fixtures/uji/actors.proposed-0.1.json'), 'utf8')) as {
   mode: 'UJI'; clock: string;
   warehouses: {id: string; code: string; name: string}[];

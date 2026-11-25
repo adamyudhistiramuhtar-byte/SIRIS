@@ -30,6 +30,8 @@ export interface SourceAdapter {
   readonly kind: ImportKind;
   readonly version: string;
   readonly components: readonly string[];
+  /** Komponen yang boleh dikirim, tetapi tidak diwajibkan. components tetap wajib. */
+  readonly optionalComponents?: readonly string[];
   parse(bytes: Buffer, component: string): NormalizedSourceRow[];
 }
 export interface UploadPart { component: string; content: AsyncIterable<Uint8Array>; }
@@ -39,7 +41,7 @@ export interface StageResult {
   status: 'STAGED'; contract_version: string; source_hash: string; row_count: number;
   correlation_id: string;
 }
-export type StageErrorCode = 'INVALID_METADATA' | 'ACCESS_DENIED' | 'SOURCE_REQUIRED' |
+export type StageErrorCode = 'INVALID_METADATA' | 'ACCESS_DENIED' | 'SOURCE_REQUIRED' | 'CUTOFF_UNVERIFIED' |
   'INVALID_FILE' | 'LIMIT_EXCEEDED' | 'STAGING_FAILED' | 'OUTCOME_UNKNOWN';
 export class StageError extends Error {
   constructor(readonly code: StageErrorCode, readonly correlation_id?: string, readonly batch_id?: string) {
