@@ -63,7 +63,7 @@
       "case_id": "UJI-STK-NEG-03",
       "description": "Metadata STOCK tanpa cutoff_id",
       "metadata_override": { "cutoff_id": null },
-      "expected_issue": "INVALID_FILE",
+      "expected_issue": "INVALID_METADATA",
       "note": "DOC-09: STOCK/COUNT wajib cutoff_id. Gap G-04."
     }
   ]
