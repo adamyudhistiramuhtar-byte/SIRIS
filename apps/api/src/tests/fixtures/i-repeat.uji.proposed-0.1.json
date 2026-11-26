@@ -1,0 +1,267 @@
+{
+  "_keterangan": "Kerangka kasus I-REPEAT berlabel SIMULATED (SRS-91). Bukan data mitra. Nilai expected I-REPEAT sengaja null karena periode, satuan item, dan perlakuan nonvalid belum diputuskan.",
+  "data_label": "SIMULATED",
+  "mode": "UJI",
+  "contract_status": "PROPOSED",
+  "definisi_sumber": "design.md tabel metrik: I-REPEAT = Jumlah item discrepancy pada sedikitnya dua cutoff berbeda dalam periode",
+  "open_decisions": [
+    {
+      "id": "Q1",
+      "pertanyaan": "Definisi periode (rentang tanggal cutoff, N cutoff terakhir, atau lainnya)",
+      "sumber": "SRS-32 10213: SOURCE REQUIRED"
+    },
+    {
+      "id": "Q2",
+      "pertanyaan": "Item dihitung per material_id atau per material + UOM",
+      "sumber": "KONTRAK_METRIK_PERSEDIAAN_SRS-32 §8 butir 1"
+    },
+    {
+      "id": "Q3",
+      "pertanyaan": "Material discrepancy di satu cutoff tetapi nonvalid di cutoff lain: dihitung atau tidak",
+      "sumber": "Belum dibahas"
+    },
+    {
+      "id": "Q4",
+      "pertanyaan": "Hanya satu cutoff: tampil 0 dengan teks (design.md) atau data tidak cukup (AC SRS-32)",
+      "sumber": "KONTRAK_METRIK_PERSEDIAAN_SRS-32 §8 butir 2"
+    },
+    {
+      "id": "Q5",
+      "pertanyaan": "Latest run per cutoff bila ada lebih dari satu run COMMITTED (tie-break commit_order)",
+      "sumber": "OD-06; SRS-32 10213"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "judul": "Dua cutoff, satu run COMMITTED per cutoff (latest tidak ambigu)",
+      "bergantung_pada": [
+        "Q1",
+        "Q2",
+        "Q3"
+      ],
+      "cutoffs": [
+        {
+          "cutoff_id": "91000000-0000-4000-8000-0000000000c1",
+          "runs": [
+            {
+              "run_id": "91000000-0000-4000-8000-0000000000a1",
+              "state": "COMMITTED",
+              "lines": [
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000101",
+                  "status": "DISCREPANCY",
+                  "variance": "-2.000000",
+                  "system_quantity": "10.000000",
+                  "physical_quantity": "8.000000"
+                },
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000102",
+                  "status": "DISCREPANCY",
+                  "variance": "1.000000",
+                  "system_quantity": "5.000000",
+                  "physical_quantity": "6.000000"
+                },
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000103",
+                  "status": "MATCHED",
+                  "variance": "0.000000",
+                  "system_quantity": "4.000000",
+                  "physical_quantity": "4.000000"
+                },
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000104",
+                  "status": "DISCREPANCY",
+                  "variance": "-1.000000",
+                  "system_quantity": "3.000000",
+                  "physical_quantity": "2.000000"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "cutoff_id": "91000000-0000-4000-8000-0000000000c2",
+          "runs": [
+            {
+              "run_id": "91000000-0000-4000-8000-0000000000a2",
+              "state": "COMMITTED",
+              "lines": [
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000101",
+                  "status": "DISCREPANCY",
+                  "variance": "-1.000000",
+                  "system_quantity": "10.000000",
+                  "physical_quantity": "9.000000"
+                },
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000102",
+                  "status": "MATCHED",
+                  "variance": "0.000000",
+                  "system_quantity": "6.000000",
+                  "physical_quantity": "6.000000"
+                },
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000103",
+                  "status": "MATCHED",
+                  "variance": "0.000000",
+                  "system_quantity": "4.000000",
+                  "physical_quantity": "4.000000"
+                },
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000104",
+                  "status": "NOT_COUNTED",
+                  "variance": null,
+                  "system_quantity": "2.000000",
+                  "physical_quantity": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "catatan": "MAT-1 discrepancy di kedua cutoff; MAT-2 hanya di C1; MAT-3 matched; MAT-4 discrepancy di C1 dan NOT_COUNTED di C2 (Q3).",
+      "expected_i_repeat": null
+    },
+    {
+      "id": "S2",
+      "judul": "Hanya satu cutoff",
+      "bergantung_pada": [
+        "Q4"
+      ],
+      "cutoffs": [
+        {
+          "cutoff_id": "91000000-0000-4000-8000-0000000000c1",
+          "runs": [
+            {
+              "run_id": "91000000-0000-4000-8000-0000000000b1",
+              "state": "COMMITTED",
+              "lines": [
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000101",
+                  "status": "DISCREPANCY",
+                  "variance": "-2.000000",
+                  "system_quantity": "10.000000",
+                  "physical_quantity": "8.000000"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "catatan": "Tampilan belum diputuskan (Q4).",
+      "expected_i_repeat": null
+    },
+    {
+      "id": "S3",
+      "judul": "Cutoff dengan dua run COMMITTED tanpa urutan commit",
+      "bergantung_pada": [
+        "Q5"
+      ],
+      "cutoffs": [
+        {
+          "cutoff_id": "91000000-0000-4000-8000-0000000000c1",
+          "runs": [
+            {
+              "run_id": "91000000-0000-4000-8000-0000000000c1",
+              "state": "COMMITTED",
+              "commit_order": null,
+              "lines": [
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000101",
+                  "status": "DISCREPANCY",
+                  "variance": "-2.000000",
+                  "system_quantity": "10.000000",
+                  "physical_quantity": "8.000000"
+                }
+              ]
+            },
+            {
+              "run_id": "91000000-0000-4000-8000-0000000000c2",
+              "state": "COMMITTED",
+              "commit_order": null,
+              "lines": [
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000101",
+                  "status": "MATCHED",
+                  "variance": "0.000000",
+                  "system_quantity": "10.000000",
+                  "physical_quantity": "10.000000"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "cutoff_id": "91000000-0000-4000-8000-0000000000c2",
+          "runs": [
+            {
+              "run_id": "91000000-0000-4000-8000-0000000000c3",
+              "state": "COMMITTED",
+              "lines": [
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000101",
+                  "status": "DISCREPANCY",
+                  "variance": "-1.000000",
+                  "system_quantity": "10.000000",
+                  "physical_quantity": "9.000000"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "catatan": "Run mana yang dipakai di C1 menentukan apakah MAT-1 berulang; tidak boleh dipilih sendiri (OD-06).",
+      "expected_i_repeat": null
+    },
+    {
+      "id": "S4",
+      "judul": "Material sama dengan UOM berbeda antarcutoff",
+      "bergantung_pada": [
+        "Q2"
+      ],
+      "cutoffs": [
+        {
+          "cutoff_id": "91000000-0000-4000-8000-0000000000c1",
+          "runs": [
+            {
+              "run_id": "91000000-0000-4000-8000-0000000000d1",
+              "state": "COMMITTED",
+              "lines": [
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000101",
+                  "status": "DISCREPANCY",
+                  "variance": "-2.000000",
+                  "system_quantity": "10.000000",
+                  "physical_quantity": "8.000000"
+                }
+              ],
+              "uom": "KG"
+            }
+          ]
+        },
+        {
+          "cutoff_id": "91000000-0000-4000-8000-0000000000c2",
+          "runs": [
+            {
+              "run_id": "91000000-0000-4000-8000-0000000000d2",
+              "state": "COMMITTED",
+              "lines": [
+                {
+                  "material_id": "91000000-0000-4000-8000-000000000101",
+                  "status": "DISCREPANCY",
+                  "variance": "-1.000000",
+                  "system_quantity": "10.000000",
+                  "physical_quantity": "9.000000"
+                }
+              ],
+              "uom": "L"
+            }
+          ]
+        }
+      ],
+      "catatan": "UOM dicatat di level run fixture karena IVarLineInput tidak memuat UOM; jangan menjumlah beda UOM (design.md UI-14).",
+      "expected_i_repeat": null
+    }
+  ]
+}
