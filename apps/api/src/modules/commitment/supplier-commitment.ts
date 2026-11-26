@@ -11,6 +11,15 @@
  *   memvalidasi bentuk normalized yang sudah dipetakan sesuai kontrak.
  * - Idempotency commit batch UC-16 ada di pipeline; di sini hanya guard domain
  *   event_ref unik per inbound dan deteksi duplikat payload-identik.
+ *
+ * Semantik tambahan hasil review SRS-18 (HEAD 9530a51):
+ * - event_ref unik per inbound; payload identik → IDEMPOTENT tanpa duplikasi
+ *   event (source_row_number pada record tetap provenance event asli).
+ * - Proses baris per baris; `ok=false` boleh koeksis dengan baris yang sukses
+ *   di-apply (tidak atomik di sini; atomicitas commit ada di pipeline UC-16).
+ * - `CommitmentHistoryStore.apply()` menegakkan validasi internal; input tidak
+ *   valid tetap ditolak walau caller melewati validasi eksplisit.
+ * - Context inbound duplikat pada konstruktor ditolak eksplisit.
  */
 
 export const COMMITMENT_EVENT_TYPES = ['INITIAL', 'CHANGE'] as const;
@@ -55,7 +64,16 @@ export interface CommitmentEventRecord {
   promised_date: string;
   event_at: string;
   event_at_epoch_ms: number;
+  /**
+   * Provenance event asli: nomor baris sumber saat event pertama kali diterima.
+   * Re-import payload identik dari baris sumber lain (IDEMPOTENT) tidak
+   * mengganti nilai ini dan tidak membuat event baru.
+   */
   source_row_number: number;
+  /**
+   * Urutan penyisipan store (import/apply order), BUKAN kronologi bisnis.
+   * Bukan pengganti sequence CF-06 yang belum diputuskan.
+   */
   recorded_sequence: number;
 }
 
@@ -76,6 +94,12 @@ export interface CommitmentHistory {
 
 export interface ApplyCommitmentResult {
   ok: boolean;
+  /**
+   * APPLIED: event baru ditambahkan.
+   * IDEMPOTENT: event_ref + payload identik sudah ada; record yang dikembalikan
+   *   adalah event asli (source_row_number asli dipertahankan).
+   * REJECTED: tidak ada mutasi histori; issues menjelaskan alasan.
+   */
   status: 'APPLIED' | 'IDEMPOTENT' | 'REJECTED';
   history: CommitmentHistory;
   record?: CommitmentEventRecord;
@@ -83,11 +107,27 @@ export interface ApplyCommitmentResult {
 }
 
 export interface ImportCommitmentBatchResult {
+  /**
+   * false bila ada minimal satu issue baris. Karena pemrosesan per baris tidak
+   * atomik di slice ini, `ok=false` dapat tetap memiliki `applied`/`idempotent`
+   * yang tidak kosong dan histori yang sudah bertambah. Atomicitas commit
+   * sesungguhnya milik pipeline UC-16 (DOC-08 §13), bukan modul ini.
+   */
   ok: boolean;
   histories: CommitmentHistory[];
   applied: CommitmentEventRecord[];
   idempotent: CommitmentEventRecord[];
   issues: CommitmentValidationIssue[];
+}
+
+/** Context inbound duplikat (termasuk tabrakan setelah trim) ditolak eksplisit. */
+export class DuplicateInboundContextError extends Error {
+  readonly code = 'DUPLICATE_INBOUND_CONTEXT';
+
+  constructor(readonly inbound_source_ref: string) {
+    super(`Context inbound duplikat untuk inbound_source_ref "${inbound_source_ref}".`);
+    this.name = 'DuplicateInboundContextError';
+  }
 }
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -119,6 +159,12 @@ function issue(
   return { code, message, ...extra };
 }
 
+/**
+ * Validasi bentuk normalized DOC-08 §6.
+ *
+ * `event_at` wajib ISO 8601 lengkap dengan detik dan offset/Z sesuai contoh
+ * kontrak (`2026-11-10T08:00:00+07:00`); timestamp lokal tanpa offset ditolak.
+ */
 export function validateNormalizedCommitmentRow(
   rowNumber: number,
   raw: unknown,
@@ -214,6 +260,9 @@ function sameEventPayload(a: CommitmentEventRecord, b: NormalizedCommitmentRow):
 /**
  * Store append-only in-memory untuk pengujian/domain slice SRS-18.
  * Bukan persistence produksi.
+ *
+ * Konstruktor menolak `inbound_source_ref` duplikat (setelah trim) agar
+ * `requested_date` tidak bisa tertimpa diam-diam.
  */
 export class CommitmentHistoryStore {
   private readonly histories = new Map<string, CommitmentHistory>();
@@ -222,6 +271,9 @@ export class CommitmentHistoryStore {
   constructor(inboundContexts: InboundCommitmentContext[] = []) {
     for (const context of inboundContexts) {
       const ref = context.inbound_source_ref.trim();
+      if (this.histories.has(ref)) {
+        throw new DuplicateInboundContextError(ref);
+      }
       this.histories.set(ref, {
         inbound_source_ref: ref,
         requested_date: context.requested_date,
@@ -239,14 +291,35 @@ export class CommitmentHistoryStore {
     return [...this.histories.values()].map(cloneHistory);
   }
 
+  /**
+   * Batas domain yang aman: input divalidasi ulang di sini, sehingga caller
+   * yang melewati `validateNormalizedCommitmentRow` (mis. JavaScript atau cast
+   * TypeScript) tidak dapat menyisipkan event invalid ke histori.
+   */
   apply(rowNumber: number, row: NormalizedCommitmentRow): ApplyCommitmentResult {
-    const history = this.histories.get(row.inbound_source_ref);
+    const validated = validateNormalizedCommitmentRow(rowNumber, row);
+    if (!validated.ok) {
+      const rawInboundRef = isRecord(row) ? row.inbound_source_ref : undefined;
+      return {
+        ok: false,
+        status: 'REJECTED',
+        history: {
+          inbound_source_ref: typeof rawInboundRef === 'string' ? rawInboundRef.trim() : '',
+          requested_date: '',
+          events: [],
+        },
+        issues: validated.issues,
+      };
+    }
+
+    const normalized = validated.value;
+    const history = this.histories.get(normalized.inbound_source_ref);
     if (!history) {
       return {
         ok: false,
         status: 'REJECTED',
         history: {
-          inbound_source_ref: row.inbound_source_ref,
+          inbound_source_ref: normalized.inbound_source_ref,
           requested_date: '',
           events: [],
         },
@@ -254,16 +327,16 @@ export class CommitmentHistoryStore {
           issue('MISSING_REFERENCE', 'inbound_source_ref belum memiliki referensi inbound committed pada scope ini.', {
             row_number: rowNumber,
             field: 'inbound_source_ref',
-            inbound_source_ref: row.inbound_source_ref,
-            event_ref: row.event_ref,
+            inbound_source_ref: normalized.inbound_source_ref,
+            event_ref: normalized.event_ref,
           }),
         ],
       };
     }
 
-    const existing = history.events.find((event) => event.event_ref === row.event_ref);
+    const existing = history.events.find((event) => event.event_ref === normalized.event_ref);
     if (existing) {
-      if (sameEventPayload(existing, row)) {
+      if (sameEventPayload(existing, normalized)) {
         return {
           ok: true,
           status: 'IDEMPOTENT',
@@ -280,15 +353,15 @@ export class CommitmentHistoryStore {
           issue('CONFLICTING_EVENT_REF', 'event_ref sudah ada dengan payload berbeda untuk inbound yang sama.', {
             row_number: rowNumber,
             field: 'event_ref',
-            inbound_source_ref: row.inbound_source_ref,
-            event_ref: row.event_ref,
+            inbound_source_ref: normalized.inbound_source_ref,
+            event_ref: normalized.event_ref,
           }),
         ],
       };
     }
 
     const hasInitial = history.events.some((event) => event.event_type === 'INITIAL');
-    if (row.event_type === 'CHANGE' && !hasInitial) {
+    if (normalized.event_type === 'CHANGE' && !hasInitial) {
       return {
         ok: false,
         status: 'REJECTED',
@@ -297,14 +370,14 @@ export class CommitmentHistoryStore {
           issue('CHANGE_WITHOUT_INITIAL', 'Event CHANGE ditolak karena belum ada INITIAL untuk inbound tersebut.', {
             row_number: rowNumber,
             field: 'event_type',
-            inbound_source_ref: row.inbound_source_ref,
-            event_ref: row.event_ref,
+            inbound_source_ref: normalized.inbound_source_ref,
+            event_ref: normalized.event_ref,
           }),
         ],
       };
     }
 
-    if (row.event_type === 'INITIAL' && hasInitial) {
+    if (normalized.event_type === 'INITIAL' && hasInitial) {
       return {
         ok: false,
         status: 'REJECTED',
@@ -313,14 +386,14 @@ export class CommitmentHistoryStore {
           issue('INVALID_FILE', 'Event INITIAL kedua untuk inbound yang sama ditolak.', {
             row_number: rowNumber,
             field: 'event_type',
-            inbound_source_ref: row.inbound_source_ref,
-            event_ref: row.event_ref,
+            inbound_source_ref: normalized.inbound_source_ref,
+            event_ref: normalized.event_ref,
           }),
         ],
       };
     }
 
-    const eventAtEpochMs = parseCommitmentEventAt(row.event_at);
+    const eventAtEpochMs = parseCommitmentEventAt(normalized.event_at);
     if (eventAtEpochMs === null) {
       return {
         ok: false,
@@ -330,18 +403,18 @@ export class CommitmentHistoryStore {
           issue('INVALID_FILE', 'event_at tidak valid; timestamp lokal tanpa offset ditolak.', {
             row_number: rowNumber,
             field: 'event_at',
-            event_ref: row.event_ref,
+            event_ref: normalized.event_ref,
           }),
         ],
       };
     }
 
     const record: CommitmentEventRecord = {
-      inbound_source_ref: row.inbound_source_ref,
-      event_ref: row.event_ref,
-      event_type: row.event_type,
-      promised_date: row.promised_date,
-      event_at: row.event_at,
+      inbound_source_ref: normalized.inbound_source_ref,
+      event_ref: normalized.event_ref,
+      event_type: normalized.event_type,
+      promised_date: normalized.promised_date,
+      event_at: normalized.event_at,
       event_at_epoch_ms: eventAtEpochMs,
       source_row_number: rowNumber,
       recorded_sequence: ++this.sequence,
@@ -360,6 +433,11 @@ export class CommitmentHistoryStore {
   }
 }
 
+/**
+ * Memproses baris secara berurutan (non-atomik). Baris invalid dicatat sebagai
+ * issue dan dilewati; baris valid sebelumnya tetap applied. `ok` hanya berarti
+ * "tidak ada issue", bukan "tidak ada mutasi" — lihat `ImportCommitmentBatchResult`.
+ */
 export function importCommitmentRows(
   inboundContexts: InboundCommitmentContext[],
   rows: CommitmentSourceRow[],
