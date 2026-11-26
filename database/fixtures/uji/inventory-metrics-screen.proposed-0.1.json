@@ -1,0 +1,287 @@
+{
+  "_keterangan": "Fixture sintetis berlabel SIMULATED untuk layar metrik persediaan UI-14 (SRS-32, konsumen SRS-67). Bukan data mitra dan bukan hasil operasional. Kuantitas dan urutan commit adalah nilai uji sintetis.",
+  "data_label": "SIMULATED",
+  "mode": "UJI",
+  "contract_version": "proposed-0.1",
+  "contract_status": "PROPOSED",
+  "sumber": {
+    "i_var": "apps/api/src/modules/inventory-metrics/i-var.ts (#37, develop 77669f4)",
+    "service": "apps/api/src/modules/inventory-metrics/inventory-metrics.service.ts (#49 Draft, 9668a00)",
+    "cara_dibuat": "screens.metrics_result adalah keluaran InventoryMetricsService.query #49 @ 9668a00 dengan port palsu atas service_input; dibuat 26 Nov 2026."
+  },
+  "open_decisions": [
+    "Bentuk hasil #49 belum sama dengan DOC-09 InventoryMetric (API-16); pemetaan metric_code/value/excluded_count/reason OPEN.",
+    "percent belum dibulatkan; aturan pembulatan tampilan belum diputuskan (SRS-32 10202/10213).",
+    "commit_order pada service_input SIMULATED; mekanisme persisten urutan commit OPEN (SRS-32 10213).",
+    "I-REPEAT tidak dihitung; definisi periode belum diputuskan.",
+    "Envelope respons data/meta (api.ts) vs contoh DOC-09 tanpa envelope: OPEN."
+  ],
+  "service_input": {
+    "filter": {
+      "warehouse_id": "00000000-0000-4000-8000-000000000001",
+      "mode": "UJI",
+      "rule_version": "uji-engine/proposed-0.1",
+      "cutoff_ids": [
+        "32000000-0000-4000-8000-0000000000c1",
+        "32000000-0000-4000-8000-0000000000c2",
+        "32000000-0000-4000-8000-0000000000c3"
+      ]
+    },
+    "runs": [
+      {
+        "run_id": "32000000-0000-4000-8000-0000000000a1",
+        "cutoff_id": "32000000-0000-4000-8000-0000000000c1",
+        "state": "COMMITTED",
+        "commit_order": "1",
+        "catatan": "Run lama, tetap di histori"
+      },
+      {
+        "run_id": "32000000-0000-4000-8000-0000000000a2",
+        "cutoff_id": "32000000-0000-4000-8000-0000000000c1",
+        "state": "COMMITTED",
+        "commit_order": "2",
+        "catatan": "Latest karena commit_order lebih besar"
+      },
+      {
+        "run_id": "32000000-0000-4000-8000-0000000000a3",
+        "cutoff_id": "32000000-0000-4000-8000-0000000000c1",
+        "state": "RUNNING",
+        "commit_order": null,
+        "catatan": "Belum COMMITTED, tidak pernah dipilih"
+      },
+      {
+        "run_id": "32000000-0000-4000-8000-0000000000b1",
+        "cutoff_id": "32000000-0000-4000-8000-0000000000c2",
+        "state": "COMMITTED",
+        "commit_order": null,
+        "catatan": "Urutan commit tidak terjamin"
+      },
+      {
+        "run_id": "32000000-0000-4000-8000-0000000000b2",
+        "cutoff_id": "32000000-0000-4000-8000-0000000000c2",
+        "state": "COMMITTED",
+        "commit_order": null,
+        "catatan": "Urutan commit tidak terjamin"
+      },
+      {
+        "run_id": "32000000-0000-4000-8000-0000000000d1",
+        "cutoff_id": "32000000-0000-4000-8000-0000000000c3",
+        "state": "COMMITTED",
+        "commit_order": "1",
+        "catatan": "Semua pasangan nonvalid"
+      }
+    ],
+    "run_lines": {
+      "32000000-0000-4000-8000-0000000000a2": [
+        {
+          "material_id": "32000000-0000-4000-8000-000000000101",
+          "status": "MATCHED",
+          "variance": "0.000000",
+          "system_quantity": "10.000000",
+          "physical_quantity": "10.000000"
+        },
+        {
+          "material_id": "32000000-0000-4000-8000-000000000102",
+          "status": "DISCREPANCY",
+          "variance": "-2.500000",
+          "system_quantity": "10.000000",
+          "physical_quantity": "7.500000"
+        },
+        {
+          "material_id": "32000000-0000-4000-8000-000000000103",
+          "status": "DISCREPANCY",
+          "variance": "1.000000",
+          "system_quantity": "4.000000",
+          "physical_quantity": "5.000000"
+        },
+        {
+          "material_id": "32000000-0000-4000-8000-000000000104",
+          "status": "NOT_COUNTED",
+          "variance": null,
+          "system_quantity": "2.000000",
+          "physical_quantity": null
+        },
+        {
+          "material_id": "32000000-0000-4000-8000-000000000105",
+          "status": "STOCK_MISSING",
+          "variance": null,
+          "system_quantity": null,
+          "physical_quantity": "1.000000"
+        }
+      ],
+      "32000000-0000-4000-8000-0000000000d1": [
+        {
+          "material_id": "32000000-0000-4000-8000-000000000201",
+          "status": "COUNT_MISSING",
+          "variance": null,
+          "system_quantity": "3.000000",
+          "physical_quantity": null
+        },
+        {
+          "material_id": "32000000-0000-4000-8000-000000000202",
+          "status": "UOM_MISMATCH",
+          "variance": null,
+          "system_quantity": "5.000000",
+          "physical_quantity": "5.000000"
+        }
+      ]
+    }
+  },
+  "screens": {
+    "metrics_result": {
+      "description": "Tiga kelompok: OK dengan histori, AMBIGUOUS_ORDER, dan data tidak cukup",
+      "body": {
+        "warehouse_id": "00000000-0000-4000-8000-000000000001",
+        "mode": "UJI",
+        "groups": [
+          {
+            "cutoff_id": "32000000-0000-4000-8000-0000000000c1",
+            "rule_version": "uji-engine/proposed-0.1",
+            "status": "OK",
+            "latest_run_id": "32000000-0000-4000-8000-0000000000a2",
+            "history_run_ids": [
+              "32000000-0000-4000-8000-0000000000a1",
+              "32000000-0000-4000-8000-0000000000a2"
+            ],
+            "i_var": {
+              "run_id": "32000000-0000-4000-8000-0000000000a2",
+              "cutoff_id": "32000000-0000-4000-8000-0000000000c1",
+              "rule_version": "uji-engine/proposed-0.1",
+              "items": [
+                {
+                  "material_id": "32000000-0000-4000-8000-000000000101",
+                  "i_var": "0.000000"
+                },
+                {
+                  "material_id": "32000000-0000-4000-8000-000000000102",
+                  "i_var": "-2.500000"
+                },
+                {
+                  "material_id": "32000000-0000-4000-8000-000000000103",
+                  "i_var": "1.000000"
+                }
+              ],
+              "excluded": [
+                {
+                  "material_id": "32000000-0000-4000-8000-000000000104",
+                  "status": "NOT_COUNTED"
+                },
+                {
+                  "material_id": "32000000-0000-4000-8000-000000000105",
+                  "status": "STOCK_MISSING"
+                }
+              ],
+              "insufficient_data": false
+            },
+            "exact_cover": {
+              "i_exact": {
+                "numerator": 1,
+                "denominator": 3,
+                "percent": 33.333333333333336,
+                "insufficient_data": false
+              },
+              "i_cover": {
+                "numerator": 3,
+                "denominator": 4,
+                "percent": 75,
+                "insufficient_data": false
+              },
+              "counts": {
+                "matched": 1,
+                "discrepancy": 2,
+                "valid": 3,
+                "nonvalid": 2,
+                "snapshot_items": 4
+              }
+            }
+          },
+          {
+            "cutoff_id": "32000000-0000-4000-8000-0000000000c2",
+            "rule_version": "uji-engine/proposed-0.1",
+            "status": "AMBIGUOUS_ORDER",
+            "latest_run_id": null,
+            "history_run_ids": [
+              "32000000-0000-4000-8000-0000000000b1",
+              "32000000-0000-4000-8000-0000000000b2"
+            ],
+            "i_var": null,
+            "exact_cover": null
+          },
+          {
+            "cutoff_id": "32000000-0000-4000-8000-0000000000c3",
+            "rule_version": "uji-engine/proposed-0.1",
+            "status": "OK",
+            "latest_run_id": "32000000-0000-4000-8000-0000000000d1",
+            "history_run_ids": [
+              "32000000-0000-4000-8000-0000000000d1"
+            ],
+            "i_var": {
+              "run_id": "32000000-0000-4000-8000-0000000000d1",
+              "cutoff_id": "32000000-0000-4000-8000-0000000000c3",
+              "rule_version": "uji-engine/proposed-0.1",
+              "items": [],
+              "excluded": [
+                {
+                  "material_id": "32000000-0000-4000-8000-000000000201",
+                  "status": "COUNT_MISSING"
+                },
+                {
+                  "material_id": "32000000-0000-4000-8000-000000000202",
+                  "status": "UOM_MISMATCH"
+                }
+              ],
+              "insufficient_data": true
+            },
+            "exact_cover": {
+              "i_exact": {
+                "numerator": 0,
+                "denominator": 0,
+                "percent": null,
+                "insufficient_data": true
+              },
+              "i_cover": {
+                "numerator": 0,
+                "denominator": 2,
+                "percent": 0,
+                "insufficient_data": false
+              },
+              "counts": {
+                "matched": 0,
+                "discrepancy": 0,
+                "valid": 0,
+                "nonvalid": 2,
+                "snapshot_items": 2
+              }
+            }
+          }
+        ]
+      }
+    },
+    "metrics_empty": {
+      "description": "Tidak ada run pada scope: tampil kosong, bukan error (A-1)",
+      "body": {
+        "warehouse_id": "00000000-0000-4000-8000-000000000001",
+        "mode": "UJI",
+        "groups": []
+      }
+    },
+    "errors": [
+      {
+        "code": "METRICS_SOURCE_UNAVAILABLE",
+        "description": "Sumber gagal dibaca: tampilkan kegagalan dan coba ulang, bukan angka nol (E-2). PLACEHOLDER katalog."
+      },
+      {
+        "code": "METRICS_SOURCE_INCONSISTENT",
+        "description": "Data run tidak konsisten: seluruh hasil ditolak. PLACEHOLDER katalog."
+      },
+      {
+        "code": "FORBIDDEN",
+        "description": "Scope gudang/mode tidak diizinkan; tanpa membocorkan data."
+      },
+      {
+        "code": "BAD_REQUEST",
+        "description": "Filter tidak valid."
+      }
+    ]
+  }
+}
