@@ -1,0 +1,217 @@
+{
+  "_keterangan": "Fixture sintetis berlabel SIMULATED untuk daftar riwayat run rekonsiliasi SCR-13 (SRS-31, API-15). Bukan data mitra dan bukan hasil operasional. Urutan item bukan keputusan latest.",
+  "data_label": "SIMULATED",
+  "mode": "UJI",
+  "contract_version": "proposed-0.1",
+  "contract_status": "PROPOSED",
+  "sumber": {
+    "dto": "DOC-09 API-15 dan RunSummary",
+    "detail_run": "API-14 ReconciliationRunDetailDto (PR #59)"
+  },
+  "open_decisions": [
+    "Urutan daftar tidak menyiratkan latest; pemilihan latest dan tie-break commit_order OPEN (SRS-32 10213).",
+    "Arti sort=source_asc|source_desc belum didefinisikan di DOC-09.",
+    "RunSummary tidak memuat waktu/cutoff/gudang/mode; kolom acuan filter from/to belum disepakati.",
+    "Format next_cursor opaque; nilai di fixture hanya contoh SIMULATED.",
+    "Envelope respons data/meta (api.ts) vs contoh DOC-09 tanpa envelope: OPEN."
+  ],
+  "source_runs": {
+    "_keterangan": "Run COMMITTED sintetis beserta scope internalnya; _scope tidak termasuk DTO.",
+    "items": [
+      {
+        "id": "31000000-0000-4000-8000-000000000001",
+        "stock_snapshot_id": "31000000-0000-4000-8000-000000000101",
+        "count_session_id": "31000000-0000-4000-8000-000000000201",
+        "rule_version": "uji-engine/proposed-0.1",
+        "_scope": {
+          "warehouse_id": "00000000-0000-4000-8000-000000000001",
+          "mode": "UJI"
+        }
+      },
+      {
+        "id": "31000000-0000-4000-8000-000000000002",
+        "stock_snapshot_id": "31000000-0000-4000-8000-000000000102",
+        "count_session_id": "31000000-0000-4000-8000-000000000202",
+        "rule_version": "uji-engine/proposed-0.1",
+        "_scope": {
+          "warehouse_id": "00000000-0000-4000-8000-000000000001",
+          "mode": "UJI"
+        }
+      },
+      {
+        "id": "31000000-0000-4000-8000-000000000003",
+        "stock_snapshot_id": "31000000-0000-4000-8000-000000000103",
+        "count_session_id": "31000000-0000-4000-8000-000000000203",
+        "rule_version": "uji-engine/proposed-0.1",
+        "_scope": {
+          "warehouse_id": "00000000-0000-4000-8000-000000000001",
+          "mode": "UJI"
+        }
+      },
+      {
+        "id": "31000000-0000-4000-8000-000000000009",
+        "stock_snapshot_id": "31000000-0000-4000-8000-000000000109",
+        "count_session_id": "31000000-0000-4000-8000-000000000209",
+        "rule_version": "uji-engine/proposed-0.1",
+        "_scope": {
+          "warehouse_id": "00000000-0000-4000-8000-000000000009",
+          "mode": "UJI"
+        }
+      }
+    ]
+  },
+  "screens": {
+    "page_1": {
+      "description": "Halaman pertama, limit 2",
+      "query": {
+        "warehouse_id": "00000000-0000-4000-8000-000000000001",
+        "mode": "UJI",
+        "limit": 2
+      },
+      "body": {
+        "items": [
+          {
+            "id": "31000000-0000-4000-8000-000000000001",
+            "stock_snapshot_id": "31000000-0000-4000-8000-000000000101",
+            "count_session_id": "31000000-0000-4000-8000-000000000201",
+            "rule_version": "uji-engine/proposed-0.1"
+          },
+          {
+            "id": "31000000-0000-4000-8000-000000000002",
+            "stock_snapshot_id": "31000000-0000-4000-8000-000000000102",
+            "count_session_id": "31000000-0000-4000-8000-000000000202",
+            "rule_version": "uji-engine/proposed-0.1"
+          }
+        ],
+        "next_cursor": "SIMULATED-cursor-1"
+      }
+    },
+    "page_2": {
+      "description": "Halaman terakhir lewat cursor",
+      "query": {
+        "warehouse_id": "00000000-0000-4000-8000-000000000001",
+        "mode": "UJI",
+        "limit": 2,
+        "cursor": "SIMULATED-cursor-1"
+      },
+      "body": {
+        "items": [
+          {
+            "id": "31000000-0000-4000-8000-000000000003",
+            "stock_snapshot_id": "31000000-0000-4000-8000-000000000103",
+            "count_session_id": "31000000-0000-4000-8000-000000000203",
+            "rule_version": "uji-engine/proposed-0.1"
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    "empty": {
+      "description": "Scope tanpa run: daftar kosong, bukan error (A-1)",
+      "query": {
+        "warehouse_id": "00000000-0000-4000-8000-000000000005",
+        "mode": "UJI"
+      },
+      "body": {
+        "items": [],
+        "next_cursor": null
+      }
+    },
+    "invalid_queries": [
+      {
+        "case": "warehouse_id hilang",
+        "query": {
+          "mode": "UJI"
+        },
+        "expected_error": {
+          "code": "BAD_REQUEST",
+          "http_status": 400
+        }
+      },
+      {
+        "case": "warehouse_id bukan UUID",
+        "query": {
+          "warehouse_id": "WH-01",
+          "mode": "UJI"
+        },
+        "expected_error": {
+          "code": "BAD_REQUEST",
+          "http_status": 400
+        }
+      },
+      {
+        "case": "mode tidak dikenal",
+        "query": {
+          "warehouse_id": "00000000-0000-4000-8000-000000000001",
+          "mode": "SIMULASI"
+        },
+        "expected_error": {
+          "code": "BAD_REQUEST",
+          "http_status": 400
+        }
+      },
+      {
+        "case": "limit 0",
+        "query": {
+          "warehouse_id": "00000000-0000-4000-8000-000000000001",
+          "mode": "UJI",
+          "limit": 0
+        },
+        "expected_error": {
+          "code": "BAD_REQUEST",
+          "http_status": 400
+        }
+      },
+      {
+        "case": "limit 101",
+        "query": {
+          "warehouse_id": "00000000-0000-4000-8000-000000000001",
+          "mode": "UJI",
+          "limit": 101
+        },
+        "expected_error": {
+          "code": "BAD_REQUEST",
+          "http_status": 400
+        }
+      },
+      {
+        "case": "sort tidak dikenal",
+        "query": {
+          "warehouse_id": "00000000-0000-4000-8000-000000000001",
+          "mode": "UJI",
+          "sort": "latest"
+        },
+        "expected_error": {
+          "code": "BAD_REQUEST",
+          "http_status": 400
+        }
+      }
+    ],
+    "access_errors": [
+      {
+        "case": "Scope gudang tidak diizinkan",
+        "query": {
+          "warehouse_id": "00000000-0000-4000-8000-000000000009",
+          "mode": "UJI"
+        },
+        "expected_error": {
+          "code": "FORBIDDEN",
+          "http_status": 403
+        },
+        "catatan": "Tanpa membocorkan run gudang B (E-1)."
+      },
+      {
+        "case": "Sumber gagal dibaca",
+        "query": {
+          "warehouse_id": "00000000-0000-4000-8000-000000000001",
+          "mode": "UJI"
+        },
+        "expected_error": {
+          "code": "TRANSACTION_FAILED",
+          "http_status": 500
+        },
+        "catatan": "Tampilkan kegagalan dan coba ulang, bukan daftar kosong (E-2). Kode final OPEN."
+      }
+    ]
+  }
+}
