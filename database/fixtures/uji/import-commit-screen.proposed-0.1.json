@@ -1,0 +1,453 @@
+{
+  "_keterangan": "Fixture sintetis berlabel SIMULATED untuk layar commit/pembatalan impor dan event auditnya (SRS-52, konsumen SRS-67). Bukan data mitra dan bukan hasil operasional.",
+  "data_label": "SIMULATED",
+  "mode": "UJI",
+  "contract_version": "proposed-0.1",
+  "contract_status": "PROPOSED",
+  "sumber": {
+    "dto": "DOC-09 CommitRequest, CommitResult, Cancellation, CancellationResult, AuditEvent, ApiError",
+    "service": "apps/api/src/modules/import-commit/commit.service.ts (#46 Draft, 6cf5bbf)",
+    "cara_dibuat": "Setiap skenario dijalankan pada CommitService/CancelService #46 @ 6cf5bbf dengan fake tes #46; dibuat 26 Nov 2026. id dan created_at event audit DTO adalah nilai sintetis."
+  },
+  "open_decisions": [
+    "Audit hanya event commit/cancel #46; query/proyeksi API-20 milik SRS-33 (Luthfi) dan audit dasar SRS-49/#22 (Adam).",
+    "reason_code audit #46 dibatasi allowlist #22: penolakan domain (IDEMPOTENCY_CONFLICT, PREVIEW_*, STATE_CONFLICT, WARNING_ACKNOWLEDGEMENT_OPEN) tercatat TRANSACTION_FAILED; reason spesifik menunggu keputusan (SRS-52 10215 butir 1).",
+    "Status preview C58-03, ID/ack warning C58-04, expiry 409/410 C58-05, dan kode penolakan ACTUAL masih OPEN (SRS-52 10221).",
+    "Header Idempotency-Key untuk pembatalan OPEN (SRS-52 10215 butir 4).",
+    "Teks pesan error belum ditetapkan; message di fixture hanya contoh berlabel SIMULATED.",
+    "ApiError DOC-09 mewajibkan field+code pada details, sedangkan ApiErrorDetail di api.ts menjadikan field opsional dan menambah message.",
+    "Envelope respons sukses data/meta (api.ts) vs contoh DOC-09 tanpa envelope: OPEN."
+  ],
+  "requests": {
+    "commit": {
+      "description": "Body API-04; Idempotency-Key dikirim di header",
+      "header_idempotency_key": "uji-key-1",
+      "body": {
+        "preview_fingerprint": "UJI-fingerprint-1",
+        "acknowledged_warnings": []
+      }
+    },
+    "cancellation": {
+      "description": "Body API-05",
+      "body": {
+        "reason": "UJI: dibatalkan pengguna"
+      }
+    }
+  },
+  "error_http_status": {
+    "_keterangan": "Status HTTP usulan #46 (commit-errors.ts @ 6cf5bbf). Lihat ImportCommitErrorCodeDto untuk kode PLACEHOLDER.",
+    "BAD_REQUEST": 400,
+    "NOT_FOUND": 404,
+    "FORBIDDEN": 403,
+    "IDEMPOTENCY_CONFLICT": 409,
+    "PREVIEW_CHANGED": 409,
+    "PREVIEW_EXPIRED": 410,
+    "STATE_CONFLICT": 409,
+    "WARNING_ACKNOWLEDGEMENT_OPEN": 422,
+    "SOURCE_REQUIRED": 422,
+    "MODE_NOT_ENABLED": 422,
+    "TRANSACTION_FAILED": 500,
+    "TRANSACTION_OUTCOME_UNKNOWN": 500
+  },
+  "scenarios": [
+    {
+      "case": "Commit sukses",
+      "response": {
+        "http_status": 200,
+        "body": {
+          "batch_id": "30000000-0000-4000-8000-000000000001",
+          "state": "COMMITTED",
+          "committed_count": 3
+        }
+      },
+      "audit_events_dto": [
+        {
+          "id": "52000000-0000-4000-8000-000000000001",
+          "action": "import.commit",
+          "outcome": "SUCCESS",
+          "mode": "UJI",
+          "correlation_id": "50000000-0000-4000-8000-000000000001",
+          "created_at": "2026-11-25T10:00:00+07:00"
+        }
+      ],
+      "service_trace": {
+        "_keterangan": "Event internal CommitAuditEvent #46 apa adanya; bukan untuk layar (memuat actor/batch/reason).",
+        "events": [
+          {
+            "action": "import.commit",
+            "outcome": "SUCCESS",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "actor_id": "10000000-0000-4000-8000-000000000001",
+            "batch_id": "30000000-0000-4000-8000-000000000001",
+            "warehouse_id": "20000000-0000-4000-8000-000000000001",
+            "mode": "UJI",
+            "context_safe": {
+              "kind": "COUNT",
+              "committed_count": 3
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "Replay key dan body sama",
+      "response": {
+        "http_status": 200,
+        "body": {
+          "batch_id": "30000000-0000-4000-8000-000000000001",
+          "state": "COMMITTED",
+          "committed_count": 3
+        }
+      },
+      "audit_events_dto": [],
+      "service_trace": {
+        "_keterangan": "Event internal CommitAuditEvent #46 apa adanya; bukan untuk layar (memuat actor/batch/reason).",
+        "events": []
+      }
+    },
+    {
+      "case": "Key sama, body berbeda",
+      "response": {
+        "http_status": 409,
+        "body": {
+          "error": {
+            "code": "IDEMPOTENCY_CONFLICT",
+            "message": "SIMULATED: contoh pesan; teks final belum ditetapkan.",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "details": []
+          }
+        }
+      },
+      "audit_events_dto": [
+        {
+          "id": "52000000-0000-4000-8000-000000000002",
+          "action": "import.commit",
+          "outcome": "FAILURE",
+          "mode": "UJI",
+          "correlation_id": "50000000-0000-4000-8000-000000000001",
+          "created_at": "2026-11-25T10:00:00+07:00"
+        }
+      ],
+      "service_trace": {
+        "_keterangan": "Event internal CommitAuditEvent #46 apa adanya; bukan untuk layar (memuat actor/batch/reason).",
+        "events": [
+          {
+            "action": "import.commit",
+            "outcome": "FAILURE",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "actor_id": "10000000-0000-4000-8000-000000000001",
+            "batch_id": "30000000-0000-4000-8000-000000000001",
+            "warehouse_id": "20000000-0000-4000-8000-000000000001",
+            "mode": "UJI",
+            "context_safe": {
+              "reason_code": "TRANSACTION_FAILED"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "Akses ditolak",
+      "response": {
+        "http_status": 403,
+        "body": {
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "SIMULATED: contoh pesan; teks final belum ditetapkan.",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "details": []
+          }
+        }
+      },
+      "audit_events_dto": [
+        {
+          "id": "52000000-0000-4000-8000-000000000003",
+          "action": "import.commit",
+          "outcome": "DENIED",
+          "mode": "UJI",
+          "correlation_id": "50000000-0000-4000-8000-000000000001",
+          "created_at": "2026-11-25T10:00:00+07:00"
+        }
+      ],
+      "service_trace": {
+        "_keterangan": "Event internal CommitAuditEvent #46 apa adanya; bukan untuk layar (memuat actor/batch/reason).",
+        "events": [
+          {
+            "action": "import.commit",
+            "outcome": "DENIED",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "actor_id": "10000000-0000-4000-8000-000000000001",
+            "batch_id": "30000000-0000-4000-8000-000000000001",
+            "warehouse_id": "20000000-0000-4000-8000-000000000001",
+            "mode": "UJI",
+            "context_safe": {
+              "reason_code": "ACCESS_DENIED"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "Preview kedaluwarsa",
+      "response": {
+        "http_status": 410,
+        "body": {
+          "error": {
+            "code": "PREVIEW_EXPIRED",
+            "message": "SIMULATED: contoh pesan; teks final belum ditetapkan.",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "details": []
+          }
+        }
+      },
+      "audit_events_dto": [
+        {
+          "id": "52000000-0000-4000-8000-000000000004",
+          "action": "import.commit",
+          "outcome": "FAILURE",
+          "mode": "UJI",
+          "correlation_id": "50000000-0000-4000-8000-000000000001",
+          "created_at": "2026-11-25T10:00:00+07:00"
+        }
+      ],
+      "service_trace": {
+        "_keterangan": "Event internal CommitAuditEvent #46 apa adanya; bukan untuk layar (memuat actor/batch/reason).",
+        "events": [
+          {
+            "action": "import.commit",
+            "outcome": "FAILURE",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "actor_id": "10000000-0000-4000-8000-000000000001",
+            "batch_id": "30000000-0000-4000-8000-000000000001",
+            "warehouse_id": "20000000-0000-4000-8000-000000000001",
+            "mode": "UJI",
+            "context_safe": {
+              "reason_code": "TRANSACTION_FAILED"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "Preview berubah",
+      "response": {
+        "http_status": 409,
+        "body": {
+          "error": {
+            "code": "PREVIEW_CHANGED",
+            "message": "SIMULATED: contoh pesan; teks final belum ditetapkan.",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "details": []
+          }
+        }
+      },
+      "audit_events_dto": [
+        {
+          "id": "52000000-0000-4000-8000-000000000005",
+          "action": "import.commit",
+          "outcome": "FAILURE",
+          "mode": "UJI",
+          "correlation_id": "50000000-0000-4000-8000-000000000001",
+          "created_at": "2026-11-25T10:00:00+07:00"
+        }
+      ],
+      "service_trace": {
+        "_keterangan": "Event internal CommitAuditEvent #46 apa adanya; bukan untuk layar (memuat actor/batch/reason).",
+        "events": [
+          {
+            "action": "import.commit",
+            "outcome": "FAILURE",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "actor_id": "10000000-0000-4000-8000-000000000001",
+            "batch_id": "30000000-0000-4000-8000-000000000001",
+            "warehouse_id": "20000000-0000-4000-8000-000000000001",
+            "mode": "UJI",
+            "context_safe": {
+              "reason_code": "TRANSACTION_FAILED"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "Warning belum diakui",
+      "response": {
+        "http_status": 422,
+        "body": {
+          "error": {
+            "code": "WARNING_ACKNOWLEDGEMENT_OPEN",
+            "message": "SIMULATED: contoh pesan; teks final belum ditetapkan.",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "details": []
+          }
+        }
+      },
+      "audit_events_dto": [
+        {
+          "id": "52000000-0000-4000-8000-000000000006",
+          "action": "import.commit",
+          "outcome": "FAILURE",
+          "mode": "UJI",
+          "correlation_id": "50000000-0000-4000-8000-000000000001",
+          "created_at": "2026-11-25T10:00:00+07:00"
+        }
+      ],
+      "service_trace": {
+        "_keterangan": "Event internal CommitAuditEvent #46 apa adanya; bukan untuk layar (memuat actor/batch/reason).",
+        "events": [
+          {
+            "action": "import.commit",
+            "outcome": "FAILURE",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "actor_id": "10000000-0000-4000-8000-000000000001",
+            "batch_id": "30000000-0000-4000-8000-000000000001",
+            "warehouse_id": "20000000-0000-4000-8000-000000000001",
+            "mode": "UJI",
+            "context_safe": {
+              "reason_code": "TRANSACTION_FAILED"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "Transaksi gagal",
+      "response": {
+        "http_status": 500,
+        "body": {
+          "error": {
+            "code": "TRANSACTION_FAILED",
+            "message": "SIMULATED: contoh pesan; teks final belum ditetapkan.",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "details": []
+          }
+        }
+      },
+      "audit_events_dto": [
+        {
+          "id": "52000000-0000-4000-8000-000000000007",
+          "action": "import.commit",
+          "outcome": "FAILURE",
+          "mode": "UJI",
+          "correlation_id": "50000000-0000-4000-8000-000000000001",
+          "created_at": "2026-11-25T10:00:00+07:00"
+        }
+      ],
+      "service_trace": {
+        "_keterangan": "Event internal CommitAuditEvent #46 apa adanya; bukan untuk layar (memuat actor/batch/reason).",
+        "events": [
+          {
+            "action": "import.commit",
+            "outcome": "FAILURE",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "actor_id": "10000000-0000-4000-8000-000000000001",
+            "batch_id": "30000000-0000-4000-8000-000000000001",
+            "warehouse_id": "20000000-0000-4000-8000-000000000001",
+            "mode": "UJI",
+            "context_safe": {
+              "reason_code": "TRANSACTION_FAILED"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "Hasil COMMIT tidak diketahui",
+      "response": {
+        "http_status": 500,
+        "body": {
+          "error": {
+            "code": "TRANSACTION_OUTCOME_UNKNOWN",
+            "message": "SIMULATED: contoh pesan; teks final belum ditetapkan.",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "details": []
+          }
+        }
+      },
+      "audit_events_dto": [],
+      "service_trace": {
+        "_keterangan": "Event internal CommitAuditEvent #46 apa adanya; bukan untuk layar (memuat actor/batch/reason).",
+        "events": []
+      }
+    },
+    {
+      "case": "Batal sukses",
+      "response": {
+        "http_status": 200,
+        "body": {
+          "batch_id": "30000000-0000-4000-8000-000000000001",
+          "state": "CANCELLED"
+        }
+      },
+      "audit_events_dto": [
+        {
+          "id": "52000000-0000-4000-8000-000000000008",
+          "action": "import.cancel",
+          "outcome": "CANCELLED",
+          "mode": "UJI",
+          "correlation_id": "50000000-0000-4000-8000-000000000001",
+          "created_at": "2026-11-25T10:00:00+07:00"
+        }
+      ],
+      "service_trace": {
+        "_keterangan": "Event internal CommitAuditEvent #46 apa adanya; bukan untuk layar (memuat actor/batch/reason).",
+        "events": [
+          {
+            "action": "import.cancel",
+            "outcome": "CANCELLED",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "actor_id": "10000000-0000-4000-8000-000000000001",
+            "batch_id": "30000000-0000-4000-8000-000000000001",
+            "warehouse_id": "20000000-0000-4000-8000-000000000001",
+            "mode": "UJI",
+            "context_safe": {
+              "kind": "COUNT",
+              "reason_code": "USER_CANCELLED"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "Batal setelah COMMITTED",
+      "response": {
+        "http_status": 409,
+        "body": {
+          "error": {
+            "code": "STATE_CONFLICT",
+            "message": "SIMULATED: contoh pesan; teks final belum ditetapkan.",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "details": []
+          }
+        }
+      },
+      "audit_events_dto": [
+        {
+          "id": "52000000-0000-4000-8000-000000000009",
+          "action": "import.cancel",
+          "outcome": "FAILURE",
+          "mode": "UJI",
+          "correlation_id": "50000000-0000-4000-8000-000000000001",
+          "created_at": "2026-11-25T10:00:00+07:00"
+        }
+      ],
+      "service_trace": {
+        "_keterangan": "Event internal CommitAuditEvent #46 apa adanya; bukan untuk layar (memuat actor/batch/reason).",
+        "events": [
+          {
+            "action": "import.cancel",
+            "outcome": "FAILURE",
+            "correlation_id": "50000000-0000-4000-8000-000000000001",
+            "actor_id": "10000000-0000-4000-8000-000000000001",
+            "batch_id": "30000000-0000-4000-8000-000000000001",
+            "warehouse_id": "20000000-0000-4000-8000-000000000001",
+            "mode": "UJI",
+            "context_safe": {
+              "reason_code": "TRANSACTION_FAILED"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
