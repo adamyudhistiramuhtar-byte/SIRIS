@@ -1,0 +1,331 @@
+{
+  "_keterangan": "Fixture sintetis berlabel SIMULATED untuk layar rekonsiliasi SCR-12 (SRS-86, konsumen SRS-67). Bukan data mitra dan bukan hasil operasional. Kuantitas adalah angka uji sintetis, bukan angka bisnis.",
+  "data_label": "SIMULATED",
+  "mode": "UJI",
+  "contract_version": "proposed-0.1",
+  "contract_status": "PROPOSED",
+  "sumber": {
+    "dto": "DOC-09 RunCreated, RunDetail, ReconciliationLine",
+    "engine": "apps/api/src/modules/reconciliation/reconciliation-engine.ts (#36, develop 3e61e0e)",
+    "service_error": "apps/api/src/modules/reconciliation/reconciliation-errors.ts (#47 Draft, 542384b)"
+  },
+  "open_decisions": [
+    "Envelope respons data/meta (api.ts) vs contoh DOC-09 tanpa envelope: OPEN.",
+    "RunDetail DOC-09 tidak memuat rule_version, warehouse_id, mode, cutoff_id; tampilan konteks run perlu keputusan kontrak (SRS-58).",
+    "Riwayat run API-15 (SRS-31) dan pemilihan latest belum dicakup."
+  ],
+  "engine_input": {
+    "context": {
+      "warehouse_id": "00000000-0000-4000-8000-000000000001",
+      "mode": "UJI",
+      "cutoff_id": "00000000-0000-4000-8000-000000000002"
+    },
+    "stock_lines": [
+      {
+        "id": "86000000-0000-4000-8000-000000000101",
+        "material_id": "86000000-0000-4000-8000-000000000001",
+        "uom": "KG",
+        "system_quantity": "10.000000"
+      },
+      {
+        "id": "86000000-0000-4000-8000-000000000102",
+        "material_id": "86000000-0000-4000-8000-000000000002",
+        "uom": "KG",
+        "system_quantity": "10.000000"
+      },
+      {
+        "id": "86000000-0000-4000-8000-000000000103",
+        "material_id": "86000000-0000-4000-8000-000000000003",
+        "uom": "L",
+        "system_quantity": "4.500000"
+      },
+      {
+        "id": "86000000-0000-4000-8000-000000000104",
+        "material_id": "86000000-0000-4000-8000-000000000004",
+        "uom": "KG",
+        "system_quantity": "2.000000"
+      },
+      {
+        "id": "86000000-0000-4000-8000-000000000106",
+        "material_id": "86000000-0000-4000-8000-000000000006",
+        "uom": "KG",
+        "system_quantity": "5.000000"
+      },
+      {
+        "id": "86000000-0000-4000-8000-000000000107",
+        "material_id": "86000000-0000-4000-8000-000000000007",
+        "uom": "PCS",
+        "system_quantity": "3.000000"
+      }
+    ],
+    "count_lines": [
+      {
+        "id": "86000000-0000-4000-8000-000000000201",
+        "material_id": "86000000-0000-4000-8000-000000000001",
+        "uom": "KG",
+        "is_counted": true,
+        "physical_quantity": "10.000000"
+      },
+      {
+        "id": "86000000-0000-4000-8000-000000000202",
+        "material_id": "86000000-0000-4000-8000-000000000002",
+        "uom": "KG",
+        "is_counted": true,
+        "physical_quantity": "7.250000"
+      },
+      {
+        "id": "86000000-0000-4000-8000-000000000204",
+        "material_id": "86000000-0000-4000-8000-000000000004",
+        "uom": "KG",
+        "is_counted": false,
+        "physical_quantity": null
+      },
+      {
+        "id": "86000000-0000-4000-8000-000000000205",
+        "material_id": "86000000-0000-4000-8000-000000000005",
+        "uom": "KG",
+        "is_counted": true,
+        "physical_quantity": "1.000000"
+      },
+      {
+        "id": "86000000-0000-4000-8000-000000000206",
+        "material_id": "86000000-0000-4000-8000-000000000006",
+        "uom": "L",
+        "is_counted": true,
+        "physical_quantity": "5.000000"
+      },
+      {
+        "id": "86000000-0000-4000-8000-000000000207",
+        "material_id": "86000000-0000-4000-8000-000000000007",
+        "uom": "PCS",
+        "is_counted": true,
+        "physical_quantity": "0.000000"
+      }
+    ]
+  },
+  "screens": {
+    "run_created": {
+      "description": "Respons API-13 untuk run baru",
+      "body": {
+        "run_id": "86000000-0000-4000-8000-000000000a03",
+        "rule_version": "uji-engine/proposed-0.1"
+      }
+    },
+    "run_detail": {
+      "description": "Respons API-14; baris dihasilkan engine #36 dari engine_input",
+      "body": {
+        "run_id": "86000000-0000-4000-8000-000000000a03",
+        "stock_snapshot_id": "86000000-0000-4000-8000-000000000a01",
+        "count_session_id": "86000000-0000-4000-8000-000000000a02",
+        "lines": [
+          {
+            "material_id": "86000000-0000-4000-8000-000000000001",
+            "stock_line_id": "86000000-0000-4000-8000-000000000101",
+            "count_line_id": "86000000-0000-4000-8000-000000000201",
+            "system_quantity": "10.000000",
+            "physical_quantity": "10.000000",
+            "stock_uom": "KG",
+            "count_uom": "KG",
+            "status": "MATCHED",
+            "variance": "0.000000"
+          },
+          {
+            "material_id": "86000000-0000-4000-8000-000000000002",
+            "stock_line_id": "86000000-0000-4000-8000-000000000102",
+            "count_line_id": "86000000-0000-4000-8000-000000000202",
+            "system_quantity": "10.000000",
+            "physical_quantity": "7.250000",
+            "stock_uom": "KG",
+            "count_uom": "KG",
+            "status": "DISCREPANCY",
+            "variance": "-2.750000"
+          },
+          {
+            "material_id": "86000000-0000-4000-8000-000000000003",
+            "stock_line_id": "86000000-0000-4000-8000-000000000103",
+            "count_line_id": null,
+            "system_quantity": "4.500000",
+            "physical_quantity": null,
+            "stock_uom": "L",
+            "count_uom": null,
+            "status": "COUNT_MISSING",
+            "variance": null
+          },
+          {
+            "material_id": "86000000-0000-4000-8000-000000000004",
+            "stock_line_id": "86000000-0000-4000-8000-000000000104",
+            "count_line_id": "86000000-0000-4000-8000-000000000204",
+            "system_quantity": "2.000000",
+            "physical_quantity": null,
+            "stock_uom": "KG",
+            "count_uom": "KG",
+            "status": "NOT_COUNTED",
+            "variance": null
+          },
+          {
+            "material_id": "86000000-0000-4000-8000-000000000005",
+            "stock_line_id": null,
+            "count_line_id": "86000000-0000-4000-8000-000000000205",
+            "system_quantity": null,
+            "physical_quantity": "1.000000",
+            "stock_uom": null,
+            "count_uom": "KG",
+            "status": "STOCK_MISSING",
+            "variance": null
+          },
+          {
+            "material_id": "86000000-0000-4000-8000-000000000006",
+            "stock_line_id": "86000000-0000-4000-8000-000000000106",
+            "count_line_id": "86000000-0000-4000-8000-000000000206",
+            "system_quantity": "5.000000",
+            "physical_quantity": "5.000000",
+            "stock_uom": "KG",
+            "count_uom": "L",
+            "status": "UOM_MISMATCH",
+            "variance": null
+          },
+          {
+            "material_id": "86000000-0000-4000-8000-000000000007",
+            "stock_line_id": "86000000-0000-4000-8000-000000000107",
+            "count_line_id": "86000000-0000-4000-8000-000000000207",
+            "system_quantity": "3.000000",
+            "physical_quantity": "0.000000",
+            "stock_uom": "PCS",
+            "count_uom": "PCS",
+            "status": "DISCREPANCY",
+            "variance": "-3.000000"
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    "run_detail_empty": {
+      "description": "Run tanpa baris ditampilkan kosong, bukan error (A-1)",
+      "body": {
+        "run_id": "86000000-0000-4000-8000-000000000a04",
+        "stock_snapshot_id": "86000000-0000-4000-8000-000000000a01",
+        "count_session_id": "86000000-0000-4000-8000-000000000a02",
+        "lines": [],
+        "next_cursor": null
+      }
+    },
+    "context_rejections": [
+      {
+        "case": "Gudang berbeda",
+        "stock_context_override": {},
+        "count_context_override": {
+          "warehouse_id": "00000000-0000-4000-8000-000000000009"
+        },
+        "expected_error": {
+          "code": "WAREHOUSE_MISMATCH",
+          "http_status": 422
+        }
+      },
+      {
+        "case": "Mode berbeda",
+        "stock_context_override": {},
+        "count_context_override": {
+          "mode": "ACTUAL"
+        },
+        "expected_error": {
+          "code": "MODE_MISMATCH",
+          "http_status": 422
+        }
+      },
+      {
+        "case": "Cutoff berbeda",
+        "stock_context_override": {},
+        "count_context_override": {
+          "cutoff_id": "00000000-0000-4000-8000-000000000008"
+        },
+        "expected_error": {
+          "code": "CUTOFF_MISMATCH",
+          "http_status": 422
+        }
+      },
+      {
+        "case": "ACTUAL ditahan (OD-08)",
+        "stock_context_override": {
+          "mode": "ACTUAL"
+        },
+        "count_context_override": {
+          "mode": "ACTUAL"
+        },
+        "expected_error": {
+          "code": "CUTOFF_UNVERIFIED",
+          "http_status": 422
+        }
+      },
+      {
+        "case": "Material ganda pada sisi stok",
+        "stock_context_override": {},
+        "count_context_override": {},
+        "stock_lines_override": [
+          {
+            "id": "86000000-0000-4000-8000-000000000101",
+            "material_id": "86000000-0000-4000-8000-000000000001",
+            "uom": "KG",
+            "system_quantity": "10.000000"
+          },
+          {
+            "id": "86000000-0000-4000-8000-000000000102",
+            "material_id": "86000000-0000-4000-8000-000000000002",
+            "uom": "KG",
+            "system_quantity": "10.000000"
+          },
+          {
+            "id": "86000000-0000-4000-8000-000000000103",
+            "material_id": "86000000-0000-4000-8000-000000000003",
+            "uom": "L",
+            "system_quantity": "4.500000"
+          },
+          {
+            "id": "86000000-0000-4000-8000-000000000104",
+            "material_id": "86000000-0000-4000-8000-000000000004",
+            "uom": "KG",
+            "system_quantity": "2.000000"
+          },
+          {
+            "id": "86000000-0000-4000-8000-000000000106",
+            "material_id": "86000000-0000-4000-8000-000000000006",
+            "uom": "KG",
+            "system_quantity": "5.000000"
+          },
+          {
+            "id": "86000000-0000-4000-8000-000000000107",
+            "material_id": "86000000-0000-4000-8000-000000000007",
+            "uom": "PCS",
+            "system_quantity": "3.000000"
+          },
+          {
+            "id": "86000000-0000-4000-8000-000000000109",
+            "material_id": "86000000-0000-4000-8000-000000000001",
+            "uom": "L",
+            "system_quantity": "1.000000"
+          }
+        ],
+        "expected_error": {
+          "code": "AMBIGUOUS_PAIR",
+          "http_status": 422,
+          "material_id": "86000000-0000-4000-8000-000000000001"
+        }
+      }
+    ]
+  },
+  "error_http_status": {
+    "_keterangan": "Status HTTP usulan service #47 (reconciliation-errors.ts @ 542384b). TRANSACTION_OUTCOME_UNKNOWN PLACEHOLDER.",
+    "BAD_REQUEST": 400,
+    "NOT_FOUND": 404,
+    "FORBIDDEN": 403,
+    "IDEMPOTENCY_CONFLICT": 409,
+    "WAREHOUSE_MISMATCH": 422,
+    "MODE_MISMATCH": 422,
+    "CUTOFF_MISMATCH": 422,
+    "CUTOFF_UNVERIFIED": 422,
+    "AMBIGUOUS_PAIR": 422,
+    "NOT_COUNTED_VALUE": 422,
+    "INVALID_FILE": 422,
+    "TRANSACTION_FAILED": 500,
+    "TRANSACTION_OUTCOME_UNKNOWN": 500
+  }
+}
