@@ -1,0 +1,780 @@
+{
+  "_keterangan": "Matriks kasus QA SRS-59 berlabel SIMULATED untuk integritas lima impor. Bukan hasil eksekusi. Status hanya NOT RUN, BLOCKED, SOURCE REQUIRED, atau EXECUTABLE_NOW; hasil aktual dicatat di dokumen QA setelah benar-benar dijalankan.",
+  "data_label": "SIMULATED",
+  "mode": "UJI",
+  "contract_version": "proposed-0.1",
+  "contract_status": "PROPOSED",
+  "sumber": {
+    "kasus": "DOC-13 PVT-01/02/03/04/11/12/15/17/22",
+    "kode_error": "DOC-08 katalog error",
+    "fixture": "database/fixtures/uji/{expected,commitment,receiving,stock,count}.proposed-0.1.json (develop 0ff9e4a)"
+  },
+  "temuan_fixture": [
+    {
+      "case_ref": "stock:UJI-STK-NEG-03",
+      "isi_develop": "INVALID_FILE",
+      "keputusan": "INVALID_METADATA (Adam, SRS-26 10161 dan SRS-58 10152 butir 3)",
+      "catatan": "Perbaikan fixture ada di #39/#52; belum di develop. Oracle SRS-59 memakai keputusan Adam. INVALID_METADATA belum ada di katalog DOC-08."
+    },
+    {
+      "case_ref": "commitment:UJI-COM-NEG-01",
+      "isi_develop": "INVALID_FILE",
+      "keputusan": "Belum diputuskan",
+      "catatan": "#58 menghasilkan CHANGE_WITHOUT_INITIAL (tidak ada di katalog DOC-08). Perlu keputusan kode mana yang dipakai."
+    }
+  ],
+  "cases": [
+    {
+      "pvt_id": "PVT-01",
+      "judul": "File invalid",
+      "oracle": "judgeRejectedImport",
+      "doc13_expected": "Error field wajib; tidak ada domain atau preview siap commit.",
+      "per_kind": [
+        {
+          "kind": "EXPECTED",
+          "case_ref": "DERIVED:expected.rows[0] tanpa requested_date",
+          "expected_codes": [
+            "INVALID_FILE"
+          ],
+          "catatan": "Data DOC-13: File UJI EXPECTED tanpa requested_date; diturunkan dengan menghapus satu field, nilai lain tetap.",
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-17 impor referensi inbound (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "COMMITMENT",
+          "case_ref": "commitment:UJI-COM-NEG-03",
+          "expected_codes": [
+            "INVALID_FILE"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-18 impor janji supplier (#58, review)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "RECEIVING",
+          "case_ref": "receiving:UJI-RCV-NEG-02",
+          "expected_codes": [
+            "INVALID_FILE"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-19 impor penerimaan (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "STOCK",
+          "case_ref": "stock:UJI-STK-NEG-01",
+          "expected_codes": [
+            "INVALID_FILE"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-26 impor stok + migrasi 009 (#39 In Review; 009 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "COUNT",
+          "case_ref": "count:UJI-CNT-NEG-02",
+          "expected_codes": [
+            "INVALID_FILE"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-27 impor hitung fisik + migrasi 010 (#48 Draft; 010 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        }
+      ]
+    },
+    {
+      "pvt_id": "PVT-02",
+      "judul": "Missing reference",
+      "oracle": "judgeRejectedImport",
+      "doc13_expected": "MISSING_REFERENCE; event tidak tersimpan.",
+      "per_kind": [
+        {
+          "kind": "EXPECTED",
+          "case_ref": "expected:UJI-EXP-NEG-01",
+          "expected_codes": [
+            "MISSING_REFERENCE"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-17 impor referensi inbound (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "COMMITMENT",
+          "case_ref": "DERIVED:commitment.rows[0] dengan inbound_source_ref UJI-IN-TIDAK-ADA",
+          "expected_codes": [
+            "MISSING_REFERENCE"
+          ],
+          "catatan": "Data DOC-13. Fixture juga punya UJI-COM-NEG-02 (inbound belum di-commit).",
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-18 impor janji supplier (#58, review)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "RECEIVING",
+          "case_ref": "DERIVED:receiving.rows[0] dengan inbound_source_ref UJI-IN-TIDAK-ADA",
+          "expected_codes": [
+            "MISSING_REFERENCE"
+          ],
+          "catatan": "Fixture RECEIVING belum punya negative case referensi; diturunkan dari pola DOC-13 PVT-02.",
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-19 impor penerimaan (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "STOCK",
+          "case_ref": "stock:UJI-STK-NEG-02",
+          "expected_codes": [
+            "MISSING_REFERENCE"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-26 impor stok + migrasi 009 (#39 In Review; 009 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "COUNT",
+          "case_ref": null,
+          "expected_codes": [
+            "MISSING_REFERENCE"
+          ],
+          "status": "SOURCE REQUIRED",
+          "blocked_by": [
+            "Fixture COUNT tidak memuat negative case material tidak dikenal; aturan referensi material COUNT belum tertulis di DOC-08 §COUNT"
+          ]
+        }
+      ]
+    },
+    {
+      "pvt_id": "PVT-03",
+      "judul": "Duplicate import",
+      "oracle": "judgeDuplicateImport",
+      "doc13_expected": "Tidak ada referensi kedua; hasil lama dikenali dan outcome diaudit.",
+      "per_kind": [
+        {
+          "kind": "EXPECTED",
+          "case_ref": "expected:rows (dua batch identik)",
+          "expected_codes": [
+            "DUPLICATE_SOURCE"
+          ],
+          "catatan": "Hasil lama dikenali (result_ref sama) ATAU DUPLICATE_SOURCE; kebijakan per kind mengikuti DOC-08 §commit.",
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-17 impor referensi inbound (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "COMMITMENT",
+          "case_ref": "commitment:rows (dua batch identik)",
+          "expected_codes": [
+            "DUPLICATE_SOURCE"
+          ],
+          "catatan": "Hasil lama dikenali (result_ref sama) ATAU DUPLICATE_SOURCE; kebijakan per kind mengikuti DOC-08 §commit.",
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-18 impor janji supplier (#58, review)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "RECEIVING",
+          "case_ref": "receiving:rows (dua batch identik)",
+          "expected_codes": [
+            "DUPLICATE_SOURCE"
+          ],
+          "catatan": "Hasil lama dikenali (result_ref sama) ATAU DUPLICATE_SOURCE; kebijakan per kind mengikuti DOC-08 §commit.",
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-19 impor penerimaan (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "STOCK",
+          "case_ref": "stock:rows (dua batch identik)",
+          "expected_codes": [
+            "DUPLICATE_SOURCE"
+          ],
+          "catatan": "Hasil lama dikenali (result_ref sama) ATAU DUPLICATE_SOURCE; kebijakan per kind mengikuti DOC-08 §commit.",
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-26 impor stok + migrasi 009 (#39 In Review; 009 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "COUNT",
+          "case_ref": "count:rows (dua batch identik)",
+          "expected_codes": [
+            "DUPLICATE_SOURCE"
+          ],
+          "catatan": "Hasil lama dikenali (result_ref sama) ATAU DUPLICATE_SOURCE; kebijakan per kind mengikuti DOC-08 §commit.",
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-27 impor hitung fisik + migrasi 010 (#48 Draft; 010 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        }
+      ]
+    },
+    {
+      "pvt_id": "PVT-04",
+      "judul": "Expired preview",
+      "oracle": "judgePreviewExpiry",
+      "doc13_expected": "Sebelum expiry dapat sukses jika prasyarat lain sah; tepat expiry PREVIEW_EXPIRED tanpa commit.",
+      "parameter": {
+        "ttl_ms_usulan": 1800000,
+        "umur_uji_ms": [
+          1799000,
+          1800000
+        ],
+        "catatan": "TTL 30 menit PROPOSED; 409 vs 410 untuk expiry masih C58-05 (SRS-52 10221). Katalog DOC-08: PREVIEW_EXPIRED 410."
+      },
+      "per_kind": [
+        {
+          "kind": "EXPECTED",
+          "case_ref": "expected:rows",
+          "expected_codes": [
+            "PREVIEW_EXPIRED"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-17 impor referensi inbound (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "C58-05 expiry otoritatif server (SRS-52 10221)"
+          ]
+        },
+        {
+          "kind": "COMMITMENT",
+          "case_ref": "commitment:rows",
+          "expected_codes": [
+            "PREVIEW_EXPIRED"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-18 impor janji supplier (#58, review)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "C58-05 expiry otoritatif server (SRS-52 10221)"
+          ]
+        },
+        {
+          "kind": "RECEIVING",
+          "case_ref": "receiving:rows",
+          "expected_codes": [
+            "PREVIEW_EXPIRED"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-19 impor penerimaan (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "C58-05 expiry otoritatif server (SRS-52 10221)"
+          ]
+        },
+        {
+          "kind": "STOCK",
+          "case_ref": "stock:rows",
+          "expected_codes": [
+            "PREVIEW_EXPIRED"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-26 impor stok + migrasi 009 (#39 In Review; 009 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "C58-05 expiry otoritatif server (SRS-52 10221)"
+          ]
+        },
+        {
+          "kind": "COUNT",
+          "case_ref": "count:rows",
+          "expected_codes": [
+            "PREVIEW_EXPIRED"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-27 impor hitung fisik + migrasi 010 (#48 Draft; 010 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "C58-05 expiry otoritatif server (SRS-52 10221)"
+          ]
+        }
+      ]
+    },
+    {
+      "pvt_id": "PVT-11",
+      "judul": "Rollback",
+      "oracle": "judgeRollback",
+      "doc13_expected": "Seluruh domain/lineage baru dibatalkan; audit FAILURE terpisah jika DB pulih; tidak ada SUCCESS palsu.",
+      "per_kind": [
+        {
+          "kind": "EXPECTED",
+          "case_ref": "expected:rows (fault setelah insert pertama)",
+          "expected_codes": [
+            "TRANSACTION_FAILED"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-17 impor referensi inbound (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "COMMITMENT",
+          "case_ref": "commitment:rows (fault setelah insert pertama)",
+          "expected_codes": [
+            "TRANSACTION_FAILED"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-18 impor janji supplier (#58, review)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "RECEIVING",
+          "case_ref": "receiving:rows (fault setelah insert pertama)",
+          "expected_codes": [
+            "TRANSACTION_FAILED"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-19 impor penerimaan (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "STOCK",
+          "case_ref": "stock:rows (fault setelah insert pertama)",
+          "expected_codes": [
+            "TRANSACTION_FAILED"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-26 impor stok + migrasi 009 (#39 In Review; 009 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "COUNT",
+          "case_ref": "count:rows (fault setelah insert pertama)",
+          "expected_codes": [
+            "TRANSACTION_FAILED"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-27 impor hitung fisik + migrasi 010 (#48 Draft; 010 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        }
+      ]
+    },
+    {
+      "pvt_id": "PVT-12",
+      "judul": "Idempotency dan konkurensi",
+      "oracle": "judgeIdempotency",
+      "doc13_expected": "Satu hasil; retry menerima ID sama; perubahan payload 409 IDEMPOTENCY_CONFLICT.",
+      "per_kind": [
+        {
+          "kind": "EXPECTED",
+          "case_ref": "expected:rows",
+          "expected_codes": [
+            "IDEMPOTENCY_CONFLICT"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-17 impor referensi inbound (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "COMMITMENT",
+          "case_ref": "commitment:rows",
+          "expected_codes": [
+            "IDEMPOTENCY_CONFLICT"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-18 impor janji supplier (#58, review)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "RECEIVING",
+          "case_ref": "receiving:rows",
+          "expected_codes": [
+            "IDEMPOTENCY_CONFLICT"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-19 impor penerimaan (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "STOCK",
+          "case_ref": "stock:rows",
+          "expected_codes": [
+            "IDEMPOTENCY_CONFLICT"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-26 impor stok + migrasi 009 (#39 In Review; 009 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "kind": "COUNT",
+          "case_ref": "count:rows",
+          "expected_codes": [
+            "IDEMPOTENCY_CONFLICT"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-27 impor hitung fisik + migrasi 010 (#48 Draft; 010 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        }
+      ]
+    },
+    {
+      "pvt_id": "PVT-15",
+      "judul": "Preview metadata tampering",
+      "oracle": "judgeTampering",
+      "doc13_expected": "PREVIEW_CHANGED atau scope error; tidak commit; wajib validasi ulang.",
+      "per_kind": [
+        {
+          "kind": "EXPECTED",
+          "case_ref": "expected:metadata diubah (gudang/mode/cutoff) setelah validasi",
+          "expected_codes": [
+            "PREVIEW_CHANGED",
+            "WAREHOUSE_MISMATCH",
+            "MODE_MISMATCH",
+            "CUTOFF_MISMATCH",
+            "FORBIDDEN"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-17 impor referensi inbound (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "Fingerprint #54 belum memuat actor dan reference revision (SRS-52 10215 butir 7)"
+          ]
+        },
+        {
+          "kind": "COMMITMENT",
+          "case_ref": "commitment:metadata diubah (gudang/mode/cutoff) setelah validasi",
+          "expected_codes": [
+            "PREVIEW_CHANGED",
+            "WAREHOUSE_MISMATCH",
+            "MODE_MISMATCH",
+            "CUTOFF_MISMATCH",
+            "FORBIDDEN"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-18 impor janji supplier (#58, review)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "Fingerprint #54 belum memuat actor dan reference revision (SRS-52 10215 butir 7)"
+          ]
+        },
+        {
+          "kind": "RECEIVING",
+          "case_ref": "receiving:metadata diubah (gudang/mode/cutoff) setelah validasi",
+          "expected_codes": [
+            "PREVIEW_CHANGED",
+            "WAREHOUSE_MISMATCH",
+            "MODE_MISMATCH",
+            "CUTOFF_MISMATCH",
+            "FORBIDDEN"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-19 impor penerimaan (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "Fingerprint #54 belum memuat actor dan reference revision (SRS-52 10215 butir 7)"
+          ]
+        },
+        {
+          "kind": "STOCK",
+          "case_ref": "stock:metadata diubah (gudang/mode/cutoff) setelah validasi",
+          "expected_codes": [
+            "PREVIEW_CHANGED",
+            "WAREHOUSE_MISMATCH",
+            "MODE_MISMATCH",
+            "CUTOFF_MISMATCH",
+            "FORBIDDEN"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-26 impor stok + migrasi 009 (#39 In Review; 009 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "Fingerprint #54 belum memuat actor dan reference revision (SRS-52 10215 butir 7)"
+          ]
+        },
+        {
+          "kind": "COUNT",
+          "case_ref": "count:metadata diubah (gudang/mode/cutoff) setelah validasi",
+          "expected_codes": [
+            "PREVIEW_CHANGED",
+            "WAREHOUSE_MISMATCH",
+            "MODE_MISMATCH",
+            "CUTOFF_MISMATCH",
+            "FORBIDDEN"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-27 impor hitung fisik + migrasi 010 (#48 Draft; 010 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "Fingerprint #54 belum memuat actor dan reference revision (SRS-52 10215 butir 7)"
+          ]
+        }
+      ]
+    },
+    {
+      "pvt_id": "PVT-17",
+      "judul": "QTY AKHIR tanpa double counting",
+      "oracle": "judgeNoDoubleCounting",
+      "doc13_expected": "system_quantity 10, bukan 13; variance 0 MATCHED; support tersimpan terpisah.",
+      "data_uji": {
+        "_keterangan": "Data DOC-13 PVT-17 (angka uji, bukan angka bisnis).",
+        "qty_akhir": "10.000000",
+        "support_movement": "+3.000000",
+        "count_physical": "10.000000",
+        "material_id": "59000000-0000-4000-8000-000000000001",
+        "uom": "KG"
+      },
+      "langkah": [
+        {
+          "langkah": "1 Commit satu paket STOCK (balance + movement)",
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-26 impor stok + migrasi 009 (#39 In Review; 009 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        },
+        {
+          "langkah": "2 Rekonsiliasi terhadap COUNT 10",
+          "status": "EXECUTABLE_NOW",
+          "catatan": "Dijalankan terhadap engine #36 di develop dengan stock line dari QTY AKHIR saja; bukan bukti commit atau penyimpanan."
+        },
+        {
+          "langkah": "3 Periksa lineage dukungan",
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-26 impor stok + migrasi 009 (#39 In Review; 009 belum ada)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)"
+          ]
+        }
+      ]
+    },
+    {
+      "pvt_id": "PVT-22",
+      "judul": "Warehouse scope",
+      "oracle": "judgeWarehouseScope",
+      "doc13_expected": "Seluruh akses lintas izin ditolak/disembunyikan; tidak ada data B dalam hasil atau metrik.",
+      "per_kind": [
+        {
+          "kind": "EXPECTED",
+          "case_ref": "expected: objek gudang UJI-B, sesi gudang UJI-A",
+          "expected_codes": [
+            "FORBIDDEN"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-17 impor referensi inbound (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "SRS-47/48 sesi dan otorisasi backend (#54)"
+          ]
+        },
+        {
+          "kind": "COMMITMENT",
+          "case_ref": "commitment: objek gudang UJI-B, sesi gudang UJI-A",
+          "expected_codes": [
+            "FORBIDDEN"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-18 impor janji supplier (#58, review)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "SRS-47/48 sesi dan otorisasi backend (#54)"
+          ]
+        },
+        {
+          "kind": "RECEIVING",
+          "case_ref": "receiving: objek gudang UJI-B, sesi gudang UJI-A",
+          "expected_codes": [
+            "FORBIDDEN"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-19 impor penerimaan (To Do)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "SRS-47/48 sesi dan otorisasi backend (#54)"
+          ]
+        },
+        {
+          "kind": "STOCK",
+          "case_ref": "stock: objek gudang UJI-B, sesi gudang UJI-A",
+          "expected_codes": [
+            "FORBIDDEN"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-26 impor stok + migrasi 009 (#39 In Review; 009 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "SRS-47/48 sesi dan otorisasi backend (#54)"
+          ]
+        },
+        {
+          "kind": "COUNT",
+          "case_ref": "count: objek gudang UJI-B, sesi gudang UJI-A",
+          "expected_codes": [
+            "FORBIDDEN"
+          ],
+          "status": "BLOCKED",
+          "blocked_by": [
+            "SRS-27 impor hitung fisik + migrasi 010 (#48 Draft; 010 belum ada)",
+            "SRS-50 core staging (#27/#52, belum merged)",
+            "SRS-51 preview (#54, CHANGES_REQUESTED)",
+            "SRS-52 commit/idempotency (#46 Draft; migrasi 012 belum ada)",
+            "SRS-54 test harness PostgreSQL (#22/#23, belum merged)",
+            "SRS-47/48 sesi dan otorisasi backend (#54)"
+          ]
+        }
+      ]
+    }
+  ]
+}
