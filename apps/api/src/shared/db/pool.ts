@@ -5,6 +5,15 @@ const { Pool } = pg;
 
 let pool: pg.Pool | null = null;
 
+// Code exception bukan otomatis aman hanya karena terdiri dari huruf/angka.
+// Hanya diagnostik koneksi yang terdaftar boleh melewati batas log/response.
+const SAFE_CONNECTION_CODES = new Set([
+  'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'EHOSTUNREACH',
+  'ENETUNREACH', 'EPIPE', '28P01', '28000', '3D000', '53300',
+  '57P01', '57P02', '57P03', '08000', '08001', '08003', '08004',
+  '08006', '08007', '08P01',
+]);
+
 export interface DatabaseConnectionStatus {
   connected: boolean;
   latency_ms?: number;
@@ -39,8 +48,8 @@ export function getDbPool(): pg.Pool {
  */
 function toSafeDatabaseErrorCode(err: unknown): string {
   const code = (err as { code?: unknown } | null)?.code;
-  if (typeof code === 'string' && /^[A-Za-z0-9_]+$/.test(code)) {
-    return code.toUpperCase();
+  if (typeof code === 'string' && SAFE_CONNECTION_CODES.has(code)) {
+    return code;
   }
   return 'DATABASE_CONNECTION_FAILED';
 }

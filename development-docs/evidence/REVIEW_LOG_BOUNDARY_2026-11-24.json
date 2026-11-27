@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-24",
+  "base_sha": "c2105a6083bbb7ba2b81a51b49aab18fd6524c4f",
+  "node": "22.22.2",
+  "mode": "UJI",
+  "tests": {"passed": 116, "failed": 0, "new_cases": 7, "shutdown_cases": 6},
+  "reproduction_before_fix": {"failed": 5, "diagnostic_controls_passed": 2},
+  "lint": "PASS",
+  "typecheck": "PASS",
+  "build": "PASS",
+  "postgresql_local": "NOT RUN: DATABASE_URL_NOT_CONFIGURED; pool boundary tests use a mock",
+  "remote_ci": "NOT RUN for the new candidate",
+  "independent_approval": "PENDING; author Adam cannot approve his own candidate"
+}
