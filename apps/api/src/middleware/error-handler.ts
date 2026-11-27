@@ -19,16 +19,14 @@ function buildErrorResponse(
 }
 
 /**
- * Log aman untuk error tak terduga. Pesan mentah, SQL, stack lengkap, dan
- * objek error tidak dicatat karena dapat memuat nilai sensitif atau storage key.
- * Nama, code, dan stack milik exception juga dapat memuat data privat.
- * LOG_LEVEL=debug tidak mengubah batas kerahasiaan ini.
+ * Log aman untuk error tak terduga. Event selalu memakai identitas stabil
+ * `INTERNAL_SERVER_ERROR` dan correlation ID yang lolos validasi UUID; nama,
+ * code, pesan mentah, SQL, storage key, dan stack error tidak dicatat.
  */
 function logUnexpectedError(correlationId: string): void {
-  // Kontrak wire correlation tidak diubah; header yang belum tervalidasi
-  // tidak disalin ke log. UUID sah tetap menghubungkan log dengan response.
   const safeCorrelationId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(correlationId)
-    ? correlationId : 'CORRELATION_UNAVAILABLE';
+    ? correlationId
+    : 'CORRELATION_UNAVAILABLE';
   console.error(`[${safeCorrelationId}] Unhandled Error: INTERNAL_SERVER_ERROR`);
 }
 
