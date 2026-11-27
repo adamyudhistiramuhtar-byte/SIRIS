@@ -3783,6 +3783,19 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
           "name": {
             "type": "string"
           },
+          "cutoff_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Tanggal efektif cutoff; basis efektif tetap memerlukan bukti."
+          },
+          "cutoff_time": {
+            "type": ["string", "null"],
+            "description": "NULL untuk cutoff UJI tanggal-saja; tidak mengarang jam."
+          },
+          "status": {
+            "type": "string",
+            "description": "UJI menggunakan SIMULATED; status ACTUAL masih memerlukan sumber."
+          },
           "cutoff_at": {
             "type": "string",
             "format": "date-time"

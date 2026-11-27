@@ -23,11 +23,11 @@ Register hash SHA-256 sumber terdapat pada katalog field. Keputusan PM setelah s
 
 ## Pembaruan integrasi UJI — 27 November 2026
 
-Pembaruan ini menggunakan keputusan PM pada SRS-38 komentar 10153, SRS-58 komentar 10152 dan handoff SRS-52 komentar 10159. Versi mesin OpenAPI pada PR ini tetap kandidat untuk review. Ketidaksesuaian di bawah harus diselesaikan bersama pemilik API dan schema sebelum kontrak dipakai sebagai bukti implementasi.
+Pembaruan ini menggunakan keputusan PM pada SRS-38 komentar 10153, SRS-58 komentar 10152 dan handoff SRS-52 komentar 10159. Versi mesin OpenAPI pada PR ini tetap kandidat untuk review; field cutoff baru merupakan proyeksi UJI yang perlu ditinjau penerima. Ketidaksesuaian di bawah harus diselesaikan bersama pemilik API dan schema sebelum kontrak dipakai sebagai bukti implementasi.
 
 | Area | Nilai atau batas yang dapat dipakai sekarang | Pekerjaan berikut dan pemilik |
 | --- | --- | --- |
-| Cutoff | UJI tanggal-saja memakai `cutoff_date` dan `cutoff_time = null`; UJI berstatus SIMULATED. Tanggal cetak atau `cutoff_id` sama saja belum membuktikan basis efektif. | Luthfi dan Dwi menyelaraskan ReferenceItem, schema dan UI. `cutoff_at` wajib date-time pada snapshot mesin tidak dapat mewakili tanggal-saja. CF-04 ACTUAL tetap SOURCE REQUIRED. |
+| Cutoff | UJI tanggal-saja memakai `cutoff_date` dan `cutoff_time = null`; UJI berstatus SIMULATED. Tanggal cetak atau `cutoff_id` sama saja belum membuktikan basis efektif. | Luthfi dan Dwi menyelaraskan ReferenceItem, schema dan UI. `cutoff_at` legacy bila tersedia berbentuk date-time dan tidak dapat mewakili tanggal-saja; kandidat mesin menambahkan `cutoff_date`, `cutoff_time` nullable, dan `status` sebagai proyeksi yang memerlukan review. CF-04 ACTUAL tetap SOURCE REQUIRED. |
 | Hasil rekonsiliasi | Fisik null tetap belum dihitung. Satu material per sisi per run; UOM ganda ambigu. Input snapshot/count/rule/scope identik memakai ulang run. Latest hanya dari run COMMITTED. | Dwi memeriksa constraint, transaksi dan API. Sumber urutan commit yang dapat dibuktikan masih OPEN. |
 | Pembatalan dan replay | COMMITTED dan CANCELLED terminal. Replay identik tidak boleh membuat domain write kedua. Hasil COMMIT tidak pasti tidak boleh diulang sebagai unggahan baru. | Luthfi dan Dwi mereview header cancel, respons replay serta bukti konkuren. Kewajiban Idempotency-Key untuk cancel masih OPEN. |
 | Warning dan expiry | Warning belum memiliki identitas acknowledgement yang diterima. Commit tetap fail-closed sampai kontrak disepakati. Waktu kedaluwarsa harus diterbitkan oleh server. | Luthfi dan Vassell menyepakati identitas warning, konsumen dan boundary. Durasi 30 menit dan retensi record masih PROPOSED. |
@@ -36,6 +36,40 @@ Pembaruan ini menggunakan keputusan PM pada SRS-38 komentar 10153, SRS-58 koment
 | Sumber operasi | Kandidat ini mencakup 22 operasi pada 21 path. Katalog internal SRS-35 mencatat 25 operasi pada sumber. | Adam menyusun pemetaan satu per satu berdasarkan sumber berizin. Selisih masih NEEDS REVIEW dan tidak menghapus operasi baseline. |
 
 Komponen PR #54 adalah kandidat terpisah. Hasil pengujian fixture dan review pada HEAD PR dicatat di Jira; implementasi session, role, preview dan commit nyata masih memerlukan uji API dan database terintegrasi.
+
+## Penelusuran API sumber terhadap kandidat
+
+Tabel ini adalah indeks review, bukan persamaan ID endpoint. Kolom sumber diambil dari matriks FR pada ekstrak DESAIN-42-1.1 halaman 202–211. Relasi FR-20, FR-21 dan FR-28 bersifat lintas operasi. Kolom kandidat adalah **kelompok hipotesis berdasarkan fungsi FR**, bukan pemetaan method/path yang sudah diverifikasi. Nomor kandidat merujuk tabel 22 operasi di bawah. Ekstrak yang tersedia tidak memuat tabel method/path API-01–API-25 sumber, sehingga semua baris tetap SOURCE REQUIRED untuk pemetaan endpoint. Luthfi memeriksa method/path dan Dwi memeriksa schema setelah halaman sumber yang sesuai tersedia.
+
+| API sumber | FR yang merujuk API sumber | Kelompok kandidat untuk diperiksa | Status |
+| --- | --- | --- | --- |
+| API-01 | FR-20 | Belum dipetakan | SOURCE REQUIRED: method/path sumber |
+| API-02 | FR-20 | Belum dipetakan | SOURCE REQUIRED: method/path sumber |
+| API-03 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | 01–05 | SOURCE REQUIRED: method/path sumber |
+| API-04 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | 01–05 | SOURCE REQUIRED: method/path sumber |
+| API-05 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | 01–05 | SOURCE REQUIRED: method/path sumber |
+| API-06 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | 01–05 | SOURCE REQUIRED: method/path sumber |
+| API-07 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | 01–05 | SOURCE REQUIRED: method/path sumber |
+| API-08 | FR-01, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-28, FR-29 | 01–05, 21 | SOURCE REQUIRED: method/path sumber |
+| API-09 | FR-04, FR-20, FR-21, FR-28 | 06 | SOURCE REQUIRED: method/path sumber |
+| API-10 | FR-05, FR-20, FR-21, FR-28 | 07 | SOURCE REQUIRED: method/path sumber |
+| API-11 | FR-06, FR-20, FR-21, FR-24, FR-28 | 08 | SOURCE REQUIRED: method/path sumber |
+| API-12 | FR-07, FR-19, FR-20, FR-21, FR-27, FR-28 | 09 | SOURCE REQUIRED: method/path sumber |
+| API-13 | FR-08, FR-20, FR-21, FR-28 | 10 | SOURCE REQUIRED: method/path sumber |
+| API-14 | FR-09, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-28, FR-29 | 11, 22 | SOURCE REQUIRED: method/path sumber |
+| API-15 | FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-26, FR-28, FR-29 | 12 | SOURCE REQUIRED: method/path sumber |
+| API-16 | FR-11, FR-20, FR-21, FR-28 | 17–19 | SOURCE REQUIRED: method/path sumber |
+| API-17 | FR-11, FR-20, FR-21, FR-28 | 17–19 | SOURCE REQUIRED: method/path sumber |
+| API-18 | FR-12, FR-19, FR-20, FR-21, FR-25, FR-26, FR-27, FR-28, FR-29 | 13–14 | SOURCE REQUIRED: method/path sumber |
+| API-19 | FR-13, FR-19, FR-20, FR-21, FR-27, FR-28 | 14–15 | SOURCE REQUIRED: method/path sumber |
+| API-20 | FR-13, FR-19, FR-20, FR-21, FR-27, FR-28 | 14–15 | SOURCE REQUIRED: method/path sumber |
+| API-21 | FR-14, FR-20, FR-21, FR-28 | 16 | SOURCE REQUIRED: method/path sumber |
+| API-22 | FR-15, FR-19, FR-20, FR-21, FR-28 | 20 | SOURCE REQUIRED: method/path sumber |
+| API-23 | FR-07, FR-19, FR-20, FR-21, FR-27, FR-28 | 09 | SOURCE REQUIRED: method/path sumber |
+| API-24 | FR-21 | Belum dipetakan | SOURCE REQUIRED: method/path sumber |
+| API-25 | FR-11, FR-20, FR-21, FR-28 | 17–19 | SOURCE REQUIRED: method/path sumber |
+
+API-01/02 dan API-24 sumber belum mempunyai pasangan yang dapat dibuktikan dari ekstrak. Ketiadaan baris pasangan bukan bukti endpoint hilang. API-03–07 masing-masing perlu dicocokkan ke lima operasi impor berdasarkan method, path, body dan respons. Periksa juga API-16/17/25 terhadap tiga operasi evidence. Selisih jumlah 25 dan 22 belum menunjukkan jumlah operasi yang belum diimplementasikan.
 
 ## Matriks 22 operasi UI–DTO–query–lineage
 
