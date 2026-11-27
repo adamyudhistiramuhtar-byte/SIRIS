@@ -21,6 +21,22 @@ Baseline: `develop@23f59a0`. Baseline tetap 16 UC, 29 FR, 14 NFR. Identitas FR/N
 
 Register hash SHA-256 sumber terdapat pada katalog field. Keputusan PM setelah snapshot ini harus dicatat sebagai revisi berikutnya; tidak otomatis dianggap disetujui. Kontrak ACTUAL tidak dibuka dari izin UJI.
 
+## Pembaruan integrasi UJI — 27 November 2026
+
+Pembaruan ini menggunakan keputusan PM pada SRS-38 komentar 10153, SRS-58 komentar 10152 dan handoff SRS-52 komentar 10159. Versi mesin OpenAPI pada PR ini tetap kandidat untuk review. Ketidaksesuaian di bawah harus diselesaikan bersama pemilik API dan schema sebelum kontrak dipakai sebagai bukti implementasi.
+
+| Area | Nilai atau batas yang dapat dipakai sekarang | Pekerjaan berikut dan pemilik |
+| --- | --- | --- |
+| Cutoff | UJI tanggal-saja memakai `cutoff_date` dan `cutoff_time = null`; UJI berstatus SIMULATED. Tanggal cetak atau `cutoff_id` sama saja belum membuktikan basis efektif. | Luthfi dan Dwi menyelaraskan ReferenceItem, schema dan UI. `cutoff_at` wajib date-time pada snapshot mesin tidak dapat mewakili tanggal-saja. CF-04 ACTUAL tetap SOURCE REQUIRED. |
+| Hasil rekonsiliasi | Fisik null tetap belum dihitung. Satu material per sisi per run; UOM ganda ambigu. Input snapshot/count/rule/scope identik memakai ulang run. Latest hanya dari run COMMITTED. | Dwi memeriksa constraint, transaksi dan API. Sumber urutan commit yang dapat dibuktikan masih OPEN. |
+| Pembatalan dan replay | COMMITTED dan CANCELLED terminal. Replay identik tidak boleh membuat domain write kedua. Hasil COMMIT tidak pasti tidak boleh diulang sebagai unggahan baru. | Luthfi dan Dwi mereview header cancel, respons replay serta bukti konkuren. Kewajiban Idempotency-Key untuk cancel masih OPEN. |
+| Warning dan expiry | Warning belum memiliki identitas acknowledgement yang diterima. Commit tetap fail-closed sampai kontrak disepakati. Waktu kedaluwarsa harus diterbitkan oleh server. | Luthfi dan Vassell menyepakati identitas warning, konsumen dan boundary. Durasi 30 menit dan retensi record masih PROPOSED. |
+| Fingerprint | Hash mengikat scope, actor, metadata dan sumber; referensi harus memakai revisi yang dapat dibuktikan. | Sumber reference revision masih OPEN. Jangan mengganti revisi bisnis dengan timestamp yang diasumsikan. Dwi menguji perubahan referensi dan replay. |
+| Error dan audit | Error domain yang dikenal dapat dipetakan melalui allowlist. Pesan driver dan `cause` internal tidak ditampilkan pada response. | Luthfi dan Dwi mereview nama error publik dan reason audit. Guard transaksi staging pada #52 membutuhkan #50 serta pemeriksaan pada HEAD hasil integrasi. |
+| Sumber operasi | Kandidat ini mencakup 22 operasi pada 21 path. Katalog internal SRS-35 mencatat 25 operasi pada sumber. | Adam menyusun pemetaan satu per satu berdasarkan sumber berizin. Selisih masih NEEDS REVIEW dan tidak menghapus operasi baseline. |
+
+Komponen PR #54 adalah kandidat terpisah. Hasil pengujian fixture dan review pada HEAD PR dicatat di Jira; implementasi session, role, preview dan commit nyata masih memerlukan uji API dan database terintegrasi.
+
 ## Matriks 22 operasi UI–DTO–query–lineage
 
 Semua operasi bisnis masih PROPOSED. Query berikut adalah rancangan relasi DOC-07, **bukan klaim tabel domain sudah dibangun**. Sebelum pagination/agregasi, terapkan sesi, role, gudang, mode dan ownership pada backend. Detail ID mengambil scope dari objek. Field yang belum ada di DTO tetap kosong secara semantik dengan alasan yang benar; jangan mengisi angka/nama/waktu fiktif.
