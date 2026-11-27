@@ -80,7 +80,7 @@ describe('SRS-48 StageAuthorizer adapter (PR #27 handoff)', () => {
     const az = createAuthorizer();
     const resolver = vi.fn(async () => actor({ accountId: 'session-user' }));
     const adapter = createStageAuthorizerAdapter(resolver, az);
-    const result = await adapter.authorizeStage({ kind: 'STOCK', warehouse_id: 'WH-01', mode: 'UJI' } as any);
+    const result = await adapter.authorizeStage({ kind: 'STOCK', warehouse_id: 'WH-01', mode: 'UJI' });
     expect(result.actor_id).toBe('session-user');
     expect(resolver).toHaveBeenCalledTimes(1);
   });

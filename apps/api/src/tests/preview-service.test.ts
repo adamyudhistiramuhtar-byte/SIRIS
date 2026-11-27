@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { createPreviewService, PREVIEW_TTL_MS, PREVIEW_VALIDATION_VERSION } from '../validation/preview-service.js';
+import { createPreviewService, PREVIEW_TTL_MS, PREVIEW_VALIDATION_VERSION, type PreviewRowValidator } from '../validation/preview-service.js';
 import type { BuildPreviewInput, PreviewActor, PreviewAuthorizer, PreviewResult, StagingRow } from '../validation/preview-types.js';
 
 const fixturePath = path.resolve(process.cwd(), 'apps/api/src/tests/fixtures/srs51/preview-valid-uji.fixture.json');
@@ -270,5 +270,80 @@ describe('Regresi tinjauan independen SRS-51 (HEAD ab91423, 25 November 2026)', 
     ];
     const result = await makeService({}, rows).buildPreview({ ...baseInput });
     expect(result.issues.some((i) => i.code === 'ROW_ORDER_INVALID')).toBe(true);
+  });
+});
+
+describe('Regresi temuan review Dwi pada PR #54 (HEAD 92ef171)', () => {
+  const baseInput = { ...fixture.batch, actor };
+
+  const invalidRow = (id: string, component: string): StagingRow => ({
+    id,
+    component,
+    row_number: 1,
+    raw_payload: {},
+    normalized_payload: { sku: 'A', quantity: 1 },
+    validation_status: 'INVALID',
+  });
+
+  it('dua komponen dengan baris INVALID identik menghasilkan dua issue unik (tidak terdedup)', async () => {
+    const rows = [invalidRow('balance-1', 'balance'), invalidRow('support-1', 'support_master')];
+    const result = await makeService({}, rows).buildPreview({ ...baseInput });
+
+    expect(result.errors).toHaveLength(2);
+    expect(result.errors.every((e) => e.code === 'ROW_INVALID' && e.rowNumber === 1)).toBe(true);
+    expect(new Set(result.errors.map((e) => e.id)).size).toBe(2);
+    expect(result.canCommit).toBe(false);
+  });
+
+  it('ID dan urutan issue deterministik serta stabil saat komponen tidak terkait diurutkan ulang', async () => {
+    const balanceRow = invalidRow('balance-1', 'balance');
+    const supportRow = invalidRow('support-1', 'support_master');
+
+    const first = await makeService({}, [balanceRow, supportRow]).buildPreview({ ...baseInput });
+    const second = await makeService({}, [balanceRow, supportRow]).buildPreview({ ...baseInput });
+    const reordered = await makeService({}, [supportRow, balanceRow]).buildPreview({ ...baseInput });
+
+    expect(second.errors.map((e) => e.id)).toEqual(first.errors.map((e) => e.id));
+    expect(reordered.errors.map((e) => e.id)).toEqual(first.errors.map((e) => e.id));
+
+    // Sort memuat component: 'balance' < 'support_master', apa pun urutan input.
+    const balanceOnly = await makeService({}, [balanceRow]).buildPreview({ ...baseInput });
+    const supportOnly = await makeService({}, [supportRow]).buildPreview({ ...baseInput });
+    expect(first.errors.map((e) => e.id)).toEqual([balanceOnly.errors[0].id, supportOnly.errors[0].id]);
+  });
+
+  it('issue identik dalam komponen yang sama tetap terdedup', async () => {
+    const rows = [invalidRow('balance-1', 'balance'), invalidRow('balance-2', 'balance')];
+    const result = await makeService({}, rows).buildPreview({ ...baseInput });
+
+    // Dua baris INVALID pada row_number 1 yang sama menghasilkan ID identik -> satu issue.
+    expect(result.errors.filter((e) => e.code === 'ROW_INVALID')).toHaveLength(1);
+    // Baris kedua tetap memicu ROW_ORDER_INVALID karena urutan per komponen tidak sesuai.
+    expect(result.errors.filter((e) => e.code === 'ROW_ORDER_INVALID')).toHaveLength(1);
+  });
+
+  it('WARNING dari validator memblokir commit (fail-closed) dan ID-nya deterministik', async () => {
+    const rows: StagingRow[] = [
+      { id: 'balance-1', component: 'balance', row_number: 1, raw_payload: {}, normalized_payload: { sku: 'A', quantity: 1 }, validation_status: 'VALID' },
+    ];
+    const warningValidator: PreviewRowValidator = (row) =>
+      row.normalized_payload.sku === 'A'
+        ? [{ severity: 'WARNING', code: 'STOCK_LOW', message: 'Stok berada di bawah ambang.' }]
+        : [];
+
+    const svc = makeService({ rowValidators: [warningValidator] }, rows);
+    const first = await svc.buildPreview({ ...baseInput });
+
+    expect(first.warnings.length).toBeGreaterThan(0);
+    expect(first.canCommit).toBe(false);
+    expect(first.status).toBe('INVALID');
+
+    const warning = first.warnings.find((w) => w.code === 'STOCK_LOW');
+    expect(warning).toBeDefined();
+    expect(warning?.id).toMatch(/^warn_[a-f0-9]{16}$/);
+    expect(first.issues.some((i) => i.id === warning?.id)).toBe(true);
+
+    const second = await svc.buildPreview({ ...baseInput });
+    expect(second.warnings.find((w) => w.code === 'STOCK_LOW')?.id).toBe(warning?.id);
   });
 });

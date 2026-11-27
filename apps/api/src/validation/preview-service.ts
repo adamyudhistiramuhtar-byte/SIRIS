@@ -6,10 +6,18 @@ import type {
   ReadOwnedStaging,
   StagingRow,
   ValidationIssue,
+  ValidationSeverity,
 } from './preview-types.js';
 
 export const PREVIEW_VALIDATION_VERSION = 'srs51-preview-v1';
 export const PREVIEW_TTL_MS = 30 * 60 * 1000;
+
+// Pembanding eksplisit agar kanonikalisasi hash tidak bergantung pada locale.
+function compareStrings(a: string, b: string): number {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+}
 
 function stableJson(value: unknown): string {
   if (value instanceof Date) {
@@ -19,7 +27,7 @@ function stableJson(value: unknown): string {
   }
   if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
   if (value && typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b));
+    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => compareStrings(a, b));
     return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stableJson(v)}`).join(',')}}`;
   }
   return JSON.stringify(value);
@@ -57,11 +65,27 @@ export function computePreviewFingerprint(input: {
   return createHash('sha256').update(canonical).digest('hex');
 }
 
-function issueId(batchId: string, code: string, severity: 'ERROR' | 'WARNING', rowNumber: number | null | undefined, field?: string | null): string {
+function issueId(
+  batchId: string,
+  component: string,
+  code: string,
+  severity: ValidationSeverity,
+  rowNumber: number | null | undefined,
+  field?: string | null,
+): string {
   const prefix = severity === 'WARNING' ? 'warn_' : 'err_';
-  const raw = `${batchId}|${severity}|${code}|${rowNumber ?? 'batch'}|${field ?? ''}`;
+  const raw = `${batchId}|${component}|${severity}|${code}|${rowNumber ?? 'batch'}|${field ?? ''}`;
   return `${prefix}${createHash('sha1').update(raw).digest('hex').slice(0, 16)}`;
 }
+
+export interface PreviewRowValidationFinding {
+  severity: ValidationSeverity;
+  code: string;
+  message: string;
+  field?: string | null;
+}
+
+export type PreviewRowValidator = (row: StagingRow) => readonly PreviewRowValidationFinding[];
 
 function validationError(code: string, message: string, statusCode = 403): Error & { code: string; statusCode: number } {
   return Object.assign(new Error(message), { code, statusCode });
@@ -73,12 +97,15 @@ export interface PreviewServiceDeps {
   now?: () => number;
   ttlMs?: number;
   validationVersion?: string;
+  /** Aturan validasi tambahan (mis. WARNING) yang diinjeksi; default kosong (tanpa perilaku tambahan). */
+  rowValidators?: readonly PreviewRowValidator[];
 }
 
 export function createPreviewService(deps: PreviewServiceDeps) {
   const now = deps.now ?? (() => Date.now());
   const ttlMs = deps.ttlMs ?? PREVIEW_TTL_MS;
   const validationVersion = deps.validationVersion ?? PREVIEW_VALIDATION_VERSION;
+  const rowValidators = deps.rowValidators ?? [];
 
   async function buildPreview(input: BuildPreviewInput): Promise<PreviewResult> {
     const decision = deps.authorizer.authorize({
@@ -95,14 +122,19 @@ export function createPreviewService(deps: PreviewServiceDeps) {
 
     const rows = await deps.readOwnedStaging({ batchId: input.batchId, actorId: input.actor.accountId });
     const issues: ValidationIssue[] = [];
+    const issueComponents = new Map<string, string>();
+    const addIssue = (component: string, issue: ValidationIssue): void => {
+      issues.push(issue);
+      issueComponents.set(issue.id, component);
+    };
     const componentRowCounter = new Map<string, number>();
 
     rows.forEach((row) => {
       const expectedRow = (componentRowCounter.get(row.component) ?? 0) + 1;
       componentRowCounter.set(row.component, expectedRow);
       if (row.row_number !== expectedRow) {
-        issues.push({
-          id: issueId(input.batchId, 'ROW_ORDER_INVALID', 'ERROR', row.row_number, 'row_number'),
+        addIssue(row.component, {
+          id: issueId(input.batchId, row.component, 'ROW_ORDER_INVALID', 'ERROR', row.row_number, 'row_number'),
           severity: 'ERROR',
           code: 'ROW_ORDER_INVALID',
           message: `Urutan baris tidak valid pada row_number ${row.row_number}.`,
@@ -111,8 +143,8 @@ export function createPreviewService(deps: PreviewServiceDeps) {
         });
       }
       if (row.validation_status === 'INVALID') {
-        issues.push({
-          id: issueId(input.batchId, 'ROW_INVALID', 'ERROR', row.row_number),
+        addIssue(row.component, {
+          id: issueId(input.batchId, row.component, 'ROW_INVALID', 'ERROR', row.row_number),
           severity: 'ERROR',
           code: 'ROW_INVALID',
           message: `Baris ${row.row_number} tidak valid.`,
@@ -120,8 +152,8 @@ export function createPreviewService(deps: PreviewServiceDeps) {
         });
       }
       if (row.validation_status === 'PENDING') {
-        issues.push({
-          id: issueId(input.batchId, 'ROW_PENDING', 'ERROR', row.row_number),
+        addIssue(row.component, {
+          id: issueId(input.batchId, row.component, 'ROW_PENDING', 'ERROR', row.row_number),
           severity: 'ERROR',
           code: 'ROW_PENDING',
           message: `Baris ${row.row_number} masih menunggu validasi dan belum boleh di-commit.`,
@@ -130,8 +162,8 @@ export function createPreviewService(deps: PreviewServiceDeps) {
       }
       const qty = row.normalized_payload.quantity;
       if (typeof qty === 'number' && qty < 0) {
-        issues.push({
-          id: issueId(input.batchId, 'NEGATIVE_QUANTITY', 'ERROR', row.row_number, 'quantity'),
+        addIssue(row.component, {
+          id: issueId(input.batchId, row.component, 'NEGATIVE_QUANTITY', 'ERROR', row.row_number, 'quantity'),
           severity: 'ERROR',
           code: 'NEGATIVE_QUANTITY',
           message: `Kuantitas negatif pada baris ${row.row_number}.`,
@@ -139,11 +171,29 @@ export function createPreviewService(deps: PreviewServiceDeps) {
           field: 'quantity',
         });
       }
+      for (const validateRow of rowValidators) {
+        for (const finding of validateRow(row)) {
+          addIssue(row.component, {
+            id: issueId(input.batchId, row.component, finding.code, finding.severity, row.row_number, finding.field),
+            severity: finding.severity,
+            code: finding.code,
+            message: finding.message,
+            rowNumber: row.row_number,
+            ...(finding.field !== undefined ? { field: finding.field } : {}),
+          });
+        }
+      }
     });
 
     const dedup = new Map<string, ValidationIssue>();
     for (const issue of issues) dedup.set(issue.id, issue);
-    const finalIssues = [...dedup.values()].sort((a, b) => (a.rowNumber ?? 0) - (b.rowNumber ?? 0) || a.code.localeCompare(b.code));
+    const finalIssues = [...dedup.values()].sort(
+      (a, b) =>
+        compareStrings(issueComponents.get(a.id) ?? '', issueComponents.get(b.id) ?? '') ||
+        (a.rowNumber ?? 0) - (b.rowNumber ?? 0) ||
+        compareStrings(a.code, b.code) ||
+        compareStrings(a.id, b.id),
+    );
     const errors = finalIssues.filter((i) => i.severity === 'ERROR');
     const warnings = finalIssues.filter((i) => i.severity === 'WARNING');
     const hasPendingValidation = finalIssues.some((i) => i.code === 'ROW_PENDING');
