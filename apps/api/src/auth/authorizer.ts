@@ -31,12 +31,14 @@ export function createAuthorizer(): Authorizer {
     if (!allowedActions) return { allowed: false, reason: 'DENY_ROLE' };
     if (!allowedActions.includes(action)) return { allowed: false, reason: 'DENY_ROLE' };
 
-    if (scope.warehouseId) {
-      if (!actor.warehouseIds.includes(scope.warehouseId)) {
-        return { allowed: false, reason: 'DENY_WAREHOUSE' };
-      }
+    if (!scope.warehouseId || !actor.warehouseIds.includes(scope.warehouseId)) {
+      return { allowed: false, reason: 'DENY_WAREHOUSE' };
     }
 
+    // Staging belum memiliki batch; seluruh aksi batch memerlukan owner dari server.
+    if (action !== 'import:stage' && !scope.batchOwnerId) {
+      return { allowed: false, reason: 'DENY_OBJECT_OWNERSHIP' };
+    }
     if (scope.batchOwnerId && scope.batchOwnerId !== actor.accountId) {
       // Management read-only can read batch metadata only through explicit read path; object ownership enforced.
       if (action === 'batch:read' && actor.role === 'MANAGEMENT') {

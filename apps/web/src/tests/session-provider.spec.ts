@@ -45,8 +45,20 @@ describe('SRS-47 session provider (store terinjeksi, fake auth server)', () => {
     const result = await provider.login({ username: 'yudha', password: 'wrong' });
 
     expect(result).toEqual({ ok: false, reason: 'AUTH_FAILED' });
-    expect(store.state.accountId).toBe('before');
+    expect(store.state.accountId).toBe('');
     expect(provider.csrfToken).toBeNull();
+  });
+
+  it('login kedua yang ditolak membersihkan token dan konteks sesi sebelumnya', async () => {
+    const store = createSessionStore(makeContext());
+    const auth = new FakeSessionAuthServer(() => 1_000, 5_000);
+    auth.seed('yudha', 'secret', makeContext());
+    const provider = createSessionProvider({ store, auth, now: () => 1_000 });
+    expect((await provider.login({ username: 'yudha', password: 'secret' })).ok).toBe(true);
+    expect(provider.csrfToken).not.toBeNull();
+    expect(await provider.login({ username: 'yudha', password: 'wrong' })).toEqual({ ok: false, reason: 'AUTH_FAILED' });
+    expect(provider.csrfToken).toBeNull();
+    expect(store.state.accountId).toBe('');
   });
 
   it('logout memanggil auth server dan membersihkan konteks', async () => {
