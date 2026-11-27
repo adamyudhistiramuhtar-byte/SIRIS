@@ -146,7 +146,7 @@ function isIsoDate(value: string): boolean {
 }
 
 export function parseCommitmentEventAt(value: string): number | null {
-  if (!ISO_DATETIME_OFFSET_RE.test(value)) return null;
+  if (!ISO_DATETIME_OFFSET_RE.test(value) || !isIsoDate(value.slice(0, 10))) return null;
   const epochMs = Date.parse(value);
   return Number.isNaN(epochMs) ? null : epochMs;
 }
