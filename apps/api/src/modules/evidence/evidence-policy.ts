@@ -33,14 +33,25 @@ export function checkEvidenceUpload(
   content: Uint8Array,
   uploadAuthorized: boolean,
 ): EvidenceDecision {
-  if (!target || !target.id || !target.warehouse_id) return { ok: false, code: 'INVALID_TARGET' };
-  if (!uploadAuthorized || actor.role !== 'WAREHOUSE' || target.mode !== 'UJI' || !actor.warehouse_ids.includes(target.warehouse_id)) {
-    return { ok: false, code: 'ACCESS_DENIED' };
-  }
+  const access = checkEvidenceUploadAccess(actor, target, uploadAuthorized);
+  if (!access.ok) return access;
   if (content.byteLength > MAX_EVIDENCE_BYTES) return { ok: false, code: 'LIMIT_EXCEEDED' };
   const signature = signatures.find((entry) =>
     entry.mime === declaredMime && entry.bytes.every((byte, index) => content[index] === byte),
   );
   if (!signature) return { ok: false, code: 'INVALID_FILE' };
   return { ok: true, mime: signature.mime };
+}
+
+/** Konteks actor dan keputusan izin diperoleh server dari sesi yang sah. */
+export function checkEvidenceUploadAccess(
+  actor: EvidenceActor,
+  target: EvidenceTarget | null,
+  uploadAuthorized: boolean,
+): { ok: true } | { ok: false; code: 'INVALID_TARGET' | 'ACCESS_DENIED' } {
+  if (!target || !target.id || !target.warehouse_id) return { ok: false, code: 'INVALID_TARGET' };
+  if (!uploadAuthorized || actor.role !== 'WAREHOUSE' || target.mode !== 'UJI' || !actor.warehouse_ids.includes(target.warehouse_id)) {
+    return { ok: false, code: 'ACCESS_DENIED' };
+  }
+  return { ok: true };
 }
