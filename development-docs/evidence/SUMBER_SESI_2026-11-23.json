@@ -1,0 +1,35 @@
+{
+  "mode": "UJI",
+  "purpose": "Snapshot sumber yang dibaca; hash bukan pengesahan sumber final.",
+  "branch": "3099525f17c0e5aaf540896b31f3be2c7475ce15",
+  "sources": [
+    {
+      "file": "AGENTS.md",
+      "sha256": "b0f923128692d57a455223e2a4e129e4cb4862df15707e0c787b04c87816a353"
+    },
+    {
+      "file": "design.md",
+      "sha256": "d250dfd717c1a75bc8a15f3f04a3a44143a4eec8a90ec069521d2b2c9b08f2ec"
+    },
+    {
+      "file": "development-docs/07_DATABASE_DESIGN.md",
+      "sha256": "833038b1b9950c32308993bd63e48a551ddc16a42fd536330a8a7841c3295211"
+    },
+    {
+      "file": "development-docs/08_DATA_CONTRACT_IMPORT_SPECIFICATION.md",
+      "sha256": "e3dfd5ec0f989e722a5efd0ab281dd32400b59f164be0f606df7c786745a4502"
+    },
+    {
+      "file": "development-docs/09_API_SPECIFICATION.md",
+      "sha256": "fc4c84d3404d8c917799497a67129d56fc098a2138515f416e4db506e4742df2"
+    },
+    {
+      "file": "development-docs/10_UI_UX_PROTOTYPE_SPECIFICATION.md",
+      "sha256": "3acef8e8c1400898f337d2296c13a2bfaa04b251fa56a2f044f5f2618438917d"
+    },
+    {
+      "file": "development-docs/KONTRAK_SUMBER_SRS-37.md",
+      "sha256": "1d212a9d30d26275120c934dc0bdf4590ce919ec0ffdca61844b0b451b1950c9"
+    }
+  ]
+}
