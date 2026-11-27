@@ -75,7 +75,10 @@ export function createSessionProvider({ store, auth, now = (): number => Date.no
       clearSession();
       return { ok: false, reason: 'AUTH_FAILED' };
     }
-    if (!result) return { ok: false, reason: 'AUTH_FAILED' };
+    if (!result) {
+      clearSession();
+      return { ok: false, reason: 'AUTH_FAILED' };
+    }
 
     const expiresAt = result.expiresAt ?? null;
     if (expiresAt !== null && now() >= expiresAt) {

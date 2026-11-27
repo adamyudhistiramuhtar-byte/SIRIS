@@ -43,8 +43,22 @@ describe('SRS-48 authorizer (deny-by-default)', () => {
 
   it('menolak mutasi batch milik orang lain', () => {
     const az = createAuthorizer();
-    const decision = az.authorize({ actor: actor(), action: 'batch:mutate', scope: { mode: 'UJI', batchOwnerId: 'u-2' } });
+    const decision = az.authorize({ actor: actor(), action: 'batch:mutate', scope: { mode: 'UJI', warehouseId: 'WH-01', batchOwnerId: 'u-2' } });
     expect(decision.reason).toBe('DENY_OBJECT_OWNERSHIP');
+  });
+
+  it.each(['import:validate', 'import:preview', 'import:commit', 'import:read', 'batch:read', 'batch:mutate'] as const)(
+    'menolak %s ketika warehouse atau owner tidak tersedia',
+    (action) => {
+      const az = createAuthorizer();
+      expect(az.authorize({ actor: actor(), action, scope: { mode: 'UJI' } }).allowed).toBe(false);
+      expect(az.authorize({ actor: actor(), action, scope: { mode: 'UJI', warehouseId: 'WH-01' } }).allowed).toBe(false);
+      expect(az.authorize({ actor: actor(), action, scope: { mode: 'UJI', warehouseId: 'WH-01', batchOwnerId: 'u-1' } }).allowed).toBe(true);
+    },
+  );
+
+  it('menolak staging tanpa warehouse', () => {
+    expect(createAuthorizer().authorize({ actor: actor(), action: 'import:stage', scope: { mode: 'UJI' } }).allowed).toBe(false);
   });
 
   it('mengizinkan akses sah', () => {
