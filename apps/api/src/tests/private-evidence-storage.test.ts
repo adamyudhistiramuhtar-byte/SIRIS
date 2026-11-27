@@ -38,6 +38,12 @@ describe('Penyimpanan evidence privat UJI', () => {
     expect((await storage.write(chunks(new Uint8Array(MAX_EVIDENCE_BYTES)))).size).toBe(MAX_EVIDENCE_BYTES);
   });
 
+  it('tidak mengungkap path ketika berkas tidak tersedia', async () => {
+    const { storage } = await makeStorage();
+    const missing = { key: '10000000-0000-4000-8000-000000000001', sha256: 'a'.repeat(64), size: 1 };
+    await expect(storage.read(missing)).rejects.toThrow(/^EVIDENCE_STORAGE_FAILED$/);
+  });
+
   it('menolak traversal, symlink dan perubahan data', async () => {
     const { root, storage } = await makeStorage();
     await expect(storage.remove('../private')).rejects.toThrow('INVALID_STORAGE_KEY');

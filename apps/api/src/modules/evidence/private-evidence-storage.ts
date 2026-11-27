@@ -34,7 +34,12 @@ export class PrivateEvidenceStorage {
   async write(content: AsyncIterable<Uint8Array>): Promise<StoredEvidence> {
     await this.ensurePrivateRoot();
     const key = randomUUID();
-    const handle = await open(this.path(key), constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY | constants.O_NOFOLLOW, 0o600);
+    let handle;
+    try {
+      handle = await open(this.path(key), constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY | constants.O_NOFOLLOW, 0o600);
+    } catch {
+      throw new Error('EVIDENCE_STORAGE_FAILED');
+    }
     const hash = createHash('sha256');
     let size = 0;
     try {
@@ -53,7 +58,8 @@ export class PrivateEvidenceStorage {
       } catch {
         try { this.onCleanupFailure(); } catch { /* Diagnostik tidak menutupi error awal. */ }
       }
-      throw error;
+      if (error instanceof Error && ['LIMIT_EXCEEDED', 'INVALID_FILE'].includes(error.message)) throw error;
+      throw new Error('EVIDENCE_STORAGE_FAILED');
     } finally {
       await handle.close();
     }
@@ -65,7 +71,13 @@ export class PrivateEvidenceStorage {
       !Number.isSafeInteger(expected.size) || expected.size < 1 || expected.size > MAX_EVIDENCE_BYTES) {
       throw new Error('INVALID_EVIDENCE_METADATA');
     }
-    const handle = await open(this.path(expected.key), constants.O_RDONLY | constants.O_NOFOLLOW);
+    const path = this.path(expected.key);
+    let handle;
+    try {
+      handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+    } catch {
+      throw new Error('EVIDENCE_STORAGE_FAILED');
+    }
     try {
       const info = await handle.stat();
       if (!info.isFile() || info.size !== expected.size || (info.mode & 0o077) !== 0) {
@@ -90,6 +102,11 @@ export class PrivateEvidenceStorage {
 
   async remove(key: string): Promise<void> {
     await this.ensurePrivateRoot();
-    await unlink(this.path(key));
+    const path = this.path(key);
+    try {
+      await unlink(path);
+    } catch {
+      throw new Error('EVIDENCE_STORAGE_FAILED');
+    }
   }
 }
