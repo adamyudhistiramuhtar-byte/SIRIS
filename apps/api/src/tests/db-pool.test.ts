@@ -111,7 +111,7 @@ describe('Unit test lapisan pool PostgreSQL SRS-43 (mock pg)', () => {
 
     const result = await checkDatabaseConnection();
 
-    expect(result).toEqual({ connected: false, error: '42P01' });
+    expect(result).toEqual({ connected: false, error: 'DATABASE_CONNECTION_FAILED' });
     expect(client.release).toHaveBeenCalledTimes(1);
   });
 
