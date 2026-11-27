@@ -131,6 +131,19 @@ export function createSessionStore(initial: SessionContext = DEFAULT_UJI_CONTEXT
     return { ok: true, changed };
   }
 
+  /**
+   * Bersihkan konteks sesi (logout atau kadaluarsa). Semua selection/cache wajib
+   * me-reset karena tidak ada konteks aktif lagi. Konteks kosong bersifat sementara
+   * untuk pemisahan antara mode UJI dan runtime nyata (SRS-47).
+   */
+  function clear(): SessionChangeResult {
+    const previous = snapshot();
+    Object.assign(state, { ...SIGNED_OUT_CONTEXT, warehouses: [...SIGNED_OUT_CONTEXT.warehouses] });
+    const changed = diff(previous, snapshot());
+    notify(changed, previous);
+    return { ok: true, changed };
+  }
+
   function setRole(role: UserRole): SessionChangeResult {
     if (!isUserRole(role)) return { ok: false, reason: 'ROLE_INVALID' };
     const previous = snapshot();
@@ -148,6 +161,7 @@ export function createSessionStore(initial: SessionContext = DEFAULT_UJI_CONTEXT
     setActiveWarehouse,
     setMode,
     setRole,
+    clear,
   };
 }
 
@@ -155,3 +169,12 @@ export type SessionStore = ReturnType<typeof createSessionStore>;
 
 /** Instans tunggal aplikasi. Pengujian membuat instans sendiri lewat createSessionStore. */
 export const sessionStore: SessionStore = createSessionStore();
+
+const SIGNED_OUT_CONTEXT: SessionContext = {
+  accountId: '',
+  displayName: '',
+  role: 'PURCHASING',
+  warehouses: [],
+  activeWarehouseId: null,
+  mode: 'UJI',
+};
