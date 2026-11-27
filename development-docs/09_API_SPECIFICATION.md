@@ -456,6 +456,8 @@ API-01 multipart memakai metadata object; field contoh metadata di tabel endpoin
 
 Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stabil; default sumber terbaru/ID untuk events/run, urutan row_number untuk baris snapshot/preview, kode untuk lookup. Frontend tidak menawarkan sort kolom lain sebelum kontraknya tersedia. Mode, warehouse_id, filter, run_id dan cursor harus konsisten; cursor tidak boleh dipakai lintas konteks. Pada detail berbasis ID, server menurunkan scope dari objek dan memeriksa izin, bukan mempercayai scope client.
 
+Seluruh operasi kandidat mensyaratkan sesi berdasarkan security global. Respons 401 dan 403 berikut merupakan proyeksi PROPOSED untuk review, dengan schema error kandidat yang masih berbeda dari envelope pada sumber DESAIN-42-1.1. Status tersebut bukan bukti endpoint atau keamanan runtime telah tersedia.
+
 ```json
 {
   "openapi": "3.1.1",
@@ -523,6 +525,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         },
         "requestBody": {
@@ -598,6 +606,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -672,6 +686,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -743,6 +763,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         },
         "requestBody": {
@@ -814,6 +840,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         },
         "requestBody": {
@@ -960,6 +992,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -1095,6 +1133,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -1233,6 +1277,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -1378,6 +1428,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -1524,6 +1580,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -1659,6 +1721,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -1794,6 +1862,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -1851,6 +1925,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         },
         "requestBody": {
@@ -1995,6 +2075,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -2085,6 +2171,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -2214,6 +2306,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -2273,6 +2371,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         },
         "requestBody": {
@@ -2334,6 +2438,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -2379,6 +2489,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -2532,6 +2648,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -2681,6 +2803,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -2789,6 +2917,12 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDenied"
           }
         }
       }
@@ -3789,7 +3923,10 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
             "description": "Tanggal efektif cutoff; basis efektif tetap memerlukan bukti."
           },
           "cutoff_time": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "NULL untuk cutoff UJI tanggal-saja; tidak mengarang jam."
           },
           "status": {
@@ -4020,8 +4157,32 @@ Sorting yang dirancang: source_asc/source_desc mengikuti urutan sumber yang stab
           "is_counted"
         ]
       }
+    },
+    "responses": {
+      "AuthenticationRequired": {
+        "description": "PROPOSED: sesi tidak sah atau kedaluwarsa; kontrak respons memerlukan review.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "AccessDenied": {
+        "description": "PROPOSED: akses role, gudang, objek atau CSRF ditolak; kontrak respons memerlukan review.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      }
     }
-  }
+  },
+  "x-siris-contract-version": "SRS-58/proposed-0.1",
+  "x-siris-status": "SNAPSHOT PROPOSED; gap dan keputusan mengikuti KONTRAK_LINTAS_MODUL_SRS-58.md"
 }
 ```
 

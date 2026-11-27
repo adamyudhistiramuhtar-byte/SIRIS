@@ -2,7 +2,7 @@
 
 Versi: **proposed-0.1**, 20 November 2026. Status: **KANDIDAT REVIEW**, bukan pengesahan domain atau bukti endpoint tersedia. Owner: Adam. Reviewer yang diminta: Luthfi (API), Dwi (schema), Vassell (konsumsi UI).
 
-Baseline: `develop@23f59a0`. Baseline tetap 16 UC, 29 FR, 14 NFR. Identitas FR/NFR asli tetap SOURCE REQUIRED. Snapshot OpenAPI tersedia pada [kontrak mesin](contracts/SRS-58-openapi.proposed-0.1.json); matriks field lengkap pada [katalog field](contracts/SRS-58-field-matrix.proposed-0.1.json). Keduanya menyalin DOC-09, bukan menghasilkan nilai operasional.
+Baseline: `develop@23f59a0`. Baseline tetap 16 UC, 29 FR, 14 NFR. Identitas FR/NFR asli tercatat dalam katalog sumber internal SRS-35; pemetaan dan review tetap diperlukan. Snapshot OpenAPI tersedia pada [kontrak mesin](contracts/SRS-58-openapi.proposed-0.1.json); matriks field lengkap pada [katalog field](contracts/SRS-58-field-matrix.proposed-0.1.json). Keduanya menyalin DOC-09, bukan menghasilkan nilai operasional.
 
 ## Sumber dan batas keputusan
 
@@ -33,43 +33,45 @@ Pembaruan ini menggunakan keputusan PM pada SRS-38 komentar 10153, SRS-58 koment
 | Warning dan expiry | Warning belum memiliki identitas acknowledgement yang diterima. Commit tetap fail-closed sampai kontrak disepakati. Waktu kedaluwarsa harus diterbitkan oleh server. | Luthfi dan Vassell menyepakati identitas warning, konsumen dan boundary. Durasi 30 menit dan retensi record masih PROPOSED. |
 | Fingerprint | Hash mengikat scope, actor, metadata dan sumber; referensi harus memakai revisi yang dapat dibuktikan. | Sumber reference revision masih OPEN. Jangan mengganti revisi bisnis dengan timestamp yang diasumsikan. Dwi menguji perubahan referensi dan replay. |
 | Error dan audit | Error domain yang dikenal dapat dipetakan melalui allowlist. Pesan driver dan `cause` internal tidak ditampilkan pada response. | Luthfi dan Dwi mereview nama error publik dan reason audit. Guard transaksi staging pada #52 membutuhkan #50 serta pemeriksaan pada HEAD hasil integrasi. |
-| Sumber operasi | Kandidat ini mencakup 22 operasi pada 21 path. Katalog internal SRS-35 mencatat 25 operasi pada sumber. | Adam menyusun pemetaan satu per satu berdasarkan sumber berizin. Selisih masih NEEDS REVIEW dan tidak menghapus operasi baseline. |
+| Sumber operasi | Kandidat ini mencakup 22 operasi pada 21 path; sumber internal memuat 25 operasi. Pemetaan method/path tersedia pada lampiran SRS-58 nomor 10007. | Luthfi, Dwi dan Vassell mereview perubahan path dan DTO. Identitas sumber tidak diganti oleh ID kandidat. |
 
 Komponen PR #54 adalah kandidat terpisah. Hasil pengujian fixture dan review pada HEAD PR dicatat di Jira; implementasi session, role, preview dan commit nyata masih memerlukan uji API dan database terintegrasi.
 
 ## Penelusuran API sumber terhadap kandidat
 
-Tabel ini adalah indeks review, bukan persamaan ID endpoint. Kolom sumber diambil dari matriks FR pada ekstrak DESAIN-42-1.1 halaman 202–211. Relasi FR-20, FR-21 dan FR-28 bersifat lintas operasi. Kolom kandidat adalah **kelompok hipotesis berdasarkan fungsi FR**, bukan pemetaan method/path yang sudah diverifikasi. Nomor kandidat merujuk tabel 22 operasi di bawah. Ekstrak yang tersedia tidak memuat tabel method/path API-01–API-25 sumber, sehingga semua baris tetap SOURCE REQUIRED untuk pemetaan endpoint. Luthfi memeriksa method/path dan Dwi memeriksa schema setelah halaman sumber yang sesuai tersedia.
+Sumber DESAIN-42-1.1 halaman 187–193 telah dicocokkan menggunakan hash pada SRS-35. Lampiran internal [SRS-58](https://adamyudhistiramuhtar.atlassian.net/browse/SRS-58) nomor 10007 memuat method, path, prefix, halaman dan perbedaan tiap baris. Tabel ini memuat relasi FR serta indeks kandidat tanpa memindahkan dokumen internal ke repository. Status seluruh pasangan **NEEDS REVIEW** oleh Luthfi/API, Dwi/schema dan Vassell/UI. Pasangan berdasarkan fungsi tidak otomatis kompatibel.
 
-| API sumber | FR yang merujuk API sumber | Kelompok kandidat untuk diperiksa | Status |
+| API sumber | FR yang merujuk API sumber | Kandidat DOC-09 | Hasil awal |
 | --- | --- | --- | --- |
-| API-01 | FR-20 | Belum dipetakan | SOURCE REQUIRED: method/path sumber |
-| API-02 | FR-20 | Belum dipetakan | SOURCE REQUIRED: method/path sumber |
-| API-03 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | 01–05 | SOURCE REQUIRED: method/path sumber |
-| API-04 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | 01–05 | SOURCE REQUIRED: method/path sumber |
-| API-05 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | 01–05 | SOURCE REQUIRED: method/path sumber |
-| API-06 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | 01–05 | SOURCE REQUIRED: method/path sumber |
-| API-07 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | 01–05 | SOURCE REQUIRED: method/path sumber |
-| API-08 | FR-01, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-28, FR-29 | 01–05, 21 | SOURCE REQUIRED: method/path sumber |
-| API-09 | FR-04, FR-20, FR-21, FR-28 | 06 | SOURCE REQUIRED: method/path sumber |
-| API-10 | FR-05, FR-20, FR-21, FR-28 | 07 | SOURCE REQUIRED: method/path sumber |
-| API-11 | FR-06, FR-20, FR-21, FR-24, FR-28 | 08 | SOURCE REQUIRED: method/path sumber |
-| API-12 | FR-07, FR-19, FR-20, FR-21, FR-27, FR-28 | 09 | SOURCE REQUIRED: method/path sumber |
-| API-13 | FR-08, FR-20, FR-21, FR-28 | 10 | SOURCE REQUIRED: method/path sumber |
-| API-14 | FR-09, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-28, FR-29 | 11, 22 | SOURCE REQUIRED: method/path sumber |
-| API-15 | FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-26, FR-28, FR-29 | 12 | SOURCE REQUIRED: method/path sumber |
-| API-16 | FR-11, FR-20, FR-21, FR-28 | 17–19 | SOURCE REQUIRED: method/path sumber |
-| API-17 | FR-11, FR-20, FR-21, FR-28 | 17–19 | SOURCE REQUIRED: method/path sumber |
-| API-18 | FR-12, FR-19, FR-20, FR-21, FR-25, FR-26, FR-27, FR-28, FR-29 | 13–14 | SOURCE REQUIRED: method/path sumber |
-| API-19 | FR-13, FR-19, FR-20, FR-21, FR-27, FR-28 | 14–15 | SOURCE REQUIRED: method/path sumber |
-| API-20 | FR-13, FR-19, FR-20, FR-21, FR-27, FR-28 | 14–15 | SOURCE REQUIRED: method/path sumber |
-| API-21 | FR-14, FR-20, FR-21, FR-28 | 16 | SOURCE REQUIRED: method/path sumber |
-| API-22 | FR-15, FR-19, FR-20, FR-21, FR-28 | 20 | SOURCE REQUIRED: method/path sumber |
-| API-23 | FR-07, FR-19, FR-20, FR-21, FR-27, FR-28 | 09 | SOURCE REQUIRED: method/path sumber |
-| API-24 | FR-21 | Belum dipetakan | SOURCE REQUIRED: method/path sumber |
-| API-25 | FR-11, FR-20, FR-21, FR-28 | 17–19 | SOURCE REQUIRED: method/path sumber |
+| API-01 | FR-20 | Belum ditemukan | Belum ada pasangan langsung pada snapshot kandidat |
+| API-02 | FR-20 | Belum ditemukan | Belum ada pasangan langsung pada snapshot kandidat |
+| API-03 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | api_01 | Pasangan fungsional perlu review method/path dan DTO |
+| API-04 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | api_02 | Pasangan fungsional perlu review method/path dan DTO |
+| API-05 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | api_03 | Pasangan fungsional perlu review method/path dan DTO |
+| API-06 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | api_04 | Pasangan fungsional perlu review method/path dan DTO |
+| API-07 | FR-01, FR-02, FR-03, FR-09, FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-26, FR-27, FR-28, FR-29 | api_05 | Pasangan fungsional perlu review method/path dan DTO |
+| API-08 | FR-01, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-28, FR-29 | Belum ditemukan | Belum ada pasangan langsung pada snapshot kandidat |
+| API-09 | FR-04, FR-20, FR-21, FR-28 | api_06 | Pasangan fungsional perlu review method/path dan DTO |
+| API-10 | FR-05, FR-20, FR-21, FR-28 | api_07 | Pasangan fungsional perlu review method/path dan DTO |
+| API-11 | FR-06, FR-20, FR-21, FR-24, FR-28 | api_08 | Pasangan fungsional perlu review method/path dan DTO |
+| API-12 | FR-07, FR-19, FR-20, FR-21, FR-27, FR-28 | api_09 | Pasangan fungsional perlu review method/path dan DTO |
+| API-13 | FR-08, FR-20, FR-21, FR-28 | api_10 | Pasangan fungsional perlu review method/path dan DTO |
+| API-14 | FR-09, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-22, FR-23, FR-24, FR-25, FR-28, FR-29 | api_11 | Pasangan fungsional perlu review method/path dan DTO |
+| API-15 | FR-10, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, FR-26, FR-28, FR-29 | api_12 | Pasangan fungsional perlu review method/path dan DTO |
+| API-16 | FR-11, FR-20, FR-21, FR-28 | api_17 | Pasangan fungsional perlu review method/path dan DTO |
+| API-17 | FR-11, FR-20, FR-21, FR-28 | api_19 | Pasangan fungsional perlu review method/path dan DTO |
+| API-18 | FR-12, FR-19, FR-20, FR-21, FR-25, FR-26, FR-27, FR-28, FR-29 | api_13 | Pasangan fungsional perlu review method/path dan DTO |
+| API-19 | FR-13, FR-19, FR-20, FR-21, FR-27, FR-28 | api_15 | Pasangan fungsional perlu review method/path dan DTO |
+| API-20 | FR-13, FR-19, FR-20, FR-21, FR-27, FR-28 | api_14 | Pasangan fungsional perlu review method/path dan DTO |
+| API-21 | FR-14, FR-20, FR-21, FR-28 | api_16 | Pasangan fungsional perlu review method/path dan DTO |
+| API-22 | FR-15, FR-19, FR-20, FR-21, FR-28 | api_20 | Pasangan fungsional perlu review method/path dan DTO |
+| API-23 | FR-07, FR-19, FR-20, FR-21, FR-27, FR-28 | Belum ditemukan | Belum ada pasangan langsung pada snapshot kandidat |
+| API-24 | FR-21 | api_21 | Pasangan fungsional perlu review method/path dan DTO |
+| API-25 | FR-11, FR-20, FR-21, FR-28 | Belum ditemukan | Belum ada pasangan langsung pada snapshot kandidat |
 
-API-01/02 dan API-24 sumber belum mempunyai pasangan yang dapat dibuktikan dari ekstrak. Ketiadaan baris pasangan bukan bukti endpoint hilang. API-03–07 masing-masing perlu dicocokkan ke lima operasi impor berdasarkan method, path, body dan respons. Periksa juga API-16/17/25 terhadap tiga operasi evidence. Selisih jumlah 25 dan 22 belum menunjukkan jumlah operasi yang belum diimplementasikan.
+Lima operasi sumber tanpa pasangan langsung pada snapshot adalah API-01, API-02, API-08, API-23 dan API-25. Dua operasi kandidat yang belum memiliki pasangan langsung dalam tabel sumber adalah api_18 dan api_22. Temuan ini adalah perbandingan spesifikasi, bukan klaim kelima operasi belum diimplementasikan.
+
+Perbedaan lintas kontrak meliputi prefix sumber /api dan kandidat /api/v1, penamaan path validasi/pembatalan, scope detail versus query, halaman versus cursor, metadata multipart, token preview dan fingerprint, envelope respons, status error serta kontrol akses. SRS-36 membatasi UC-11/UC-12 pada baseline UJI; daftar operasi sumber tidak memberikan izin mutasi. Perubahan route, schema, izin atau versi kontrak memerlukan review pemilik dan change control.
 
 ## Matriks 22 operasi UI–DTO–query–lineage
 
